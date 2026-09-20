@@ -1,122 +1,108 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useEffect, useCallback } from "react";
+import type { JobSummary } from "./types/engineering";
+import { listJobs } from "./mocks/api";
+import { Header } from "./components/layout/Header";
+import { JobList } from "./components/jobs/JobList";
+import { JobDetailView } from "./components/jobs/JobDetailView";
+import { SubmitJobModal } from "./components/jobs/SubmitJobModal";
+import { IconLoader } from "./components/common/Icon";
 
-function App() {
-  const [count, setCount] = useState(0)
+export function App() {
+  const [jobs, setJobs] = useState<JobSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+
+  const fetchJobs = useCallback(async (showRefreshing = false) => {
+    if (showRefreshing) setIsRefreshing(true);
+    try {
+      const data = await listJobs();
+      setJobs(data);
+    } catch (err) {
+      console.error("Failed to load jobs from mock API:", err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    listJobs()
+      .then((data) => {
+        if (isMounted) {
+          setJobs(data);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load jobs from mock API:", err);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleJobSubmitted = (newJob: JobSummary) => {
+    // Prepend new job to local state and navigate into its detail view
+    setJobs((prev) => [newJob, ...prev]);
+    setSelectedJobId(newJob.id);
+  };
+
+  const handleSelectJob = (jobId: string) => {
+    setSelectedJobId(jobId);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleBackToJobs = () => {
+    setSelectedJobId(null);
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="console-app">
+      <Header
+        jobs={jobs}
+        onOpenSubmit={() => setIsSubmitModalOpen(true)}
+        onRefresh={() => fetchJobs(true)}
+        isRefreshing={isRefreshing}
+        onGoHome={handleBackToJobs}
+      />
 
-      <div className="ticks"></div>
+      <main className="main-content">
+        {isLoading ? (
+          <div className="job-detail-loading">
+            <IconLoader size={36} className="text-accent" />
+            <p className="loading-text">
+              Connecting to engineering agent console...
+            </p>
+          </div>
+        ) : selectedJobId ? (
+          <JobDetailView
+            jobId={selectedJobId}
+            onBack={handleBackToJobs}
+            onRefreshList={() => fetchJobs(false)}
+          />
+        ) : (
+          <JobList
+            jobs={jobs}
+            selectedJobId={selectedJobId}
+            onSelectJob={handleSelectJob}
+            onOpenSubmit={() => setIsSubmitModalOpen(true)}
+          />
+        )}
+      </main>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <SubmitJobModal
+        isOpen={isSubmitModalOpen}
+        onClose={() => setIsSubmitModalOpen(false)}
+        onJobSubmitted={handleJobSubmitted}
+      />
+    </div>
+  );
 }
 
-export default App
+export default App;
