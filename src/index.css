@@ -2190,6 +2190,148 @@ body {
 }
 
 /* ==========================================================================
+   Module Workspace — panels (User Inputs / Project Info / Nozzle Schedule)
+   ========================================================================== */
+.workspace-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.workspace-panel:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.workspace-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--accent-blue);
+}
+
+.workspace-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.workspace-fields-grid-text {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.form-hint-inline {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.workspace-shell-override {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 12px;
+  background-color: rgba(59, 130, 246, 0.06);
+  border: 1px dashed rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-md);
+}
+
+.workspace-shell-override-input {
+  max-width: 420px;
+}
+
+/* Nozzle Schedule Editor */
+.nozzle-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nozzle-editor-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.nozzle-editor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.nozzle-editor-table th {
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  text-align: left;
+  padding: 8px 6px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.nozzle-editor-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nozzle-cell-input,
+.nozzle-cell-select {
+  width: 100%;
+  min-width: 70px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 5px 6px;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.nozzle-cell-input:focus,
+.nozzle-cell-select:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.nozzle-row-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.nozzle-row-remove-btn:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.nozzle-row-remove-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nozzle-editor-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 16px !important;
+  font-size: 13px;
+}
+
+/* ==========================================================================
    Responsive Breakpoints
    ========================================================================== */
 @media (max-width: 1024px) {
@@ -2235,5 +2377,9 @@ body {
   .module-workspace-subnav {
     flex-wrap: wrap;
     gap: 8px;
+  }
+  .workspace-fields-grid,
+  .workspace-fields-grid-text {
+    grid-template-columns: 1fr 1fr;
   }
 }

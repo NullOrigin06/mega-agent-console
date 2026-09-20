@@ -1,14 +1,14 @@
 import { useState } from "react";
-import type { ModuleKind, JobSummary } from "../../types/engineering";
+import type { ModuleKind, JobSummary, ProjectInfo, NozzleItem } from "../../types/engineering";
 import { submitJob } from "../../api";
 import { MODULE_OPTIONS } from "../../constants/modules";
+import { getDefaultNozzleSchedule } from "../../constants/nozzleDefaults";
 import {
-  buildSizingRequest,
-  DEFAULT_SIZING_FIELDS,
-  type SizingMode,
-  type SizingFieldValues,
-} from "../../utils/sizingValidation";
-import { SizingModeFields } from "../jobs/SizingModeFields";
+  buildWorkspaceRequest,
+  DEFAULT_WORKSPACE_FIELDS,
+  type WorkspaceFieldValues,
+} from "../../utils/workspaceValidation";
+import { NozzleScheduleEditor } from "../jobs/NozzleScheduleEditor";
 import { JobDetailView } from "../jobs/JobDetailView";
 import { IconArrowLeft, IconLoader } from "../common/Icon";
 
@@ -20,12 +20,26 @@ interface ModuleWorkspaceProps {
   onRefreshList: () => void;
 }
 
+const DEFAULT_PROJECT_INFO: ProjectInfo = {
+  customerName: "",
+  drawingTitle: "",
+  projectNo: "",
+  drawingNo: "",
+  revision: "0",
+  preparedBy: "",
+  checkedBy: "",
+  approvedBy: "",
+};
+
 /**
- * Per-module workspace page, mirroring the desktop suite's Form3: pick a
- * module (ModulesHome) -> land here -> size it -> the full calculated
- * result (Actual/Estimated values, nozzles, BOM, drawing generation) shows
- * inline on this same page, all for one module, all in one place. A run
- * started here still shows up in the "All Jobs" dashboard for later review.
+ * Per-module workspace page, mirroring the desktop suite's Form3 in full:
+ * User Inputs (HTA/Tube OD/Tube Length/Tube THK/No. of Pass/Baffle Qty),
+ * Project Information, and the Nozzle Input/Schedule grid all live on one
+ * screen (Parth's explicit correction: a Shell-ID-only entry point is not
+ * how the real app works — these are the actual fields Form3 takes). A
+ * directly-typed Shell ID is offered as an optional override/alternative to
+ * the thermal calculation, not the only way in. Submitting switches this
+ * same page to show the full result (JobDetailView) inline.
  */
 export function ModuleWorkspace({
   module,
@@ -35,19 +49,28 @@ export function ModuleWorkspace({
   onRefreshList,
 }: ModuleWorkspaceProps) {
   const [job, setJob] = useState<JobSummary | null>(null);
-  const [sizingMode, setSizingMode] = useState<SizingMode>("thermal");
-  const [fields, setFields] = useState<SizingFieldValues>(DEFAULT_SIZING_FIELDS);
+  const [fields, setFields] = useState<WorkspaceFieldValues>(DEFAULT_WORKSPACE_FIELDS);
+  const [projectInfo, setProjectInfo] = useState<ProjectInfo>(DEFAULT_PROJECT_INFO);
+  const [nozzles, setNozzles] = useState<NozzleItem[]>(getDefaultNozzleSchedule());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const moduleInfo = MODULE_OPTIONS.find((m) => m.kind === module) ?? MODULE_OPTIONS[0];
   const ModuleIcon = moduleInfo.icon;
 
+  const setField = (key: keyof WorkspaceFieldValues, value: string) => {
+    setFields((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setProjectField = (key: keyof ProjectInfo, value: string) => {
+    setProjectInfo((prev) => ({ ...prev, [key]: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    const result = buildSizingRequest(module, sizingMode, fields);
+    const result = buildWorkspaceRequest(module, fields, projectInfo, nozzles);
     if ("error" in result) {
       setError(result.error);
       return;
@@ -120,13 +143,106 @@ export function ModuleWorkspace({
           </div>
         )}
 
-        <SizingModeFields
-          mode={sizingMode}
-          onModeChange={setSizingMode}
-          fields={fields}
-          onFieldsChange={setFields}
-          disabled={isSubmitting}
-        />
+        {/* User Inputs — mirrors Form3's "User Inputs" panel exactly */}
+        <div className="workspace-panel">
+          <h3 className="workspace-panel-title">User Inputs</h3>
+          <div className="workspace-fields-grid">
+            <div className="shell-input-wrapper">
+              <input
+                type="number" min="0" step="any" className="form-input text-mono"
+                value={fields.hta} onChange={(e) => setField("hta", e.target.value)}
+                placeholder="HTA" disabled={isSubmitting}
+              />
+              <span className="input-suffix">HTA m²</span>
+            </div>
+            <div className="shell-input-wrapper">
+              <input
+                type="number" min="0" step="any" className="form-input text-mono"
+                value={fields.tubeOD} onChange={(e) => setField("tubeOD", e.target.value)}
+                placeholder="Tube OD" disabled={isSubmitting}
+              />
+              <span className="input-suffix">Tube OD mm</span>
+            </div>
+            <div className="shell-input-wrapper">
+              <input
+                type="number" min="0" step="any" className="form-input text-mono"
+                value={fields.tubeLength} onChange={(e) => setField("tubeLength", e.target.value)}
+                placeholder="Tube Length" disabled={isSubmitting}
+              />
+              <span className="input-suffix">Tube Length mm</span>
+            </div>
+            <div className="shell-input-wrapper">
+              <input
+                type="number" min="0" step="any" className="form-input text-mono"
+                value={fields.tubeThk} onChange={(e) => setField("tubeThk", e.target.value)}
+                placeholder="Tube THK" disabled={isSubmitting}
+              />
+              <span className="input-suffix">Tube THK mm</span>
+            </div>
+            <div className="shell-input-wrapper">
+              <input
+                type="number" min="1" step="1" className="form-input text-mono"
+                value={fields.noOfPass} onChange={(e) => setField("noOfPass", e.target.value)}
+                placeholder="No. of Pass" disabled={isSubmitting}
+              />
+              <span className="input-suffix">No. of Pass</span>
+            </div>
+            <div className="shell-input-wrapper">
+              <input
+                type="number" min="1" step="1" className="form-input text-mono"
+                value={fields.baffleQty} onChange={(e) => setField("baffleQty", e.target.value)}
+                placeholder="Baffle Qty" disabled={isSubmitting}
+              />
+              <span className="input-suffix">Baffle Qty</span>
+            </div>
+          </div>
+
+          <div className="workspace-shell-override">
+            <label className="form-label" htmlFor="shell-id-override">
+              Shell ID Override <span className="form-hint-inline">(optional — skips the calculation above and uses this Shell ID directly, same as editing Shell I.D. in the Estimated column on Form3)</span>
+            </label>
+            <div className="shell-input-wrapper workspace-shell-override-input">
+              <input
+                id="shell-id-override"
+                type="number" min="150" max="4000" step="1" className="form-input text-mono"
+                value={fields.shellIdOverride}
+                onChange={(e) => setField("shellIdOverride", e.target.value)}
+                placeholder="e.g. 914 (leave blank to calculate from HTA above)"
+                disabled={isSubmitting}
+              />
+              <span className="input-suffix">mm</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Project Information — mirrors Form3's title-block panel */}
+        <div className="workspace-panel">
+          <h3 className="workspace-panel-title">Project Information</h3>
+          <div className="workspace-fields-grid workspace-fields-grid-text">
+            <input className="form-input" placeholder="Customer Name" disabled={isSubmitting}
+              value={projectInfo.customerName} onChange={(e) => setProjectField("customerName", e.target.value)} />
+            <input className="form-input" placeholder="Drawing Title" disabled={isSubmitting}
+              value={projectInfo.drawingTitle} onChange={(e) => setProjectField("drawingTitle", e.target.value)} />
+            <input className="form-input" placeholder="Project No" disabled={isSubmitting}
+              value={projectInfo.projectNo} onChange={(e) => setProjectField("projectNo", e.target.value)} />
+            <input className="form-input" placeholder="Drawing No" disabled={isSubmitting}
+              value={projectInfo.drawingNo} onChange={(e) => setProjectField("drawingNo", e.target.value)} />
+            <input className="form-input" placeholder="Revision" disabled={isSubmitting}
+              value={projectInfo.revision} onChange={(e) => setProjectField("revision", e.target.value)} />
+            <input className="form-input" placeholder="Prepared By" disabled={isSubmitting}
+              value={projectInfo.preparedBy} onChange={(e) => setProjectField("preparedBy", e.target.value)} />
+            <input className="form-input" placeholder="Checked By" disabled={isSubmitting}
+              value={projectInfo.checkedBy} onChange={(e) => setProjectField("checkedBy", e.target.value)} />
+            <input className="form-input" placeholder="Approved By" disabled={isSubmitting}
+              value={projectInfo.approvedBy} onChange={(e) => setProjectField("approvedBy", e.target.value)} />
+          </div>
+        </div>
+
+        {/* Nozzle Input/Schedule — mirrors Form3's nozzle grid */}
+        <div className="workspace-panel">
+          <h3 className="workspace-panel-title">Nozzle Input / Schedule</h3>
+          <NozzleScheduleEditor nozzles={nozzles} onChange={setNozzles} disabled={isSubmitting} />
+        </div>
 
         <div className="module-workspace-form-footer">
           <button

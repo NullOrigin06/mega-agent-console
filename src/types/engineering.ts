@@ -42,12 +42,28 @@ export type JobStatus = "queued" | "running" | "completed" | "failed";
 export type DrawingStatus = "not_generated" | "generating" | "generated" | "failed";
 
 /**
- * Request to start a new generation run. Mirrors Form3's two real entry
- * paths: either a directly-typed Shell ID (OnEstimatedShellIdChanged), or
- * the four thermal-sizing inputs that Form3.BtnCalculate_Click uses to
- * compute Shell ID itself (hta/tubeOD/tubeLength/noOfPass). Provide one or
- * the other, not both — the API computes shellId server-side when thermal
- * inputs are supplied.
+ * Project Information / title-block fields, mirroring Form3's "Project
+ * Information" panel and MegaEngineeringSuite.CadAutomation.DrawingInformation.
+ * All optional — the API fills in the same defaults Form3 itself used
+ * (e.g. PreparedBy "NSS") for anything left blank.
+ */
+export interface ProjectInfo {
+  customerName?: string;
+  drawingTitle?: string;
+  projectNo?: string;
+  drawingNo?: string;
+  revision?: string;
+  preparedBy?: string;
+  checkedBy?: string;
+  approvedBy?: string;
+}
+
+/**
+ * Request to start a new generation run. Mirrors Form3's real "User Inputs"
+ * panel (hta/tubeOD/tubeLength/tubeThk/noOfPass/baffleQty), its "Project
+ * Information" panel, and its Nozzle Input/Schedule grid — plus a directly-
+ * typed Shell ID (OnEstimatedShellIdChanged) as an optional override/
+ * alternative to the thermal-sizing calculation, not the only way in.
  */
 export interface JobRequest {
   module: ModuleKind;
@@ -56,6 +72,10 @@ export interface JobRequest {
   tubeOD?: number;
   tubeLength?: number;
   noOfPass?: number;
+  tubeThk?: number;
+  baffleQty?: number;
+  nozzles?: NozzleItem[];
+  projectInfo?: ProjectInfo;
 }
 
 /** Summary row for a job list / history view. */
