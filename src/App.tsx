@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { JobSummary } from "./types/engineering";
-import { listJobs } from "./mocks/api";
+import { listJobs } from "./api";
 import { Header } from "./components/layout/Header";
 import { JobList } from "./components/jobs/JobList";
 import { JobDetailView } from "./components/jobs/JobDetailView";

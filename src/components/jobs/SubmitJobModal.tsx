@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ModuleKind, JobSummary } from "../../types/engineering";
-import { submitJob } from "../../mocks/api";
+import { submitJob } from "../../api";
 import {
   IconClose,
   IconDisc,
@@ -14,8 +14,6 @@ interface SubmitJobModalProps {
   onClose: () => void;
   onJobSubmitted: (job: JobSummary) => void;
 }
-
-const PRESET_SHELL_IDS = [600, 762, 914, 1100];
 
 const MODULE_OPTIONS: {
   kind: ModuleKind;
@@ -186,21 +184,6 @@ export function SubmitJobModal({
                 required
               />
               <span className="input-suffix">mm</span>
-            </div>
-
-            <div className="preset-chips-row">
-              <span className="preset-label">Standard Presets:</span>
-              {PRESET_SHELL_IDS.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={`chip-preset ${shellId === id.toString() ? "chip-preset-active" : ""}`}
-                  onClick={() => setShellId(id.toString())}
-                  disabled={isSubmitting}
-                >
-                  {id} mm
-                </button>
-              ))}
             </div>
           </div>
 

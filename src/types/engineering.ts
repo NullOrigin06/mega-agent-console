@@ -32,6 +32,15 @@ export type ModuleKind = "TubeSheet" | "BonnetFlange" | "HeatExchangerFab";
 
 export type JobStatus = "queued" | "running" | "completed" | "failed";
 
+/**
+ * Separate from JobStatus: a job can be "completed" (BOM/engineering data
+ * succeeded) while DrawingStatus is independently "generating" or "failed" —
+ * drawing generation is a distinct, later, explicit step (the user clicks
+ * "Generate Drawing"), not part of job submission. Mirrors the .NET API's
+ * JobRecord.DrawingStatus exactly (mega-agent-api/Program.cs).
+ */
+export type DrawingStatus = "not_generated" | "generating" | "generated" | "failed";
+
 /** Request to start a new generation run. Mirrors picking a module + Shell ID on Form3 today. */
 export interface JobRequest {
   module: ModuleKind;
@@ -47,13 +56,15 @@ export interface JobSummary {
   createdAt: string; // ISO 8601
   completedAt?: string; // ISO 8601
   errorMessage?: string;
+  drawingStatus: DrawingStatus;
 }
 
 /** Full detail for one job, including the engineering data and BOM once available. */
 export interface JobDetail extends JobSummary {
   engineeringData?: EngineeringDataModel;
   bom?: BomRow[];
-  drawingUrl?: string; // present once status === "completed"
+  drawingUrl?: string; // present once drawingStatus === "generated" — this is a single-machine setup, so this is informational, not a browser download target
+  drawingError?: string;
 }
 
 /**

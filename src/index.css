@@ -413,6 +413,12 @@ body {
   border-radius: var(--radius-sm);
 }
 
+.brand-env-real {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
 .brand-subtitle {
   font-size: 11px;
   color: var(--text-muted);

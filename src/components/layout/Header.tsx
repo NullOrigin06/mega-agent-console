@@ -1,5 +1,6 @@
 import { IconCpu, IconPlus, IconRefresh } from "../common/Icon";
 import type { JobSummary } from "../../types/engineering";
+import { API_MODE } from "../../api";
 
 interface HeaderProps {
   jobs: JobSummary[];
@@ -37,7 +38,9 @@ export function Header({
           <div className="brand-text">
             <div className="brand-title-row">
               <span className="brand-name">MEGA AGENT CONSOLE</span>
-              <span className="brand-env-tag">MOCK API v1.0</span>
+              <span className={`brand-env-tag ${API_MODE === "real" ? "brand-env-real" : ""}`}>
+                {API_MODE === "real" ? "REAL API" : "MOCK API v1.0"}
+              </span>
             </div>
             <span className="brand-subtitle">
               Mega EPC Pressure Vessel & CAD Automation

@@ -72,6 +72,77 @@ You have latitude on layout/visual design — there's no existing design system 
 
 ## 7. What you are explicitly NOT responsible for
 
-- The real API/backend that will eventually replace `src/mocks/api.ts`. That depends on extraction work happening in the `MegaEngineeringSuite` .NET repo — see the reference docs in §3 if you want the full context (not required reading for this pass).
 - Deciding any of the open engineering questions mentioned in §4. Those are the project owner's calls, not something to resolve in this front-end.
 - Shop Tank / Site Tank modules — two other engineering modules exist in the .NET app but are out of scope for both this console and the current extraction pass.
+
+**Update, 2026-09-20:** the real API now exists and your real-mode client (`src/api/realApi.ts`) is done and verified — nice work, independently confirmed by the Claude Code session. This section's original first bullet ("the real API doesn't exist yet") is stale; see §8 for the current task.
+
+## 8. Next task (2026-09-20): source Shell ID presets from real data in real mode
+
+**The gap:** `SubmitJobModal.tsx`'s Shell ID quick-select presets (`600, 762, 914, 1100`) are guessed values. `762` is deliberately useful as a "show the failure case" demo, but a real user has no way to know which Shell IDs actually resolve without trial and error. `mega-agent-api` now exposes `GET /api/shell-ids` (a plain `number[]`, e.g. `[600, 700, 800, ...]`) — the workspace agent there was assigned this in parallel with you, so it may or may not exist yet when you start; handle that gracefully (see below).
+
+**Your task:**
+1. Add a `listShellIds(): Promise<number[]>` function to `src/api/realApi.ts`, calling `GET {VITE_API_BASE_URL}/api/shell-ids`, following the same pattern as your existing `listJobs`/`getJob`/`submitJob`.
+2. Add a corresponding mock version to `src/mocks/api.ts` that returns a small hardcoded array (e.g. `[600, 700, 800, 900, 1000, 1100, 1200]` — these are confirmed-real values from earlier live testing against the actual Excel dataset, safe to hardcode as the mock's answer) — keep the mock/real symmetry you already established.
+3. In `SubmitJobModal.tsx`, call `listShellIds()` (via whichever facade — mock or real — the mode toggle currently selects) when the modal opens, and use the result as the quick-select presets instead of the hardcoded `600, 762, 914, 1100` list. If the call fails (e.g. the endpoint doesn't exist yet in `mega-agent-api`, or the request errors for any reason), fall back to the existing hardcoded presets rather than showing a broken/empty preset row — this should degrade gracefully, not become a hard dependency.
+4. Keep manual Shell ID entry working exactly as before — this only changes where the *quick-select* suggestions come from, not the input's validation or freedom to enter any number.
+
+**Verification:** in real mode, confirm the presets shown are the live values from `GET /api/shell-ids` (not the old hardcoded four); in mock mode, confirm the mock's hardcoded list appears; and confirm the modal still works correctly if you temporarily point `VITE_API_BASE_URL` at a nonexistent port, to prove the fallback path is real and not just theoretical.
+
+**Status: done, independently verified.** The Claude Code session confirmed the live preset grid in the browser matches the real `GET /api/shell-ids` output value-for-value (168, 219, 273, 290, 300...2250+, all 225 real values), not the mock list or the hardcoded fallback. One thing flagged back at the time, not yet acted on: rendering all 225 values as individual buttons is a lot of buttons — technically correct, just not very "quick" as a quick-select. Worth revisiting if you want it tightened (e.g. every 10th value, or a searchable list), but that's your and Parth's call, not required.
+
+## 9. Next task (2026-09-20): real drawing download now genuinely works — check `DrawingView.tsx` actually uses it
+
+**Real DWG generation now exists.** `mega-agent-api` can now generate an actual `.dwg` file for a `BonnetFlange` job (launches real GstarCAD, produces a real file, confirmed independently by the Claude Code session — a real 1,143,040-byte drawing, downloadable). It exposes this via `GET /api/jobs/{id}/drawing`, and a completed job's `drawingUrl` is now a real, working relative path like `/api/jobs/job-abc123/drawing` — not the mock's static `/mock-drawings/job-1001.pdf` placeholder.
+
+**The question this task answers:** does `DrawingView.tsx`'s download button/link actually work against this in real mode, or does it still behave like the mock's "simulated download action"? Nobody has checked this yet.
+
+**Your task:**
+1. Submit a real `BonnetFlange` job in real mode (Shell ID 800 is confirmed working) and wait for it to complete.
+2. Open that job's Drawing tab and try the actual download/view action. Confirm: does clicking it genuinely download a real `.dwg` file (check the downloaded file's size — it should be over 1MB, not 0 bytes or an HTML error page), or does something break (wrong base URL, CORS issue, the button still behaving like the old "simulated" mock action, wrong assumed content-type, etc.)?
+3. If it's already working: great, just confirm it explicitly (a screenshot or a described test is enough) and note the file size you got, so this is verified rather than assumed.
+4. If it's broken: fix it. Likely candidates, in rough order of likelihood: `drawingUrl` needs to be resolved against `VITE_API_BASE_URL` rather than treated as a same-origin path (the API runs on a different port than the Vite dev server); the download handler might be calling `window.open()` or similar in a way that assumes a same-origin static asset rather than an API endpoint that needs the base URL prefixed; or the "ILLUSTRATIVE PLACEHOLDER MOCKUP" SVG blueprint you built for the mock case might be incorrectly showing even when a real file is available — a real completed job with a real `drawingUrl` should offer the real download, and the placeholder mockup should only appear when there's genuinely no real drawing yet (queued/running/failed jobs, or mock-mode completed jobs).
+5. Don't touch anything module-specific — `HeatExchangerFab` and `TubeSheet` don't have real generation yet (separate tasks, in progress on the API side), so their jobs should still show no real drawing / the placeholder, correctly. Only `BonnetFlange` jobs should be able to show a real download right now.
+
+**Verification:** a real downloaded `.dwg` file from a real completed `BonnetFlange` job, confirmed by file size (should match whatever `mega-agent-api`'s `GeneratedDrawings/` folder shows for that job — check both sides agree), and confirmation that `HeatExchangerFab`/`TubeSheet` jobs still correctly show no real download (since they don't have one yet).
+
+**Status: done, independently verified twice over.** The Claude Code session confirmed this in the browser itself: real jobs for all three modules render correctly, the Drawing tab shows the correct real asset path, and clicking the download button genuinely downloaded a real 1,148,919-byte `.dwg` file to disk (matching the API's own file exactly). Nice work — this was fully real, not simulated.
+
+**Then Parth used it and gave feedback that changes the design — read §10 and §11 below before doing anything else.** Two things: (1) the file-download flow itself needs to go away entirely, replaced with a "launch CAD directly" flow, and (2) the Shell ID quick-select grid (all 225 buttons) needs to go away too — he wants manual entry only.
+
+---
+
+## 10. Next task (2026-09-20): remove the Shell ID preset grid — manual entry only
+
+**Parth's exact words:** *"why are there this many options for shell id no need to display these ill enter that manually."*
+
+The full 225-button grid from §8 (sourced from `GET /api/shell-ids`) is not what he wants — it was meant to be a "quick-select," but showing every valid value defeated that purpose (confirmed independently: it really was all 225, rendered as one big wall of buttons).
+
+**Your task:**
+1. In `SubmitJobModal.tsx`, remove the Shell ID quick-preset button grid entirely.
+2. Keep the manual numeric Shell ID input exactly as it is — that's the only way to enter a Shell ID now.
+3. You can either delete the `listShellIds()` call from this component entirely, or keep it around unused for now if it's easy to leave — your call, but nothing should render from it anymore. Don't delete `listShellIds()` from `src/api/realApi.ts`/`src/mocks/api.ts` themselves unless you're sure nothing else uses it — a quick grep is enough to check.
+
+**Verification:** the Submit Job modal shows a plain numeric input for Shell ID, no button grid, in both mock and real mode.
+
+## 11. Next task (2026-09-20): replace "Download Drawing" with "Generate Drawing" — real behavior change, not just a relabel
+
+**This depends on `mega-agent-api`'s §16** (a new `POST /api/jobs/{id}/generate-drawing` endpoint and a new `DrawingStatus` field, separate from the job's main `Status`) — check with the user or inspect `mega-agent-api/Program.cs` directly to see if that's landed yet before starting; if it hasn't, you're blocked on it.
+
+**Why this is changing:** this is a single-machine setup — the console, the API, and GstarCAD/AutoCAD all run on the same computer (Parth confirmed this is the permanent setup, not a temporary dev convenience). Downloading a `.dwg` file to the browser and asking the user to open it separately makes no sense here — the point of a real generation is that CAD opens directly on this machine as a side effect. Parth does not want any file transferred to the browser for this at all.
+
+**The new model:**
+- `POST /api/jobs` (submission) now only produces BOM/engineering data — it's fast, no CAD involved, and completes without a `drawingUrl`.
+- A **separate, explicit "Generate Drawing" action**, available once a job is `completed`, calls `POST /api/jobs/{id}/generate-drawing`. This kicks off real CAD generation on the API's machine. The console should poll (reuse whatever polling/refresh mechanism you already have for job status) for the new `drawingStatus` field to move from `"generating"` to `"generated"` or `"failed"`.
+- **There is nothing to download or preview in the browser once it succeeds.** The correct UI feedback for `"generated"` is something like *"Drawing generated — check GstarCAD/AutoCAD on this machine"*, not a download link or file preview.
+
+**Your task, in `DrawingView.tsx` (and `JobDetailView.tsx`/wherever job state flows through) — this is a nontrivial rework, not a button rename:**
+1. Remove the file-download logic entirely — the `Results.File`-based fetch/blob/`<a download>` mechanism you built for §9. Also remove (or clearly repurpose as a debug-only, de-emphasized link) the "Asset Path" / "Copy Path" UI — there's no meaningful path for a user to copy anymore in the primary flow.
+2. Replace the "Download Drawing" button with a **"Generate Drawing"** button, shown once a job's `status` is `"completed"` and `drawingStatus` is `"not_generated"` (or `"failed"`, for retry). Clicking it calls `POST /api/jobs/{id}/generate-drawing`.
+3. Add UI states for the new `drawingStatus` values: `"not_generated"` (show the Generate button, nothing else), `"generating"` (disable the button, show a real loading/in-progress indicator — this can take over a minute per the API's own timing logs, don't imply it's instant), `"generated"` (success message, no download link, maybe a "Generate Again" option), `"failed"` (show `drawingError`, offer retry).
+4. **Keep the "ILLUSTRATIVE PLACEHOLDER MOCKUP" SVG blueprint** — that's still a reasonable always-shown visual regardless of real generation state, just make sure its labeling doesn't confuse users into thinking it's the real output (it already says this clearly, per your own earlier work — just re-check it still reads correctly next to the new button/status UI).
+5. This changes behavior for all three modules identically — `BonnetFlange`, `HeatExchangerFab`, and `TubeSheet` all get the same "Generate Drawing" flow once §16 lands.
+
+**Constraints:** don't invent a fallback file-download path "just in case" — Parth was explicit that same-machine is the permanent setup, and a half-supported download option that doesn't really work would be worse than not having one. If `mega-agent-api`'s §16 isn't done yet, don't guess at its response shape — wait, or ask.
+
+**Verification:** submit a real job, wait for it to complete, click "Generate Drawing," confirm the button disables and shows a real in-progress state, confirm a real GstarCAD/AutoCAD window actually opens on this machine, confirm the UI updates to a success state with no download link once `drawingStatus` becomes `"generated"`.

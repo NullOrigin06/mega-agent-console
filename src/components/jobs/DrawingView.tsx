@@ -1,43 +1,35 @@
-import { useState } from "react";
 import {
-  IconDownload,
   IconAlertTriangle,
   IconDrafting,
   IconCheckCircle,
+  IconLoader,
 } from "../common/Icon";
+import type { DrawingStatus } from "../../types/engineering";
 
 interface DrawingViewProps {
-  drawingUrl?: string;
+  drawingStatus: DrawingStatus;
+  drawingError?: string;
   jobId: string;
   module: string;
   shellId: number;
+  onGenerate: () => void;
+  isTriggering: boolean;
 }
 
 export function DrawingView({
-  drawingUrl,
+  drawingStatus,
+  drawingError,
   jobId,
   module,
   shellId,
+  onGenerate,
+  isTriggering,
 }: DrawingViewProps) {
-  const [copied, setCopied] = useState(false);
-  const [downloadNotice, setDownloadNotice] = useState(false);
-
-  const handleCopyUrl = () => {
-    if (drawingUrl) {
-      navigator.clipboard.writeText(drawingUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleSimulateDownload = () => {
-    setDownloadNotice(true);
-    setTimeout(() => setDownloadNotice(false), 4000);
-  };
+  const isGenerating = isTriggering || drawingStatus === "generating";
 
   return (
     <div className="drawing-view">
-      {/* CAD File Metadata & Download Action */}
+      {/* CAD Generation Status & Action */}
       <div className="drawing-status-card">
         <div className="drawing-status-main">
           <div className="drawing-icon-badge">
@@ -45,59 +37,106 @@ export function DrawingView({
           </div>
           <div className="drawing-info">
             <div className="drawing-title-row">
-              <h3 className="drawing-filename text-mono">
-                {drawingUrl ? drawingUrl.split("/").pop() : `${jobId}_GA_Drawing.dwg`}
-              </h3>
-              <span className="badge badge-status badge-completed">
-                <IconCheckCircle size={14} />
-                <span>CAD Synthesized</span>
-              </span>
+              <h3 className="drawing-filename text-mono">{jobId}</h3>
+              {drawingStatus === "generated" && (
+                <span className="badge badge-status badge-completed">
+                  <IconCheckCircle size={14} />
+                  <span>Drawing Generated</span>
+                </span>
+              )}
+              {isGenerating && (
+                <span className="badge badge-status badge-running">
+                  <IconLoader size={14} className="animate-spin" />
+                  <span>Generating...</span>
+                </span>
+              )}
+              {drawingStatus === "failed" && (
+                <span className="badge badge-status badge-failed">
+                  <IconAlertTriangle size={14} />
+                  <span>Generation Failed</span>
+                </span>
+              )}
+              {drawingStatus === "not_generated" && !isGenerating && (
+                <span className="badge badge-status badge-queued">
+                  <span>Not Generated Yet</span>
+                </span>
+              )}
             </div>
             <p className="drawing-meta-text">
               Target Module: <strong>{module}</strong> • Nominal Shell ID:{" "}
               <strong>{shellId} mm</strong> • Engine: GstarCAD/AutoCAD Automation
             </p>
-            <div className="drawing-url-row">
-              <span className="url-label">Asset Path:</span>
-              <code className="url-code">{drawingUrl || "No asset URL registered"}</code>
-              {drawingUrl && (
-                <button
-                  type="button"
-                  className="btn-text-sm"
-                  onClick={handleCopyUrl}
-                >
-                  {copied ? "✓ Copied" : "Copy Path"}
-                </button>
-              )}
-            </div>
+            <p className="drawing-meta-text">
+              This is a single-machine setup: generating a drawing opens
+              GstarCAD/AutoCAD directly on the machine running the engineering
+              engine. There is nothing to download here.
+            </p>
           </div>
         </div>
 
         <div className="drawing-actions">
-          {drawingUrl ? (
+          {drawingStatus === "generated" ? (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onGenerate}
+              disabled={isGenerating}
+            >
+              <IconDrafting size={16} />
+              <span>Generate Again</span>
+            </button>
+          ) : (
             <button
               type="button"
               className="btn btn-primary"
-              onClick={handleSimulateDownload}
-              title="Download CAD drawing file"
+              onClick={onGenerate}
+              disabled={isGenerating}
             >
-              <IconDownload size={16} />
-              <span>Download Drawing</span>
-            </button>
-          ) : (
-            <button type="button" className="btn btn-secondary" disabled>
-              <span>Drawing Pending</span>
+              {isGenerating ? (
+                <>
+                  <IconLoader size={16} className="animate-spin" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <IconDrafting size={16} />
+                  <span>
+                    {drawingStatus === "failed" ? "Retry Generation" : "Generate Drawing"}
+                  </span>
+                </>
+              )}
             </button>
           )}
         </div>
       </div>
 
-      {downloadNotice && (
+      {isGenerating && (
         <div className="alert-banner alert-banner-info">
+          <IconLoader size={16} className="animate-spin" />
+          <span>
+            CAD synthesis in progress on the engine's machine — a real
+            GstarCAD/AutoCAD window should open shortly. This can take over a
+            minute depending on the module; the status here will update
+            automatically once it finishes.
+          </span>
+        </div>
+      )}
+
+      {drawingStatus === "generated" && !isGenerating && (
+        <div className="alert-banner alert-banner-success">
+          <IconCheckCircle size={16} />
+          <span>
+            Drawing generated successfully. Check GstarCAD/AutoCAD on this
+            machine — the drawing was opened and left active for review.
+          </span>
+        </div>
+      )}
+
+      {drawingStatus === "failed" && drawingError && !isGenerating && (
+        <div className="alert-banner alert-banner-danger" role="alert">
           <IconAlertTriangle size={16} />
           <span>
-            Mock mode: <code>{drawingUrl}</code> is a simulated asset endpoint. In production,
-            this delivers the vector DWG / PDF generated by the background headless CAD worker.
+            Drawing generation failed: <code>{drawingError}</code>
           </span>
         </div>
       )}
@@ -110,9 +149,10 @@ export function DrawingView({
           <div className="disclaimer-text">
             <strong>ILLUSTRATIVE PLACEHOLDER MOCKUP — NOT REAL COMPUTED GEOMETRY</strong>
             <p>
-              The drawing below is a visual placeholder demonstrating CAD preview integration
-              within the Mega Agent Console. It does not represent real calculated geometry
-              for Shell ID {shellId}.
+              The drawing below is a visual placeholder demonstrating the
+              console's layout. It does not represent real calculated
+              geometry for Shell ID {shellId} — the real drawing, once
+              generated, opens directly in GstarCAD/AutoCAD, not here.
             </p>
           </div>
         </div>

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { JobDetail } from "../../types/engineering";
-import { getJob } from "../../mocks/api";
+import { getJob, generateDrawing } from "../../api";
 import { StatusBadge, ModuleBadge } from "../common/Badge";
 import {
   IconArrowLeft,
@@ -35,6 +35,8 @@ export function JobDetailView({
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("values");
   const [copied, setCopied] = useState(false);
+  const [isTriggeringGeneration, setIsTriggeringGeneration] = useState(false);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchDetail = useCallback(async () => {
     setIsLoading(true);
@@ -47,6 +49,50 @@ export function JobDetailView({
       setIsLoading(false);
     }
   }, [jobId]);
+
+  // Silent refresh (no loading spinner) — used while polling for drawing
+  // generation status, so the UI doesn't flicker back to a full loading state.
+  const refreshSilently = useCallback(async () => {
+    try {
+      const data = await getJob(jobId);
+      setJob(data || null);
+    } catch {
+      // keep last-known state on a transient poll failure
+    }
+  }, [jobId]);
+
+  // Poll while a drawing is generating (real CAD generation can take over a
+  // minute) — stop as soon as it settles into "generated" or "failed".
+  useEffect(() => {
+    if (job?.drawingStatus === "generating") {
+      if (!pollIntervalRef.current) {
+        pollIntervalRef.current = setInterval(refreshSilently, 3000);
+      }
+    } else if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [job?.drawingStatus, refreshSilently]);
+
+  const handleGenerateDrawing = async () => {
+    if (!job) return;
+    setIsTriggeringGeneration(true);
+    try {
+      await generateDrawing(job.id);
+      await refreshSilently();
+    } catch (err) {
+      console.warn("[JobDetailView] generateDrawing failed to start:", err);
+      await refreshSilently();
+    } finally {
+      setIsTriggeringGeneration(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -327,7 +373,12 @@ export function JobDetailView({
             >
               <IconDrafting size={16} />
               <span>CAD Drawing & Output</span>
-              {job.drawingUrl && <span className="tab-pill-ready">Ready</span>}
+              {job.drawingStatus === "generated" && (
+                <span className="tab-pill-ready">Ready</span>
+              )}
+              {job.drawingStatus === "generating" && (
+                <span className="tab-pill">Generating</span>
+              )}
             </button>
           </nav>
 
@@ -347,10 +398,13 @@ export function JobDetailView({
 
             {activeTab === "drawing" && (
               <DrawingView
-                drawingUrl={job.drawingUrl}
+                drawingStatus={job.drawingStatus}
+                drawingError={job.drawingError}
                 jobId={job.id}
                 module={job.module}
                 shellId={job.shellId}
+                onGenerate={handleGenerateDrawing}
+                isTriggering={isTriggeringGeneration}
               />
             )}
           </div>
