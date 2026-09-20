@@ -14,8 +14,12 @@ dist-ssr
 
 # Local environment config — now that VITE_API_KEY can hold a real secret,
 # this must never be committed. .env.example documents the shape instead.
+# .env.development / .env.production are Vite's mode-specific overrides
+# (npm run dev / npm run build respectively) — same reason, same rule.
 .env
 .env.local
+.env.development
+.env.production
 
 # Editor directories and files
 .vscode/*

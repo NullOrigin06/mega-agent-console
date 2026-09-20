@@ -12,14 +12,14 @@ interface JobListProps {
   jobs: JobSummary[];
   selectedJobId?: string | null;
   onSelectJob: (jobId: string) => void;
-  onOpenSubmit: () => void;
+  onGoToModules: () => void;
 }
 
 export function JobList({
   jobs,
   selectedJobId,
   onSelectJob,
-  onOpenSubmit,
+  onGoToModules,
 }: JobListProps) {
   const [selectedModule, setSelectedModule] = useState<ModuleKind | "All">(
     "All"
@@ -97,7 +97,7 @@ export function JobList({
           <button
             type="button"
             className="btn btn-primary"
-            onClick={onOpenSubmit}
+            onClick={onGoToModules}
           >
             + New Generation Job
           </button>
@@ -322,7 +322,7 @@ export function JobList({
         </span>
         <span className="text-dim">
           {IS_REAL_API
-            ? `Connected to ${new URL(API_BASE_URL).origin}`
+            ? `Connected to ${new URL(API_BASE_URL, window.location.origin).origin}`
             : "Mock API delay: 400ms"}{" "}
           • Contract source: <code>src/types/engineering.ts</code>
         </span>
