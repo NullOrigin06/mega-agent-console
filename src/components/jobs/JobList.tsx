@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import type { JobSummary, ModuleKind, JobStatus } from "../../types/engineering";
 import { StatusBadge, ModuleBadge } from "../common/Badge";
+import { IS_REAL_API, API_BASE_URL } from "../../api";
 import {
   IconSearch,
   IconAlertTriangle,
@@ -320,8 +321,10 @@ export function JobList({
           <strong>{jobs.length}</strong> total jobs
         </span>
         <span className="text-dim">
-          Mock API delay: 400ms • Contract source:{" "}
-          <code>src/types/engineering.ts</code>
+          {IS_REAL_API
+            ? `Connected to ${new URL(API_BASE_URL).origin}`
+            : "Mock API delay: 400ms"}{" "}
+          • Contract source: <code>src/types/engineering.ts</code>
         </span>
       </div>
     </div>
