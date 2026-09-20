@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Local environment config — now that VITE_API_KEY can hold a real secret,
+# this must never be committed. .env.example documents the shape instead.
+.env
+.env.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

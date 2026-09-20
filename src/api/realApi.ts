@@ -10,6 +10,18 @@ import type {
 export const REAL_API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5299/api/jobs";
 
+// mega-agent-api requires this on every /api/* request once it's reachable
+// beyond localhost (see Program.cs's API key middleware) — without it every
+// call gets a 401. Safe to leave unset for pure-localhost development.
+const API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
+
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  return {
+    ...(API_KEY ? { "X-Api-Key": API_KEY } : {}),
+    ...extra,
+  };
+}
+
 // In-memory cache for jobs submitted in this session (e.g. synthetic failed jobs)
 const clientSessionJobs = new Map<string, JobDetail>();
 
@@ -135,7 +147,7 @@ function normalizeBomRows(rawRows?: unknown[]): BomRow[] | undefined {
 export async function listJobs(): Promise<JobSummary[]> {
   try {
     const res = await fetch(REAL_API_BASE_URL, {
-      headers: { Accept: "application/json" },
+      headers: authHeaders({ Accept: "application/json" }),
     });
 
     if (!res.ok) {
@@ -172,7 +184,7 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
   try {
     const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}`;
     const res = await fetch(url, {
-      headers: { Accept: "application/json" },
+      headers: authHeaders({ Accept: "application/json" }),
     });
 
     if (res.status === 404) {
@@ -231,10 +243,10 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
   try {
     const res = await fetch(REAL_API_BASE_URL, {
       method: "POST",
-      headers: {
+      headers: authHeaders({
         "Content-Type": "application/json",
         Accept: "application/json",
-      },
+      }),
       body: JSON.stringify(request),
     });
 
@@ -295,7 +307,7 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
  */
 export async function generateDrawing(jobId: string): Promise<void> {
   const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}/generate-drawing`;
-  const res = await fetch(url, { method: "POST" });
+  const res = await fetch(url, { method: "POST", headers: authHeaders() });
 
   if (!res.ok) {
     const errorText = await res.text().catch(() => "");
@@ -311,7 +323,7 @@ export async function generateDrawing(jobId: string): Promise<void> {
 export async function listShellIds(): Promise<number[]> {
   const url = `${REAL_API_BASE_URL.replace(/\/jobs\/?$/, "")}/shell-ids`;
   const res = await fetch(url, {
-    headers: { Accept: "application/json" },
+    headers: authHeaders({ Accept: "application/json" }),
   });
 
   if (!res.ok) {
