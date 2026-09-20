@@ -102,11 +102,11 @@ export function JobDetailView({
     };
   }, [isPolling, job?.drawingStatus, refreshSilently]);
 
-  const handleGenerateDrawing = async () => {
+  const handleGenerateDrawing = async (agentId?: string) => {
     if (!job) return;
     setIsTriggeringGeneration(true);
     try {
-      await generateDrawing(job.id);
+      await generateDrawing(job.id, agentId);
       await refreshSilently();
     } catch (err) {
       console.warn("[JobDetailView] generateDrawing failed to start:", err);

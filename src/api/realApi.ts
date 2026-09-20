@@ -298,16 +298,21 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
 }
 
 /**
- * Triggers real CAD drawing generation for an already-completed job
- * (POST /api/jobs/{id}/generate-drawing). This is a single-machine setup —
- * generation launches GstarCAD/AutoCAD directly on the machine running
- * mega-agent-api; nothing is returned to the browser for the user to
- * download. Callers should poll getJob(jobId) to observe drawingStatus
- * transition from "generating" to "generated" or "failed".
+ * Triggers CAD drawing generation for an already-completed job
+ * (POST /api/jobs/{id}/generate-drawing). When agentId is provided, the API
+ * routes generation to that paired Local Agent — it runs on the agent's own
+ * machine, against the agent's own GstarCAD, not on whatever machine hosts
+ * mega-agent-api. Omitting agentId falls back to the original single-
+ * machine behavior (generates on the API's own host) — kept only for the
+ * no-agent-paired case, not the default path anymore.
  */
-export async function generateDrawing(jobId: string): Promise<void> {
+export async function generateDrawing(jobId: string, agentId?: string): Promise<void> {
   const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}/generate-drawing`;
-  const res = await fetch(url, { method: "POST", headers: authHeaders() });
+  const res = await fetch(url, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ agentId: agentId ?? null }),
+  });
 
   if (!res.ok) {
     const errorText = await res.text().catch(() => "");
@@ -315,6 +320,28 @@ export async function generateDrawing(jobId: string): Promise<void> {
       `Failed to start drawing generation (${res.status}): ${errorText || res.statusText}`
     );
   }
+}
+
+/**
+ * Looks up a Local Agent by the pairing code a user typed in (GET
+ * /api/agents/by-code/{code}) — confirms the code is real and whether that
+ * agent is currently online (heartbeat within the last 30s).
+ */
+export async function checkAgentByCode(
+  pairingCode: string
+): Promise<{ agentId: string; isOnline: boolean }> {
+  const base = REAL_API_BASE_URL.replace(/\/jobs\/?$/, "");
+  const url = `${base}/agents/by-code/${encodeURIComponent(pairingCode)}`;
+  const res = await fetch(url, { headers: authHeaders({ Accept: "application/json" }) });
+
+  if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error("No agent is registered with that pairing code.");
+    }
+    throw new Error(`Failed to look up agent (${res.status}): ${res.statusText}`);
+  }
+
+  return res.json();
 }
 
 /**

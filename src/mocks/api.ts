@@ -86,8 +86,10 @@ export async function listShellIds(): Promise<number[]> {
  * POST /api/jobs/{id}/generate-drawing). Simulates a real CAD generation
  * delay, then flips drawingStatus to "generated" — matches the real API's
  * behavior of tracking drawing generation separately from job Status.
+ * agentId is accepted for signature parity with the real client but has no
+ * effect in mock mode — there's no real agent to route to.
  */
-export async function generateDrawing(jobId: string): Promise<void> {
+export async function generateDrawing(jobId: string, _agentId?: string): Promise<void> {
   const job = jobs.find((j) => j.id === jobId);
   if (job) {
     job.drawingStatus = "generating";
@@ -97,5 +99,20 @@ export async function generateDrawing(jobId: string): Promise<void> {
   if (job) {
     job.drawingStatus = "generated";
   }
+}
+
+/**
+ * Mock version of GET /api/agents/by-code/{code} — accepts any 6-digit-
+ * looking code (\d{3}-\d{3}) and pretends it's a valid, online agent, so
+ * the pairing UI can be exercised in mock mode without a real agent running.
+ */
+export async function checkAgentByCode(
+  pairingCode: string
+): Promise<{ agentId: string; isOnline: boolean }> {
+  await delay(undefined);
+  if (!/^\d{3}-\d{3}$/.test(pairingCode.trim())) {
+    throw new Error("No agent is registered with that pairing code.");
+  }
+  return { agentId: `mock-agent-${pairingCode.trim()}`, isOnline: true };
 }
 

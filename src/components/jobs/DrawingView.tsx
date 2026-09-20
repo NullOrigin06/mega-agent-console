@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   IconAlertTriangle,
   IconDrafting,
@@ -5,6 +6,8 @@ import {
   IconLoader,
 } from "../common/Icon";
 import type { DrawingStatus } from "../../types/engineering";
+import { AgentPairingPanel } from "./AgentPairingPanel";
+import type { PairedAgent } from "../../utils/agentPairing";
 
 interface DrawingViewProps {
   drawingStatus: DrawingStatus;
@@ -12,7 +15,7 @@ interface DrawingViewProps {
   jobId: string;
   module: string;
   shellId: number;
-  onGenerate: () => void;
+  onGenerate: (agentId?: string) => void;
   isTriggering: boolean;
 }
 
@@ -26,6 +29,8 @@ export function DrawingView({
   isTriggering,
 }: DrawingViewProps) {
   const isGenerating = isTriggering || drawingStatus === "generating";
+  const [pairedAgent, setPairedAgent] = useState<PairedAgent | null>(null);
+  const canGenerate = Boolean(pairedAgent);
 
   return (
     <div className="drawing-view">
@@ -67,9 +72,8 @@ export function DrawingView({
               <strong>{shellId} mm</strong> • Engine: GstarCAD/AutoCAD Automation
             </p>
             <p className="drawing-meta-text">
-              This is a single-machine setup: generating a drawing opens
-              GstarCAD/AutoCAD directly on the machine running the engineering
-              engine. There is nothing to download here.
+              Generation runs on <strong>your own paired machine</strong>, using your own
+              GstarCAD — not on the server. Pair your Mega Local Agent below before generating.
             </p>
           </div>
         </div>
@@ -79,8 +83,9 @@ export function DrawingView({
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={onGenerate}
-              disabled={isGenerating}
+              onClick={() => onGenerate(pairedAgent?.agentId)}
+              disabled={isGenerating || !canGenerate}
+              title={canGenerate ? undefined : "Pair a Local Agent below first"}
             >
               <IconDrafting size={16} />
               <span>Generate Again</span>
@@ -89,8 +94,9 @@ export function DrawingView({
             <button
               type="button"
               className="btn btn-primary"
-              onClick={onGenerate}
-              disabled={isGenerating}
+              onClick={() => onGenerate(pairedAgent?.agentId)}
+              disabled={isGenerating || !canGenerate}
+              title={canGenerate ? undefined : "Pair a Local Agent below first"}
             >
               {isGenerating ? (
                 <>
@@ -110,12 +116,14 @@ export function DrawingView({
         </div>
       </div>
 
+      <AgentPairingPanel onPairedAgentChange={setPairedAgent} />
+
       {isGenerating && (
         <div className="alert-banner alert-banner-info">
           <IconLoader size={16} className="animate-spin" />
           <span>
-            CAD synthesis in progress on the engine's machine — a real
-            GstarCAD/AutoCAD window should open shortly. This can take over a
+            CAD synthesis in progress on your paired agent's machine — a real
+            GstarCAD/AutoCAD window should open there shortly. This can take over a
             minute depending on the module; the status here will update
             automatically once it finishes.
           </span>
@@ -126,8 +134,8 @@ export function DrawingView({
         <div className="alert-banner alert-banner-success">
           <IconCheckCircle size={16} />
           <span>
-            Drawing generated successfully. Check GstarCAD/AutoCAD on this
-            machine — the drawing was opened and left active for review.
+            Drawing generated successfully. Check GstarCAD/AutoCAD on your
+            paired agent's machine — the drawing was opened and left active for review.
           </span>
         </div>
       )}

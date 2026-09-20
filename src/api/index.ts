@@ -52,14 +52,26 @@ export async function listShellIds(): Promise<number[]> {
 }
 
 /**
- * Triggers CAD drawing generation for an already-completed job. This is a
- * single-machine setup — generation launches CAD directly on the machine
- * running the backend, there is nothing to download to the browser. Callers
- * should poll getJob(jobId) afterward to observe drawingStatus change.
+ * Triggers CAD drawing generation for an already-completed job. When
+ * agentId is given (a paired Local Agent, see utils/agentPairing.ts),
+ * generation runs on that agent's own machine/GstarCAD — not on whatever
+ * machine hosts the backend. Callers should poll getJob(jobId) afterward to
+ * observe drawingStatus change.
  */
-export async function generateDrawing(jobId: string): Promise<void> {
+export async function generateDrawing(jobId: string, agentId?: string): Promise<void> {
   return getApiMode() === "real"
-    ? realApi.generateDrawing(jobId)
-    : mockApi.generateDrawing(jobId);
+    ? realApi.generateDrawing(jobId, agentId)
+    : mockApi.generateDrawing(jobId, agentId);
+}
+
+/**
+ * Looks up a Local Agent by pairing code, confirming it's real and online.
+ */
+export async function checkAgentByCode(
+  pairingCode: string
+): Promise<{ agentId: string; isOnline: boolean }> {
+  return getApiMode() === "real"
+    ? realApi.checkAgentByCode(pairingCode)
+    : mockApi.checkAgentByCode(pairingCode);
 }
 
