@@ -29,11 +29,46 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
   return delay(summary as JobDetail | undefined);
 }
 
+/**
+ * JS mirror of MegaEngineeringSuite.Engineering.TubeSizingCalculator, used
+ * only so the mock/offline demo mode computes a Shell ID the same way the
+ * real API does when thermal sizing inputs are submitted instead of a
+ * direct Shell ID. Keep in sync with TubeSizingCalculator.cs if it changes.
+ */
+function calculateShellIdFromThermalInputs(
+  hta: number,
+  tubeOD: number,
+  tubeLength: number,
+  noOfPass: number
+): number {
+  const rawTubeQty = hta / ((tubeOD / 1000) * Math.PI * (tubeLength / 1000));
+  const tubesPerPass = Math.ceil(rawTubeQty / noOfPass);
+  const tubeQty = tubesPerPass * noOfPass;
+  const shellIdRaw =
+    (Math.sqrt(tubeQty) + 1.25 * Math.sqrt(noOfPass)) * 1.25 * 1.05 * tubeOD + 25;
+  return Math.ceil(shellIdRaw / 10) * 10;
+}
+
 export async function submitJob(request: JobRequest): Promise<JobSummary> {
+  const usedThermalSizing =
+    request.hta != null &&
+    request.tubeOD != null &&
+    request.tubeLength != null &&
+    request.noOfPass != null;
+
+  const shellId = usedThermalSizing
+    ? calculateShellIdFromThermalInputs(
+        request.hta!,
+        request.tubeOD!,
+        request.tubeLength!,
+        request.noOfPass!
+      )
+    : (request.shellId ?? 0);
+
   const newJob: JobSummary = {
     id: `job-${Math.floor(1000 + Math.random() * 9000)}`,
     module: request.module,
-    shellId: request.shellId,
+    shellId,
     status: "queued",
     createdAt: new Date().toISOString(),
     drawingStatus: "not_generated",

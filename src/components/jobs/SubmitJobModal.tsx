@@ -48,6 +48,8 @@ const MODULE_OPTIONS: {
   },
 ];
 
+type SizingMode = "thermal" | "direct";
+
 export function SubmitJobModal({
   isOpen,
   onClose,
@@ -55,7 +57,12 @@ export function SubmitJobModal({
 }: SubmitJobModalProps) {
   const [selectedModule, setSelectedModule] =
     useState<ModuleKind>("HeatExchangerFab");
+  const [sizingMode, setSizingMode] = useState<SizingMode>("thermal");
   const [shellId, setShellId] = useState<string>("914");
+  const [hta, setHta] = useState<string>("120");
+  const [tubeOD, setTubeOD] = useState<string>("25.4");
+  const [tubeLength, setTubeLength] = useState<string>("3000");
+  const [noOfPass, setNoOfPass] = useState<string>("2");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,25 +70,64 @@ export function SubmitJobModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsedShellId = Number.parseInt(shellId.trim(), 10);
-
-    if (Number.isNaN(parsedShellId) || parsedShellId <= 0) {
-      setError("Please enter a valid positive Shell ID (inner diameter in mm).");
-      return;
-    }
-
-    if (parsedShellId < 150 || parsedShellId > 4000) {
-      setError("Shell ID must typically be between 150 mm and 4000 mm.");
-      return;
-    }
-
     setError(null);
-    setIsSubmitting(true);
 
+    if (sizingMode === "direct") {
+      const parsedShellId = Number.parseInt(shellId.trim(), 10);
+
+      if (Number.isNaN(parsedShellId) || parsedShellId <= 0) {
+        setError("Please enter a valid positive Shell ID (inner diameter in mm).");
+        return;
+      }
+
+      if (parsedShellId < 150 || parsedShellId > 4000) {
+        setError("Shell ID must typically be between 150 mm and 4000 mm.");
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const newJob = await submitJob({
+          module: selectedModule,
+          shellId: parsedShellId,
+        });
+        onJobSubmitted(newJob);
+        onClose();
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to submit job to mock API."
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    const parsedHta = Number.parseFloat(hta.trim());
+    const parsedTubeOD = Number.parseFloat(tubeOD.trim());
+    const parsedTubeLength = Number.parseFloat(tubeLength.trim());
+    const parsedNoOfPass = Number.parseInt(noOfPass.trim(), 10);
+
+    if (
+      Number.isNaN(parsedHta) || parsedHta <= 0 ||
+      Number.isNaN(parsedTubeOD) || parsedTubeOD <= 0 ||
+      Number.isNaN(parsedTubeLength) || parsedTubeLength <= 0 ||
+      Number.isNaN(parsedNoOfPass) || parsedNoOfPass <= 0
+    ) {
+      setError(
+        "Please enter valid positive values for HTA, Tube OD, Tube Length, and No. of Pass."
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const newJob = await submitJob({
         module: selectedModule,
-        shellId: parsedShellId,
+        hta: parsedHta,
+        tubeOD: parsedTubeOD,
+        tubeLength: parsedTubeLength,
+        noOfPass: parsedNoOfPass,
       });
       onJobSubmitted(newJob);
       onClose();
@@ -163,29 +209,130 @@ export function SubmitJobModal({
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="input-shell-id">
-              Shell ID (Inner Diameter, mm)
+            <label className="form-label" htmlFor="sizing-mode-selection">
+              Sizing Input
               <span className="form-hint">
-                Nominal inner diameter of the cylindrical shell
+                Mirrors the two entry paths in the desktop suite's Form3
               </span>
             </label>
-            <div className="shell-input-wrapper">
-              <input
-                id="input-shell-id"
-                type="number"
-                min="150"
-                max="4000"
-                step="1"
-                className="form-input text-mono"
-                value={shellId}
-                onChange={(e) => setShellId(e.target.value)}
-                placeholder="e.g. 914"
+            <div className="sizing-mode-toggle" id="sizing-mode-selection">
+              <button
+                type="button"
+                className={`btn ${sizingMode === "thermal" ? "btn-primary" : "btn-secondary"}`}
+                onClick={() => setSizingMode("thermal")}
                 disabled={isSubmitting}
-                required
-              />
-              <span className="input-suffix">mm</span>
+              >
+                Thermal Sizing (calculate Shell ID)
+              </button>
+              <button
+                type="button"
+                className={`btn ${sizingMode === "direct" ? "btn-primary" : "btn-secondary"}`}
+                onClick={() => setSizingMode("direct")}
+                disabled={isSubmitting}
+              >
+                Enter Shell ID Directly
+              </button>
             </div>
           </div>
+
+          {sizingMode === "thermal" ? (
+            <div className="form-group">
+              <label className="form-label">
+                Thermal Sizing Inputs
+                <span className="form-hint">
+                  Shell ID is calculated from these, same as
+                  BtnCalculate_Click in the desktop app
+                </span>
+              </label>
+              <div className="thermal-inputs-grid">
+                <div className="shell-input-wrapper">
+                  <input
+                    id="input-hta"
+                    type="number"
+                    min="0"
+                    step="any"
+                    className="form-input text-mono"
+                    value={hta}
+                    onChange={(e) => setHta(e.target.value)}
+                    placeholder="HTA"
+                    disabled={isSubmitting}
+                    required
+                  />
+                  <span className="input-suffix">HTA m²</span>
+                </div>
+                <div className="shell-input-wrapper">
+                  <input
+                    id="input-tube-od"
+                    type="number"
+                    min="0"
+                    step="any"
+                    className="form-input text-mono"
+                    value={tubeOD}
+                    onChange={(e) => setTubeOD(e.target.value)}
+                    placeholder="Tube OD"
+                    disabled={isSubmitting}
+                    required
+                  />
+                  <span className="input-suffix">Tube OD mm</span>
+                </div>
+                <div className="shell-input-wrapper">
+                  <input
+                    id="input-tube-length"
+                    type="number"
+                    min="0"
+                    step="any"
+                    className="form-input text-mono"
+                    value={tubeLength}
+                    onChange={(e) => setTubeLength(e.target.value)}
+                    placeholder="Tube Length"
+                    disabled={isSubmitting}
+                    required
+                  />
+                  <span className="input-suffix">Tube Length mm</span>
+                </div>
+                <div className="shell-input-wrapper">
+                  <input
+                    id="input-no-of-pass"
+                    type="number"
+                    min="1"
+                    step="1"
+                    className="form-input text-mono"
+                    value={noOfPass}
+                    onChange={(e) => setNoOfPass(e.target.value)}
+                    placeholder="No. of Pass"
+                    disabled={isSubmitting}
+                    required
+                  />
+                  <span className="input-suffix">No. of Pass</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="form-group">
+              <label className="form-label" htmlFor="input-shell-id">
+                Shell ID (Inner Diameter, mm)
+                <span className="form-hint">
+                  Nominal inner diameter of the cylindrical shell
+                </span>
+              </label>
+              <div className="shell-input-wrapper">
+                <input
+                  id="input-shell-id"
+                  type="number"
+                  min="150"
+                  max="4000"
+                  step="1"
+                  className="form-input text-mono"
+                  value={shellId}
+                  onChange={(e) => setShellId(e.target.value)}
+                  placeholder="e.g. 914"
+                  disabled={isSubmitting}
+                  required
+                />
+                <span className="input-suffix">mm</span>
+              </div>
+            </div>
+          )}
 
           <div className="info-callout">
             <strong>Contract Notice:</strong> Submissions are sent via{" "}

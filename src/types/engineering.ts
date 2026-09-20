@@ -41,10 +41,21 @@ export type JobStatus = "queued" | "running" | "completed" | "failed";
  */
 export type DrawingStatus = "not_generated" | "generating" | "generated" | "failed";
 
-/** Request to start a new generation run. Mirrors picking a module + Shell ID on Form3 today. */
+/**
+ * Request to start a new generation run. Mirrors Form3's two real entry
+ * paths: either a directly-typed Shell ID (OnEstimatedShellIdChanged), or
+ * the four thermal-sizing inputs that Form3.BtnCalculate_Click uses to
+ * compute Shell ID itself (hta/tubeOD/tubeLength/noOfPass). Provide one or
+ * the other, not both — the API computes shellId server-side when thermal
+ * inputs are supplied.
+ */
 export interface JobRequest {
   module: ModuleKind;
-  shellId: number;
+  shellId?: number;
+  hta?: number;
+  tubeOD?: number;
+  tubeLength?: number;
+  noOfPass?: number;
 }
 
 /** Summary row for a job list / history view. */

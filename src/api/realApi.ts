@@ -243,7 +243,7 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
       const failedJob: JobDetail = {
         id: `job-${Math.floor(1000 + Math.random() * 9000)}`,
         module: request.module,
-        shellId: request.shellId,
+        shellId: request.shellId ?? 0,
         status: "failed",
         createdAt: new Date().toISOString(),
         completedAt: new Date().toISOString(),
@@ -272,7 +272,7 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
     const failedJob: JobDetail = {
       id: `job-${Math.floor(1000 + Math.random() * 9000)}`,
       module: request.module,
-      shellId: request.shellId,
+      shellId: request.shellId ?? 0,
       status: "failed",
       createdAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
