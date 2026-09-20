@@ -1955,6 +1955,241 @@ body {
 }
 
 /* ==========================================================================
+   Header Page Nav (Modules / All Jobs)
+   ========================================================================== */
+.header-page-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(11, 17, 32, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+}
+
+.page-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.page-nav-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+}
+
+.page-nav-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-blue-hover) 100%);
+  box-shadow: var(--shadow-glow-blue);
+}
+
+/* ==========================================================================
+   Modules Home (Form2-style module picker landing page)
+   ========================================================================== */
+.modules-home {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  animation: fadeInUp 0.3s ease;
+}
+
+.modules-home-header {
+  text-align: center;
+  max-width: 640px;
+  margin: 24px auto 0;
+}
+
+.modules-home-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #f8fafc 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.modules-home-subtitle {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.modules-home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.module-home-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-app) 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 26px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.module-home-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-blue);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-blue);
+}
+
+.module-home-card:hover .module-home-card-glow {
+  opacity: 1;
+}
+
+.module-home-card-glow {
+  position: absolute;
+  inset: -40% -40% auto auto;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, var(--accent-blue-glow) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.module-home-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.module-home-card-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.module-home-card-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.module-home-card-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.module-home-card-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Module Workspace (per-module sizing + inline results, Form3-style)
+   ========================================================================== */
+.module-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeInUp 0.25s ease;
+}
+
+.module-workspace-subnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.module-workspace-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-app) 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+}
+
+.module-workspace-icon {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.module-workspace-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 6px;
+}
+
+.module-workspace-desc {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 640px;
+}
+
+.module-workspace-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+}
+
+.module-workspace-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ==========================================================================
    Responsive Breakpoints
    ========================================================================== */
 @media (max-width: 1024px) {
@@ -1972,6 +2207,9 @@ body {
   .bom-metrics-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .modules-home-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1987,5 +2225,15 @@ body {
   }
   .search-box {
     width: 100%;
+  }
+  .modules-home-title {
+    font-size: 24px;
+  }
+  .module-workspace-header {
+    flex-direction: column;
+  }
+  .module-workspace-subnav {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }

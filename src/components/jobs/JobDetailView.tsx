@@ -38,6 +38,15 @@ export function JobDetailView({
   const [isTriggeringGeneration, setIsTriggeringGeneration] = useState(false);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Always-current ref to the (identity-unstable, freshly-created-per-render)
+  // onRefreshList prop, so effects/callbacks below can call it without
+  // needing it in their dependency arrays. Updated in an effect, not during
+  // render, per React's rules on refs.
+  const onRefreshListRef = useRef(onRefreshList);
+  useEffect(() => {
+    onRefreshListRef.current = onRefreshList;
+  }, [onRefreshList]);
+
   const fetchDetail = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -52,21 +61,34 @@ export function JobDetailView({
 
   // Silent refresh (no loading spinner) — used while polling for drawing
   // generation status, so the UI doesn't flicker back to a full loading state.
+  // Also nudges the parent's global job list (onRefreshList) so a job opened
+  // straight from a Module Workspace page - which never itself refetches the
+  // list - doesn't leave a stale "Queued"/"Running" row behind in All Jobs
+  // once this view's own polling sees it settle.
   const refreshSilently = useCallback(async () => {
     try {
       const data = await getJob(jobId);
       setJob(data || null);
+      onRefreshListRef.current();
     } catch {
       // keep last-known state on a transient poll failure
     }
   }, [jobId]);
 
   // Poll while a drawing is generating (real CAD generation can take over a
-  // minute) — stop as soon as it settles into "generated" or "failed".
+  // minute), or while the job itself is still queued/running (BOM/engineering
+  // calc is normally fast - a couple seconds - but has no other push signal)
+  // - stop as soon as either settles.
+  const isPolling =
+    job?.drawingStatus === "generating" ||
+    job?.status === "queued" ||
+    job?.status === "running";
+
   useEffect(() => {
-    if (job?.drawingStatus === "generating") {
+    if (isPolling) {
       if (!pollIntervalRef.current) {
-        pollIntervalRef.current = setInterval(refreshSilently, 3000);
+        const intervalMs = job?.drawingStatus === "generating" ? 3000 : 1000;
+        pollIntervalRef.current = setInterval(refreshSilently, intervalMs);
       }
     } else if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
@@ -78,7 +100,7 @@ export function JobDetailView({
         pollIntervalRef.current = null;
       }
     };
-  }, [job?.drawingStatus, refreshSilently]);
+  }, [isPolling, job?.drawingStatus, refreshSilently]);
 
   const handleGenerateDrawing = async () => {
     if (!job) return;
@@ -101,6 +123,12 @@ export function JobDetailView({
         if (isMounted) {
           setJob(data || null);
           setIsLoading(false);
+          // A job opened right after submission (e.g. from a Module Workspace
+          // page) may already be "completed" on this very first fetch,
+          // before polling ever has a reason to start - make sure the
+          // parent's global list picks up its real status too, not just a
+          // stale copy from the moment it was queued.
+          onRefreshListRef.current();
         }
       })
       .catch(() => {

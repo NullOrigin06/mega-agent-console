@@ -1,9 +1,11 @@
-import { IconCpu, IconPlus, IconRefresh } from "../common/Icon";
+import { IconCpu, IconPlus, IconRefresh, IconGrid, IconList } from "../common/Icon";
 import type { JobSummary } from "../../types/engineering";
 import { API_MODE } from "../../api";
 
 interface HeaderProps {
   jobs: JobSummary[];
+  page: "modules" | "jobs";
+  onNavigate: (page: "modules" | "jobs") => void;
   onOpenSubmit: () => void;
   onRefresh: () => void;
   isRefreshing?: boolean;
@@ -12,6 +14,8 @@ interface HeaderProps {
 
 export function Header({
   jobs,
+  page,
+  onNavigate,
   onOpenSubmit,
   onRefresh,
   isRefreshing = false,
@@ -48,6 +52,25 @@ export function Header({
           </div>
         </button>
       </div>
+
+      <nav className="header-page-nav" aria-label="Primary">
+        <button
+          type="button"
+          className={`page-nav-btn ${page === "modules" ? "page-nav-active" : ""}`}
+          onClick={() => onNavigate("modules")}
+        >
+          <IconGrid size={15} />
+          <span>Modules</span>
+        </button>
+        <button
+          type="button"
+          className={`page-nav-btn ${page === "jobs" ? "page-nav-active" : ""}`}
+          onClick={() => onNavigate("jobs")}
+        >
+          <IconList size={15} />
+          <span>All Jobs</span>
+        </button>
+      </nav>
 
       <div className="header-metrics">
         <div className="metric-pill">
