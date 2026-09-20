@@ -6,7 +6,17 @@ import {
   clearPairedAgent,
   type PairedAgent,
 } from "../../utils/agentPairing";
-import { IconCheckCircle, IconAlertTriangle, IconLoader } from "../common/Icon";
+import { IconCheckCircle, IconAlertTriangle, IconLoader, IconDownload } from "../common/Icon";
+
+/**
+ * Served from mega-agent-api's wwwroot (same origin as this console — see
+ * DrawingView.tsx/JobList.tsx history for why cross-origin links to the
+ * tunnel got silently ad-blocked). Not versioned in the URL: whoever deploys
+ * a new build copies the freshly-built installer over this same filename in
+ * wwwroot/downloads/, so this link never needs a code change to pick up a
+ * new version.
+ */
+const AGENT_INSTALLER_URL = "/downloads/MegaLocalAgent_Setup.exe";
 
 interface AgentPairingPanelProps {
   /** Fires whenever the paired agent changes (paired, unpaired, or online status refreshed). */
@@ -124,9 +134,18 @@ export function AgentPairingPanel({ onPairedAgentChange }: AgentPairingPanelProp
     <div className="agent-pairing-panel">
       <p className="agent-pairing-hint">
         Generating a drawing runs on <strong>your own machine</strong>, using your own
-        GstarCAD — not on the server. Run the Mega Local Agent app on your PC, then enter the
-        pairing code it shows below.
+        GstarCAD — not on the server. Install the Mega Local Agent app on your PC, run it,
+        then enter the pairing code it shows below.
       </p>
+      <a
+        href={AGENT_INSTALLER_URL}
+        className="btn btn-secondary"
+        style={{ marginBottom: "12px", display: "inline-flex" }}
+        download
+      >
+        <IconDownload size={16} />
+        <span>Download Mega Local Agent</span>
+      </a>
       <form onSubmit={handlePair} className="agent-pairing-form">
         {error && (
           <div className="alert-banner alert-banner-danger" role="alert">
