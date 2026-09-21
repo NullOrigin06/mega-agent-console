@@ -60,10 +60,10 @@ export interface ProjectInfo {
 
 /**
  * Request to start a new generation run. Mirrors Form3's real "User Inputs"
- * panel (hta/tubeOD/tubeLength/tubeThk/noOfPass/baffleQty), its "Project
- * Information" panel, and its Nozzle Input/Schedule grid — plus a directly-
- * typed Shell ID (OnEstimatedShellIdChanged) as an optional override/
- * alternative to the thermal-sizing calculation, not the only way in.
+ * panel (hta/tubeOD/tubeLength/tubeThk/noOfPass/baffleQty, all required),
+ * its "Project Information" panel, and its Nozzle Input/Schedule grid.
+ * `shellId` is not settable from the workspace form — Shell ID is always
+ * derived server-side from the thermal-sizing inputs above, as in Form3.
  */
 export interface JobRequest {
   module: ModuleKind;

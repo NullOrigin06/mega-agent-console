@@ -35,11 +35,10 @@ const DEFAULT_PROJECT_INFO: ProjectInfo = {
  * Per-module workspace page, mirroring the desktop suite's Form3 in full:
  * User Inputs (HTA/Tube OD/Tube Length/Tube THK/No. of Pass/Baffle Qty),
  * Project Information, and the Nozzle Input/Schedule grid all live on one
- * screen (Parth's explicit correction: a Shell-ID-only entry point is not
- * how the real app works — these are the actual fields Form3 takes). A
- * directly-typed Shell ID is offered as an optional override/alternative to
- * the thermal calculation, not the only way in. Submitting switches this
- * same page to show the full result (JobDetailView) inline.
+ * screen. All six User Inputs are required, matching Form3.ValidateInputs —
+ * there is no direct Shell ID entry point; Shell ID is always derived from
+ * these inputs. Submitting switches this same page to show the full result
+ * (JobDetailView) inline.
  */
 export function ModuleWorkspace({
   module,
@@ -151,7 +150,7 @@ export function ModuleWorkspace({
               <input
                 type="number" min="0" step="any" className="form-input text-mono"
                 value={fields.hta} onChange={(e) => setField("hta", e.target.value)}
-                placeholder="HTA" disabled={isSubmitting}
+                placeholder="HTA" disabled={isSubmitting} required
               />
               <span className="input-suffix">HTA m²</span>
             </div>
@@ -159,7 +158,7 @@ export function ModuleWorkspace({
               <input
                 type="number" min="0" step="any" className="form-input text-mono"
                 value={fields.tubeOD} onChange={(e) => setField("tubeOD", e.target.value)}
-                placeholder="Tube OD" disabled={isSubmitting}
+                placeholder="Tube OD" disabled={isSubmitting} required
               />
               <span className="input-suffix">Tube OD mm</span>
             </div>
@@ -167,7 +166,7 @@ export function ModuleWorkspace({
               <input
                 type="number" min="0" step="any" className="form-input text-mono"
                 value={fields.tubeLength} onChange={(e) => setField("tubeLength", e.target.value)}
-                placeholder="Tube Length" disabled={isSubmitting}
+                placeholder="Tube Length" disabled={isSubmitting} required
               />
               <span className="input-suffix">Tube Length mm</span>
             </div>
@@ -175,7 +174,7 @@ export function ModuleWorkspace({
               <input
                 type="number" min="0" step="any" className="form-input text-mono"
                 value={fields.tubeThk} onChange={(e) => setField("tubeThk", e.target.value)}
-                placeholder="Tube THK" disabled={isSubmitting}
+                placeholder="Tube THK" disabled={isSubmitting} required
               />
               <span className="input-suffix">Tube THK mm</span>
             </div>
@@ -183,7 +182,7 @@ export function ModuleWorkspace({
               <input
                 type="number" min="1" step="1" className="form-input text-mono"
                 value={fields.noOfPass} onChange={(e) => setField("noOfPass", e.target.value)}
-                placeholder="No. of Pass" disabled={isSubmitting}
+                placeholder="No. of Pass" disabled={isSubmitting} required
               />
               <span className="input-suffix">No. of Pass</span>
             </div>
@@ -191,26 +190,9 @@ export function ModuleWorkspace({
               <input
                 type="number" min="1" step="1" className="form-input text-mono"
                 value={fields.baffleQty} onChange={(e) => setField("baffleQty", e.target.value)}
-                placeholder="Baffle Qty" disabled={isSubmitting}
+                placeholder="Baffle Qty" disabled={isSubmitting} required
               />
               <span className="input-suffix">Baffle Qty</span>
-            </div>
-          </div>
-
-          <div className="workspace-shell-override">
-            <label className="form-label" htmlFor="shell-id-override">
-              Shell ID Override <span className="form-hint-inline">(optional — skips the calculation above and uses this Shell ID directly, same as editing Shell I.D. in the Estimated column on Form3)</span>
-            </label>
-            <div className="shell-input-wrapper workspace-shell-override-input">
-              <input
-                id="shell-id-override"
-                type="number" min="150" max="4000" step="1" className="form-input text-mono"
-                value={fields.shellIdOverride}
-                onChange={(e) => setField("shellIdOverride", e.target.value)}
-                placeholder="e.g. 914 (leave blank to calculate from HTA above)"
-                disabled={isSubmitting}
-              />
-              <span className="input-suffix">mm</span>
             </div>
           </div>
         </div>

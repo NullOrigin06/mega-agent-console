@@ -1,12 +1,12 @@
-import { IconCpu, IconPlus, IconRefresh, IconGrid, IconList } from "../common/Icon";
+import { IconRefresh, IconGrid, IconList } from "../common/Icon";
 import type { JobSummary } from "../../types/engineering";
 import { API_MODE } from "../../api";
+import megaLogo from "../../assets/mega-logo.png";
 
 interface HeaderProps {
   jobs: JobSummary[];
   page: "modules" | "jobs";
   onNavigate: (page: "modules" | "jobs") => void;
-  onOpenSubmit: () => void;
   onRefresh: () => void;
   isRefreshing?: boolean;
   onGoHome: () => void;
@@ -16,7 +16,6 @@ export function Header({
   jobs,
   page,
   onNavigate,
-  onOpenSubmit,
   onRefresh,
   isRefreshing = false,
   onGoHome,
@@ -37,7 +36,7 @@ export function Header({
           title="Return to Jobs Dashboard"
         >
           <div className="brand-logo">
-            <IconCpu size={22} className="text-accent" />
+            <img src={megaLogo} alt="Mega EPC" />
           </div>
           <div className="brand-text">
             <div className="brand-title-row">
@@ -115,16 +114,6 @@ export function Header({
             className={isRefreshing ? "animate-spin" : ""}
           />
           <span className="hide-mobile">Refresh</span>
-        </button>
-
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={onOpenSubmit}
-          id="btn-submit-job-header"
-        >
-          <IconPlus size={16} />
-          <span>Submit Job</span>
         </button>
       </div>
     </header>

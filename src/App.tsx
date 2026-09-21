@@ -1,68 +1,42 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JobSummary, ModuleKind } from "./types/engineering";
 import { listJobs } from "./api";
 import { Header } from "./components/layout/Header";
 import { JobList } from "./components/jobs/JobList";
 import { JobDetailView } from "./components/jobs/JobDetailView";
-import { SubmitJobModal } from "./components/jobs/SubmitJobModal";
 import { ModulesHome } from "./components/modules/ModulesHome";
 import { ModuleWorkspace } from "./components/modules/ModuleWorkspace";
 import { IconLoader } from "./components/common/Icon";
 
 type Page = "modules" | "jobs";
 
+const JOBS_QUERY_KEY = ["jobs"] as const;
+
 export function App() {
-  const [jobs, setJobs] = useState<JobSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
   const [page, setPage] = useState<Page>("modules");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [workspaceModule, setWorkspaceModule] = useState<ModuleKind | null>(null);
-  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
 
-  const fetchJobs = useCallback(async (showRefreshing = false) => {
-    if (showRefreshing) setIsRefreshing(true);
-    try {
-      const data = await listJobs();
-      setJobs(data);
-    } catch (err) {
-      console.error("Failed to load jobs from mock API:", err);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    listJobs()
-      .then((data) => {
-        if (isMounted) {
-          setJobs(data);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load jobs from mock API:", err);
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const {
+    data: jobs = [],
+    isLoading,
+    isRefetching: isRefreshing,
+    refetch,
+  } = useQuery({
+    queryKey: JOBS_QUERY_KEY,
+    queryFn: listJobs,
+    meta: { errorMessage: "Failed to load jobs" },
+  });
 
   const handleJobSubmitted = (newJob: JobSummary) => {
-    // Prepend new job to local state so header metrics / All Jobs stay in sync
-    // with anything submitted from the modal or a module workspace page.
-    setJobs((prev) => [newJob, ...prev]);
-  };
-
-  const handleJobSubmittedFromModal = (newJob: JobSummary) => {
-    handleJobSubmitted(newJob);
-    setPage("jobs");
-    setSelectedJobId(newJob.id);
+    // Prepend new job to cached state so header metrics / All Jobs stay in
+    // sync with anything submitted from a module workspace page.
+    queryClient.setQueryData<JobSummary[]>(JOBS_QUERY_KEY, (prev) => [
+      newJob,
+      ...(prev ?? []),
+    ]);
   };
 
   const handleSelectJob = (jobId: string) => {
@@ -103,7 +77,7 @@ export function App() {
         onBackToModules={handleGoToModules}
         onGoToAllJobs={handleGoToAllJobs}
         onJobSubmitted={handleJobSubmitted}
-        onRefreshList={() => fetchJobs(false)}
+        onRefreshList={() => refetch()}
       />
     );
   } else if (selectedJobId) {
@@ -111,7 +85,7 @@ export function App() {
       <JobDetailView
         jobId={selectedJobId}
         onBack={handleGoToAllJobs}
-        onRefreshList={() => fetchJobs(false)}
+        onRefreshList={() => refetch()}
       />
     );
   } else if (page === "modules") {
@@ -122,7 +96,7 @@ export function App() {
         jobs={jobs}
         selectedJobId={selectedJobId}
         onSelectJob={handleSelectJob}
-        onOpenSubmit={() => setIsSubmitModalOpen(true)}
+        onGoToModules={handleGoToModules}
       />
     );
   }
@@ -133,19 +107,12 @@ export function App() {
         jobs={jobs}
         page={page}
         onNavigate={(p) => (p === "modules" ? handleGoToModules() : handleGoToAllJobs())}
-        onOpenSubmit={() => setIsSubmitModalOpen(true)}
-        onRefresh={() => fetchJobs(true)}
+        onRefresh={() => refetch()}
         isRefreshing={isRefreshing}
         onGoHome={handleGoToModules}
       />
 
       <main className="main-content">{content}</main>
-
-      <SubmitJobModal
-        isOpen={isSubmitModalOpen}
-        onClose={() => setIsSubmitModalOpen(false)}
-        onJobSubmitted={handleJobSubmittedFromModal}
-      />
     </div>
   );
 }

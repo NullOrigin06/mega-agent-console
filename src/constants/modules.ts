@@ -16,7 +16,7 @@ export interface ModuleOption {
 /**
  * Single source of truth for the 3 engineering modules, mirroring the
  * Generate buttons in the desktop suite's Form3. Shared between the Modules
- * home page and SubmitJobModal so both list the same set consistently.
+ * home page and ModuleWorkspace so both list the same set consistently.
  */
 export const MODULE_OPTIONS: ModuleOption[] = [
   {
