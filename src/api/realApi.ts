@@ -255,6 +255,15 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
   }
 }
 
+export async function deleteJob(jobId: string): Promise<void> {
+  clientSessionJobs.delete(jobId);
+  const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}`;
+  const res = await apiFetch(url, { method: "DELETE" });
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`Failed to delete job (${res.status}): ${res.statusText}`);
+  }
+}
+
 export async function submitJob(request: JobRequest): Promise<JobSummary> {
   try {
     const res = await apiFetch(REAL_API_BASE_URL, {

@@ -6,6 +6,7 @@ import {
   IconSearch,
   IconAlertTriangle,
   IconExternalLink,
+  IconTrash,
 } from "../common/Icon";
 
 interface JobListProps {
@@ -13,6 +14,7 @@ interface JobListProps {
   selectedJobId?: string | null;
   onSelectJob: (jobId: string) => void;
   onGoToModules: () => void;
+  onDeleteJob: (jobId: string) => Promise<void>;
 }
 
 export function JobList({
@@ -20,6 +22,7 @@ export function JobList({
   selectedJobId,
   onSelectJob,
   onGoToModules,
+  onDeleteJob,
 }: JobListProps) {
   const [selectedModule, setSelectedModule] = useState<ModuleKind | "All">(
     "All"
@@ -28,6 +31,22 @@ export function JobList({
     "All"
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteClick = async (jobId: string) => {
+    if (confirmDeleteId !== jobId) {
+      setConfirmDeleteId(jobId);
+      return;
+    }
+    setDeletingId(jobId);
+    try {
+      await onDeleteJob(jobId);
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  };
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -295,17 +314,33 @@ export function JobList({
                       )}
                     </td>
                     <td className="text-right">
-                      <button
-                        type="button"
-                        className="btn btn-outline-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectJob(job.id);
-                        }}
-                      >
-                        <span>View</span>
-                        <IconExternalLink size={13} />
-                      </button>
+                      <div className="job-row-actions">
+                        <button
+                          type="button"
+                          className="btn btn-outline-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectJob(job.id);
+                          }}
+                        >
+                          <span>View</span>
+                          <IconExternalLink size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn btn-outline-sm btn-danger-sm ${confirmDeleteId === job.id ? "btn-danger-confirm" : ""}`}
+                          disabled={deletingId === job.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(job.id);
+                          }}
+                          onBlur={() => setConfirmDeleteId((id) => (id === job.id ? null : id))}
+                          title={confirmDeleteId === job.id ? "Click again to confirm delete" : "Delete job"}
+                        >
+                          <IconTrash size={13} />
+                          {confirmDeleteId === job.id && <span>Confirm?</span>}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

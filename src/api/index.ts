@@ -51,6 +51,14 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
 }
 
 /**
+ * Deletes a job - lets a user clear a stuck, failed, or otherwise unwanted
+ * run from the dashboard themselves.
+ */
+export async function deleteJob(jobId: string): Promise<void> {
+  return getApiMode() === "real" ? realApi.deleteJob(jobId) : mockApi.deleteJob(jobId);
+}
+
+/**
  * Retrieves valid Shell ID presets from active backend (real or mock).
  */
 export async function listShellIds(): Promise<number[]> {

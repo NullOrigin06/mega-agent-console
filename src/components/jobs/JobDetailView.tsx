@@ -12,6 +12,7 @@ import {
   IconFileText,
   IconLayers,
   IconDrafting,
+  IconTrash,
 } from "../common/Icon";
 import { EngineeringDataView } from "./EngineeringDataView";
 import { SpecsAndNozzlesView } from "./SpecsAndNozzlesView";
@@ -22,6 +23,7 @@ interface JobDetailViewProps {
   jobId: string;
   onBack: () => void;
   onRefreshList: () => void;
+  onDeleteJob: (jobId: string) => Promise<void>;
 }
 
 type TabType = "values" | "specs" | "bom" | "drawing";
@@ -30,13 +32,29 @@ export function JobDetailView({
   jobId,
   onBack,
   onRefreshList,
+  onDeleteJob,
 }: JobDetailViewProps) {
   const [job, setJob] = useState<JobDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("values");
   const [copied, setCopied] = useState(false);
   const [isTriggeringGeneration, setIsTriggeringGeneration] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handleDeleteClick = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      await onDeleteJob(jobId);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Always-current ref to the (identity-unstable, freshly-created-per-render)
   // onRefreshList prop, so effects/callbacks below can call it without
@@ -229,6 +247,17 @@ export function JobDetailView({
           >
             <IconRefresh size={14} />
             <span>Refresh</span>
+          </button>
+          <button
+            type="button"
+            className={`btn btn-outline-sm btn-danger-sm ${confirmDelete ? "btn-danger-confirm" : ""}`}
+            disabled={isDeleting}
+            onClick={handleDeleteClick}
+            onBlur={() => setConfirmDelete(false)}
+            title={confirmDelete ? "Click again to confirm delete" : "Delete this job"}
+          >
+            <IconTrash size={14} />
+            <span>{confirmDelete ? "Confirm Delete?" : "Delete Job"}</span>
           </button>
         </div>
       </div>

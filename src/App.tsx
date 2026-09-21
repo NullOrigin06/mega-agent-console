@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JobSummary, ModuleKind } from "./types/engineering";
-import { listJobs } from "./api";
+import { listJobs, deleteJob } from "./api";
 import { Header } from "./components/layout/Header";
 import { JobList } from "./components/jobs/JobList";
 import { JobDetailView } from "./components/jobs/JobDetailView";
@@ -58,6 +58,17 @@ export function App() {
     ]);
   };
 
+  const handleDeleteJob = async (jobId: string) => {
+    await deleteJob(jobId);
+    queryClient.setQueryData<JobSummary[]>(JOBS_QUERY_KEY, (prev) =>
+      (prev ?? []).filter((j) => j.id !== jobId)
+    );
+    if (selectedJobId === jobId) {
+      setSelectedJobId(null);
+      setPage("jobs");
+    }
+  };
+
   const handleSelectJob = (jobId: string) => {
     setWorkspaceModule(null);
     setSelectedJobId(jobId);
@@ -105,6 +116,7 @@ export function App() {
         onGoToAllJobs={handleGoToAllJobs}
         onJobSubmitted={handleJobSubmitted}
         onRefreshList={() => refetch()}
+        onDeleteJob={handleDeleteJob}
       />
     );
   } else if (selectedJobId) {
@@ -113,6 +125,7 @@ export function App() {
         jobId={selectedJobId}
         onBack={handleGoToAllJobs}
         onRefreshList={() => refetch()}
+        onDeleteJob={handleDeleteJob}
       />
     );
   } else if (page === "modules") {
@@ -124,6 +137,7 @@ export function App() {
         selectedJobId={selectedJobId}
         onSelectJob={handleSelectJob}
         onGoToModules={handleGoToModules}
+        onDeleteJob={handleDeleteJob}
       />
     );
   }

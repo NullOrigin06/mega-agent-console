@@ -39,6 +39,16 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
 }
 
 /**
+ * Removes a job - lets a user clear a stuck/failed run themselves instead of
+ * it sitting in the list forever. Mirrors DELETE /api/jobs/{id}.
+ */
+export async function deleteJob(jobId: string): Promise<void> {
+  jobs = jobs.filter((j) => j.id !== jobId);
+  delete sampleJobDetails[jobId];
+  await delay(undefined);
+}
+
+/**
  * JS mirror of MegaEngineeringSuite.Engineering.TubeSizingCalculator, used
  * only so the mock/offline demo mode computes a Shell ID the same way the
  * real API does when thermal sizing inputs are submitted instead of a

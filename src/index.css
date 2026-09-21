@@ -265,6 +265,33 @@ body {
   color: #93c5fd;
 }
 
+.job-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-danger-sm {
+  color: var(--accent-rose);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.btn-danger-sm:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--accent-rose);
+  color: #fca5a5;
+}
+
+.btn-danger-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger-confirm {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
 .btn-icon {
   padding: 8px 12px;
 }

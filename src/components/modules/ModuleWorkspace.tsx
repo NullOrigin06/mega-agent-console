@@ -18,6 +18,7 @@ interface ModuleWorkspaceProps {
   onGoToAllJobs: () => void;
   onJobSubmitted: (job: JobSummary) => void;
   onRefreshList: () => void;
+  onDeleteJob: (jobId: string) => Promise<void>;
 }
 
 const DEFAULT_PROJECT_INFO: ProjectInfo = {
@@ -46,6 +47,7 @@ export function ModuleWorkspace({
   onGoToAllJobs,
   onJobSubmitted,
   onRefreshList,
+  onDeleteJob,
 }: ModuleWorkspaceProps) {
   const [job, setJob] = useState<JobSummary | null>(null);
   const [fields, setFields] = useState<WorkspaceFieldValues>(DEFAULT_WORKSPACE_FIELDS);
@@ -107,6 +109,10 @@ export function ModuleWorkspace({
           jobId={job.id}
           onBack={() => setJob(null)}
           onRefreshList={onRefreshList}
+          onDeleteJob={async (jobId) => {
+            await onDeleteJob(jobId);
+            setJob(null);
+          }}
         />
       </div>
     );
