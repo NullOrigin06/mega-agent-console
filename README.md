@@ -1,29 +1,37 @@
 # Mega Agent Console
 
-Web front-end for a future background-agent-driven engineering workflow on top of **Mega Engineering Suite** (a separate repo: `MegaEngineeringSuite`).
+Web front-end for the background-agent-driven engineering workflow on top of **Mega Engineering Suite** (pressure vessel components: Tube Sheet, Bonnet Flange, and Heat Exchanger Fabrication).
 
-## Status: pre-dependency scaffold
+## Authentication & User Accounts
 
-This project has **no working backend yet**. It exists ahead of its dependency on purpose, so the front-end shape can be designed early — but it cannot do real engineering work until the following lands in the `MegaEngineeringSuite` repo:
+The console supports **per-user accounts** rather than a flat build-time secret:
+- **Sign In / Sign Up**: Simple email + password auth modal (`POST /api/auth/login`, `POST /api/auth/signup`).
+- **Session Storage**: The returned `{ userId, apiKey }` is saved to browser storage (`localStorage`) and sent as the `X-Api-Key` header on all `/api/*` requests.
+- **Session Expiration**: Automatic 401 handling invalidates the session and returns the user to the login screen cleanly.
+- **Account Indicator**: Header displays the active user email with a 1-click Sign Out action.
 
-1. A headless class library extracted from `MegaEngineeringSuite`'s WinForms app (`Form3.cs` and related), exposing Tube Sheet / Bonnet Flange / Heat Exchanger Fab calculation, BOM, and CAD-generation logic without a WinForms dependency.
-2. Some form of API surface (HTTP service, or another integration point — not yet decided) that this front-end can call.
+## Multi-Agent CAD Pairing
 
-See `MegaEngineeringSuite/docs/EXTRACTION_ANALYSIS.md` and `MegaEngineeringSuite/docs/EXTRACTION_HANDOFF.md` in the sibling repo for the full extraction plan, what's confirmed vs. still open, and which engineering conflicts require sign-off before any calculation logic can be trusted as a shared implementation.
+CAD generation runs on the engineer's workstation (using local GstarCAD/AutoCAD) rather than on the central server:
+- **Local Agent Roster**: `GET /api/agents` retrieves all workstations paired to the user's account, displaying real-time Online/Offline status.
+- **Pairing Code Flow**: Connect additional workstations using the 6-digit code shown in the Mega Local Agent desktop app.
+- **Workstation Selection**: In the Drawing tab, when multiple online agents are available, a workstation selector lets the user choose which machine receives the generation command (`POST /api/jobs/{id}/generate-drawing`).
 
-**Until that backend exists, treat any data this app displays as mocked/stubbed**, not representative of real engineering output. Do not wire up a real CAD/BOM number here and present it as authoritative — several formulas in the source project have confirmed, unresolved divergences (tube pitch, material density, a π/4 factor, an OTL boundary rule, a dish-end diameter formula) that are explicitly **not yet decided** by the project owner. Building UI that implies a single authoritative answer for any of those would be presenting an undecided engineering question as settled.
+## Mock & Real Modes
 
-## Stack
+- **Mock Mode (`VITE_API_MODE=mock`)**: Fully offline interactive mode. Any email/password will log in, sample agents are available, and drawings simulate generation.
+- **Real Mode (`VITE_API_MODE=real`)**: Connects to `mega-agent-api` (`http://localhost:5299/api/jobs` or relative `/api/jobs` when served same-origin from the API's `wwwroot`).
 
-React + TypeScript + Vite (scaffolded via `npm create vite@latest -- --template react-ts`).
-
-## Repo relationship
-
-This is a **separate GitHub repository** from `MegaEngineeringSuite`, by design — no shared git history, no project reference. Once a real API exists, this app will call it over HTTP (or whatever integration point is decided); it will not directly reference `MegaEngineeringSuite`'s .NET code.
-
-## Getting started
+## Getting Started
 
 ```bash
 npm install
 npm run dev
 ```
+
+For production builds:
+```bash
+npm run build
+```
+The compiled output in `dist/` can be copied into `mega-agent-api/wwwroot/` for same-origin deployment.
+

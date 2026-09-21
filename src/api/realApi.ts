@@ -5,22 +5,44 @@ import type {
   EngineeringDataModel,
   EngineeringValues,
   BomRow,
+  LoginRequest,
+  SignupRequest,
+  AuthResponse,
+  PairedAgentInfo,
 } from "../types/engineering";
+import { getAuthSession, clearAuthSession } from "../utils/authSession";
 
 export const REAL_API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5299/api/jobs";
 
-// mega-agent-api requires this on every /api/* request once it's reachable
-// beyond localhost (see Program.cs's API key middleware) — without it every
-// call gets a 401. Safe to leave unset for pure-localhost development.
-const API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
+export function getApiRootUrl(): string {
+  return REAL_API_BASE_URL.replace(/\/jobs\/?$/, "");
+}
 
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  const session = getAuthSession();
+  const apiKey = session?.apiKey || (import.meta.env.VITE_API_KEY as string | undefined);
   return {
-    ...(API_KEY ? { "X-Api-Key": API_KEY } : {}),
+    ...(apiKey ? { "X-Api-Key": apiKey } : {}),
     ...extra,
   };
 }
+
+async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+  const headers = authHeaders(init?.headers as Record<string, string> | undefined);
+  const res = await fetch(input, {
+    ...init,
+    headers,
+  });
+
+  if (res.status === 401) {
+    clearAuthSession();
+    throw new Error("Unauthorized: Session expired or invalid credentials.");
+  }
+
+  return res;
+}
+
 
 // In-memory cache for jobs submitted in this session (e.g. synthetic failed jobs)
 const clientSessionJobs = new Map<string, JobDetail>();
@@ -146,8 +168,8 @@ function normalizeBomRows(rawRows?: unknown[]): BomRow[] | undefined {
 
 export async function listJobs(): Promise<JobSummary[]> {
   try {
-    const res = await fetch(REAL_API_BASE_URL, {
-      headers: authHeaders({ Accept: "application/json" }),
+    const res = await apiFetch(REAL_API_BASE_URL, {
+      headers: { Accept: "application/json" },
     });
 
     if (!res.ok) {
@@ -183,8 +205,8 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
 
   try {
     const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}`;
-    const res = await fetch(url, {
-      headers: authHeaders({ Accept: "application/json" }),
+    const res = await apiFetch(url, {
+      headers: { Accept: "application/json" },
     });
 
     if (res.status === 404) {
@@ -234,19 +256,13 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
 }
 
 export async function submitJob(request: JobRequest): Promise<JobSummary> {
-  // All three modules (HeatExchangerFab, TubeSheet, BonnetFlange) are fully
-  // wired in mega-agent-api now — no module-specific "not implemented"
-  // special-casing here anymore. Surface whatever the real API actually
-  // says, since inventing a friendlier/different error would misrepresent
-  // real failures (e.g. a genuine Shell-ID-not-found error for TubeSheet
-  // would otherwise get mislabeled as "not implemented").
   try {
-    const res = await fetch(REAL_API_BASE_URL, {
+    const res = await apiFetch(REAL_API_BASE_URL, {
       method: "POST",
-      headers: authHeaders({
+      headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-      }),
+      },
       body: JSON.stringify(request),
     });
 
@@ -269,8 +285,6 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
 
     const created = (await res.json()) as JobSummary;
 
-    // Check if the backend immediately returned a failed job
-    // (e.g. ExcelLookupService throwing for non-existent Shell ID)
     if (created.status === "failed") {
       const failedDetail: JobDetail = {
         ...created,
@@ -280,7 +294,6 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
 
     return created;
   } catch (err) {
-    // Network connection failed or server is not running.
     const failedJob: JobDetail = {
       id: `job-${Math.floor(1000 + Math.random() * 9000)}`,
       module: request.module,
@@ -297,20 +310,11 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
   }
 }
 
-/**
- * Triggers CAD drawing generation for an already-completed job
- * (POST /api/jobs/{id}/generate-drawing). When agentId is provided, the API
- * routes generation to that paired Local Agent — it runs on the agent's own
- * machine, against the agent's own GstarCAD, not on whatever machine hosts
- * mega-agent-api. Omitting agentId falls back to the original single-
- * machine behavior (generates on the API's own host) — kept only for the
- * no-agent-paired case, not the default path anymore.
- */
 export async function generateDrawing(jobId: string, agentId?: string): Promise<void> {
   const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}/generate-drawing`;
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ agentId: agentId ?? null }),
   });
 
@@ -322,17 +326,12 @@ export async function generateDrawing(jobId: string, agentId?: string): Promise<
   }
 }
 
-/**
- * Looks up a Local Agent by the pairing code a user typed in (GET
- * /api/agents/by-code/{code}) — confirms the code is real and whether that
- * agent is currently online (heartbeat within the last 30s).
- */
 export async function checkAgentByCode(
   pairingCode: string
 ): Promise<{ agentId: string; isOnline: boolean }> {
-  const base = REAL_API_BASE_URL.replace(/\/jobs\/?$/, "");
+  const base = getApiRootUrl();
   const url = `${base}/agents/by-code/${encodeURIComponent(pairingCode)}`;
-  const res = await fetch(url, { headers: authHeaders({ Accept: "application/json" }) });
+  const res = await apiFetch(url, { headers: { Accept: "application/json" } });
 
   if (!res.ok) {
     if (res.status === 404) {
@@ -344,13 +343,10 @@ export async function checkAgentByCode(
   return res.json();
 }
 
-/**
- * Retrieves the list of valid Shell IDs from the real API (GET /api/shell-ids).
- */
 export async function listShellIds(): Promise<number[]> {
-  const url = `${REAL_API_BASE_URL.replace(/\/jobs\/?$/, "")}/shell-ids`;
-  const res = await fetch(url, {
-    headers: authHeaders({ Accept: "application/json" }),
+  const url = `${getApiRootUrl()}/shell-ids`;
+  const res = await apiFetch(url, {
+    headers: { Accept: "application/json" },
   });
 
   if (!res.ok) {
@@ -366,4 +362,123 @@ export async function listShellIds(): Promise<number[]> {
 
   return data.map((n) => Number(n)).filter((n) => !Number.isNaN(n) && n > 0);
 }
+
+export async function login(request: LoginRequest): Promise<AuthResponse> {
+  const url = `${getApiRootUrl()}/auth/login`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!res.ok) {
+    let errorText = "";
+    try {
+      const data = await res.json();
+      errorText = data.error || data.message || "";
+    } catch {
+      errorText = await res.text().catch(() => "");
+    }
+    throw new Error(errorText || `Login failed (${res.status} ${res.statusText})`);
+  }
+
+  const data = (await res.json()) as AuthResponse;
+  return {
+    userId: String(data.userId),
+    apiKey: String(data.apiKey),
+    email: request.email,
+  };
+}
+
+export async function signup(request: SignupRequest): Promise<AuthResponse> {
+  const url = `${getApiRootUrl()}/auth/signup`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!res.ok) {
+    let errorText = "";
+    try {
+      const data = await res.json();
+      errorText = data.error || data.message || "";
+    } catch {
+      errorText = await res.text().catch(() => "");
+    }
+    throw new Error(errorText || `Signup failed (${res.status} ${res.statusText})`);
+  }
+
+  const data = (await res.json()) as AuthResponse;
+  return {
+    userId: String(data.userId),
+    apiKey: String(data.apiKey),
+    email: request.email,
+  };
+}
+
+export async function listAgents(): Promise<PairedAgentInfo[]> {
+  const url = `${getApiRootUrl()}/agents`;
+  const res = await apiFetch(url, {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to list agents (${res.status}): ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((item: Record<string, unknown>) => ({
+    agentId: String(item.agentId ?? item.id ?? ""),
+    name: item.name ? String(item.name) : undefined,
+    online: Boolean(item.online ?? item.isOnline ?? false),
+    pairedAt: String(item.pairedAt ?? item.registeredAt ?? new Date().toISOString()),
+  }));
+}
+
+export async function pairAgent(pairingCode: string): Promise<PairedAgentInfo> {
+  const trimmed = pairingCode.trim();
+  const url = `${getApiRootUrl()}/agents/pair`;
+  try {
+    const res = await apiFetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ pairingCode: trimmed, code: trimmed }),
+    });
+
+    if (res.ok) {
+      const data = (await res.json()) as Record<string, unknown>;
+      return {
+        agentId: String(data.agentId ?? data.id ?? `agent-${trimmed}`),
+        name: data.name ? String(data.name) : `Agent-${trimmed}`,
+        online: Boolean(data.online ?? data.isOnline ?? true),
+        pairedAt: String(data.pairedAt ?? new Date().toISOString()),
+      };
+    }
+  } catch (err) {
+    console.warn("[realApi] pairAgent POST failed, attempting by-code fallback:", err);
+  }
+
+  const status = await checkAgentByCode(trimmed);
+  return {
+    agentId: status.agentId,
+    name: `Agent-${trimmed}`,
+    online: status.isOnline,
+    pairedAt: new Date().toISOString(),
+  };
+}
+
 

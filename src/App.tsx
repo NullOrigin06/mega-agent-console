@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JobSummary, ModuleKind } from "./types/engineering";
 import { listJobs } from "./api";
@@ -8,6 +8,13 @@ import { JobDetailView } from "./components/jobs/JobDetailView";
 import { ModulesHome } from "./components/modules/ModulesHome";
 import { ModuleWorkspace } from "./components/modules/ModuleWorkspace";
 import { IconLoader } from "./components/common/Icon";
+import { AuthScreen } from "./components/auth/AuthScreen";
+import {
+  getAuthSession,
+  clearAuthSession,
+  subscribeAuth,
+  type AuthSession,
+} from "./utils/authSession";
 
 type Page = "modules" | "jobs";
 
@@ -15,9 +22,19 @@ const JOBS_QUERY_KEY = ["jobs"] as const;
 
 export function App() {
   const queryClient = useQueryClient();
+  const [session, setSession] = useState<AuthSession | null>(() => getAuthSession());
   const [page, setPage] = useState<Page>("modules");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [workspaceModule, setWorkspaceModule] = useState<ModuleKind | null>(null);
+
+  useEffect(() => {
+    return subscribeAuth((newSession) => {
+      setSession(newSession);
+      if (!newSession) {
+        queryClient.removeQueries({ queryKey: JOBS_QUERY_KEY });
+      }
+    });
+  }, [queryClient]);
 
   const {
     data: jobs = [],
@@ -27,8 +44,10 @@ export function App() {
   } = useQuery({
     queryKey: JOBS_QUERY_KEY,
     queryFn: listJobs,
+    enabled: Boolean(session),
     meta: { errorMessage: "Failed to load jobs" },
   });
+
 
   const handleJobSubmitted = (newJob: JobSummary) => {
     // Prepend new job to cached state so header metrics / All Jobs stay in
@@ -61,6 +80,14 @@ export function App() {
     setSelectedJobId(null);
     setWorkspaceModule(module);
   };
+
+  const handleLogout = () => {
+    clearAuthSession();
+  };
+
+  if (!session) {
+    return <AuthScreen onLoginSuccess={setSession} />;
+  }
 
   let content: React.ReactNode;
   if (isLoading) {
@@ -110,6 +137,8 @@ export function App() {
         onRefresh={() => refetch()}
         isRefreshing={isRefreshing}
         onGoHome={handleGoToModules}
+        session={session}
+        onLogout={handleLogout}
       />
 
       <main className="main-content">{content}</main>
@@ -118,3 +147,4 @@ export function App() {
 }
 
 export default App;
+

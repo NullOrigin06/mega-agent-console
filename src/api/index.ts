@@ -1,4 +1,12 @@
-import type { JobDetail, JobRequest, JobSummary } from "../types/engineering";
+import type {
+  JobDetail,
+  JobRequest,
+  JobSummary,
+  LoginRequest,
+  SignupRequest,
+  AuthResponse,
+  PairedAgentInfo,
+} from "../types/engineering";
 import * as mockApi from "../mocks/api";
 import * as realApi from "./realApi";
 
@@ -74,4 +82,43 @@ export async function checkAgentByCode(
     ? realApi.checkAgentByCode(pairingCode)
     : mockApi.checkAgentByCode(pairingCode);
 }
+
+/**
+ * Authenticates an existing user account.
+ */
+export async function login(request: LoginRequest): Promise<AuthResponse> {
+  return getApiMode() === "real"
+    ? realApi.login(request)
+    : mockApi.login(request);
+}
+
+/**
+ * Creates a new user account and returns session tokens.
+ */
+export async function signup(request: SignupRequest): Promise<AuthResponse> {
+  return getApiMode() === "real"
+    ? realApi.signup(request)
+    : mockApi.signup(request);
+}
+
+/**
+ * Lists all paired Local Agents associated with the active account.
+ */
+export async function listAgents(): Promise<PairedAgentInfo[]> {
+  return getApiMode() === "real"
+    ? realApi.listAgents()
+    : mockApi.listAgents();
+}
+
+/**
+ * Pairs a new Local Agent to the user's account using the pairing code.
+ */
+export async function pairAgent(pairingCode: string): Promise<PairedAgentInfo> {
+  return getApiMode() === "real"
+    ? realApi.pairAgent(pairingCode)
+    : mockApi.pairAgent(pairingCode);
+}
+
+export type { LoginRequest, SignupRequest, AuthResponse, PairedAgentInfo };
+
 

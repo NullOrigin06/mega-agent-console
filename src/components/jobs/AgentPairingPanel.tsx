@@ -1,178 +1,192 @@
-import { useEffect, useState } from "react";
-import { checkAgentByCode } from "../../api";
+import { useState } from "react";
+import { pairAgent } from "../../api";
+import type { PairedAgentInfo } from "../../types/engineering";
 import {
-  getPairedAgent,
-  setPairedAgent,
-  clearPairedAgent,
-  type PairedAgent,
-} from "../../utils/agentPairing";
-import { IconCheckCircle, IconAlertTriangle, IconLoader, IconDownload } from "../common/Icon";
+  IconCheckCircle,
+  IconAlertTriangle,
+  IconLoader,
+  IconDownload,
+  IconRefresh,
+  IconPlus,
+} from "../common/Icon";
 
-/**
- * Served from mega-agent-api's wwwroot (same origin as this console — see
- * DrawingView.tsx/JobList.tsx history for why cross-origin links to the
- * tunnel got silently ad-blocked). Not versioned in the URL: whoever deploys
- * a new build copies the freshly-built installer over this same filename in
- * wwwroot/downloads/, so this link never needs a code change to pick up a
- * new version.
- */
 const AGENT_INSTALLER_URL = "/downloads/MegaLocalAgent_Setup.exe";
 
 interface AgentPairingPanelProps {
-  /** Fires whenever the paired agent changes (paired, unpaired, or online status refreshed). */
-  onPairedAgentChange: (agent: PairedAgent | null) => void;
+  agents: PairedAgentInfo[];
+  selectedAgentId?: string | null;
+  onSelectAgent?: (agentId: string) => void;
+  onRefreshAgents: () => Promise<void> | void;
+  isRefreshing?: boolean;
 }
 
-/**
- * Lets a user pair this browser to their own Local Agent (device-code
- * pairing, like a Chromecast — see utils/agentPairing.ts and
- * mega-agent-api's AgentRegistry.cs). Once paired, "Generate Drawing" runs
- * on THIS agent's own machine, not on whatever machine hosts the API.
- */
-export function AgentPairingPanel({ onPairedAgentChange }: AgentPairingPanelProps) {
-  const [paired, setPaired] = useState<PairedAgent | null>(null);
-  const [isOnline, setIsOnline] = useState<boolean | null>(null);
+export function AgentPairingPanel({
+  agents,
+  selectedAgentId,
+  onSelectAgent,
+  onRefreshAgents,
+  isRefreshing = false,
+}: AgentPairingPanelProps) {
   const [codeInput, setCodeInput] = useState("");
-  const [isChecking, setIsChecking] = useState(false);
+  const [isPairing, setIsPairing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const existing = getPairedAgent();
-    setPaired(existing);
-    onPairedAgentChange(existing);
-    if (existing) {
-      refreshOnlineStatus(existing);
-    }
-    // Only run once on mount — pairing changes happen via handlePair/handleUnpair below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const refreshOnlineStatus = async (agent: PairedAgent) => {
-    try {
-      const status = await checkAgentByCode(agent.pairingCode);
-      setIsOnline(status.isOnline);
-    } catch {
-      setIsOnline(false);
-    }
-  };
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handlePair = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
+
     const trimmed = codeInput.trim();
     if (!trimmed) {
-      setError("Enter the pairing code shown in your Mega Local Agent window.");
+      setError("Enter the 6-digit pairing code shown in your Mega Local Agent app.");
       return;
     }
 
-    setIsChecking(true);
+    setIsPairing(true);
     try {
-      const status = await checkAgentByCode(trimmed);
-      const agent: PairedAgent = {
-        agentId: status.agentId,
-        pairingCode: trimmed,
-        pairedAt: new Date().toISOString(),
-      };
-      setPairedAgent(agent);
-      setPaired(agent);
-      setIsOnline(status.isOnline);
-      onPairedAgentChange(agent);
+      const newAgent = await pairAgent(trimmed);
       setCodeInput("");
+      setSuccessMessage(`Workstation ${newAgent.name || newAgent.agentId} connected successfully.`);
+      await onRefreshAgents();
+      if (onSelectAgent && newAgent.online) {
+        onSelectAgent(newAgent.agentId);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not verify that pairing code.");
+      setError(err instanceof Error ? err.message : "Could not pair agent.");
     } finally {
-      setIsChecking(false);
+      setIsPairing(false);
     }
   };
 
-  const handleUnpair = () => {
-    clearPairedAgent();
-    setPaired(null);
-    setIsOnline(null);
-    onPairedAgentChange(null);
-  };
-
-  if (paired) {
-    return (
-      <div className="agent-pairing-panel agent-pairing-connected">
-        <div className="agent-pairing-status-row">
-          {isOnline ? (
-            <span className="badge badge-status badge-completed">
-              <IconCheckCircle size={14} />
-              <span>Agent Connected</span>
-            </span>
-          ) : isOnline === false ? (
-            <span className="badge badge-status badge-failed">
-              <IconAlertTriangle size={14} />
-              <span>Agent Offline</span>
-            </span>
-          ) : (
-            <span className="badge badge-status badge-queued">
-              <IconLoader size={14} className="animate-spin" />
-              <span>Checking...</span>
-            </span>
-          )}
-          <span className="agent-pairing-code text-mono">{paired.pairingCode}</span>
-          <button type="button" className="btn-link" onClick={() => refreshOnlineStatus(paired)}>
-            Refresh
-          </button>
-          <button type="button" className="btn-link" onClick={handleUnpair}>
-            Unpair
-          </button>
-        </div>
-        {isOnline === false && (
-          <p className="agent-pairing-hint">
-            This agent hasn't checked in recently — make sure the Mega Local Agent app is
-            running on your machine before generating a drawing.
-          </p>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="agent-pairing-panel">
-      <p className="agent-pairing-hint">
-        Generating a drawing runs on <strong>your own machine</strong>, using your own
-        GstarCAD — not on the server. Install the Mega Local Agent app on your PC, run it,
-        then enter the pairing code it shows below.
-      </p>
-      <a
-        href={AGENT_INSTALLER_URL}
-        className="btn btn-secondary"
-        style={{ marginBottom: "12px", display: "inline-flex" }}
-        download
-      >
-        <IconDownload size={16} />
-        <span>Download Mega Local Agent</span>
-      </a>
-      <form onSubmit={handlePair} className="agent-pairing-form">
+      <div className="agent-pairing-header">
+        <div>
+          <h4 className="agent-roster-title">Connected Local Agents</h4>
+          <p className="agent-pairing-hint">
+            Drawings generate on <strong>your own workstation</strong> using local GstarCAD/AutoCAD.
+            Each engineer can link one or more machines to their account.
+          </p>
+        </div>
+        <div className="agent-pairing-header-actions">
+          <button
+            type="button"
+            className="btn btn-secondary btn-icon"
+            onClick={onRefreshAgents}
+            disabled={isRefreshing}
+            title="Refresh agents status"
+          >
+            <IconRefresh size={14} className={isRefreshing ? "animate-spin" : ""} />
+            <span>Refresh</span>
+          </button>
+          <a
+            href={AGENT_INSTALLER_URL}
+            className="btn btn-secondary btn-icon"
+            download
+            title="Download Mega Local Agent Installer"
+          >
+            <IconDownload size={14} />
+            <span>Download Agent</span>
+          </a>
+        </div>
+      </div>
+
+      {/* Roster of Paired Agents */}
+      <div className="agent-roster-list">
+        {agents.length === 0 ? (
+          <div className="agent-roster-empty">
+            <p>No Local Agents connected to your account yet.</p>
+            <span className="agent-roster-empty-hint">
+              Install the Mega Local Agent app on your PC, start it, and enter the code below.
+            </span>
+          </div>
+        ) : (
+          <div className="agent-grid">
+            {agents.map((agent) => {
+              const isSelected = selectedAgentId === agent.agentId;
+              return (
+                <div
+                  key={agent.agentId}
+                  className={`agent-card ${agent.online ? "agent-card-online" : "agent-card-offline"} ${isSelected ? "agent-card-selected" : ""}`}
+                  onClick={() => agent.online && onSelectAgent?.(agent.agentId)}
+                  role={agent.online && onSelectAgent ? "button" : undefined}
+                  tabIndex={agent.online && onSelectAgent ? 0 : undefined}
+                >
+                  <div className="agent-card-header">
+                    <span className="agent-card-name">{agent.name || "Workstation"}</span>
+                    {agent.online ? (
+                      <span className="badge badge-status badge-completed">
+                        <IconCheckCircle size={12} />
+                        <span>Online</span>
+                      </span>
+                    ) : (
+                      <span className="badge badge-status badge-failed">
+                        <IconAlertTriangle size={12} />
+                        <span>Offline</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="agent-card-details">
+                    <span className="agent-card-id text-mono">{agent.agentId}</span>
+                    <span className="agent-card-date">
+                      Linked {new Date(agent.pairedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {isSelected && (
+                    <div className="agent-selected-badge">
+                      <span>Target Workstation</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Connect New Agent Form */}
+      <div className="agent-connect-section">
+        <h5 className="agent-connect-title">Connect Another Local Agent</h5>
         {error && (
           <div className="alert-banner alert-banner-danger" role="alert">
+            <IconAlertTriangle size={14} />
             <span>{error}</span>
           </div>
         )}
-        <div className="agent-pairing-form-row">
-          <input
-            type="text"
-            className="form-input text-mono"
-            placeholder="e.g. 482-913"
-            value={codeInput}
-            onChange={(e) => setCodeInput(e.target.value)}
-            disabled={isChecking}
-          />
-          <button type="submit" className="btn btn-primary" disabled={isChecking}>
-            {isChecking ? (
-              <>
-                <IconLoader size={16} className="animate-spin" />
-                <span>Connecting...</span>
-              </>
-            ) : (
-              <span>Connect Agent</span>
-            )}
-          </button>
-        </div>
-      </form>
+        {successMessage && (
+          <div className="alert-banner alert-banner-success" role="alert">
+            <IconCheckCircle size={14} />
+            <span>{successMessage}</span>
+          </div>
+        )}
+
+        <form onSubmit={handlePair} className="agent-pairing-form">
+          <div className="agent-pairing-form-row">
+            <input
+              type="text"
+              className="form-input text-mono"
+              placeholder="e.g. 482-913"
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value)}
+              disabled={isPairing}
+            />
+            <button type="submit" className="btn btn-primary" disabled={isPairing}>
+              {isPairing ? (
+                <>
+                  <IconLoader size={15} className="animate-spin" />
+                  <span>Connecting...</span>
+                </>
+              ) : (
+                <>
+                  <IconPlus size={15} />
+                  <span>Connect Agent</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

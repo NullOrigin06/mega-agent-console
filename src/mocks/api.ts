@@ -1,5 +1,14 @@
-import type { JobDetail, JobRequest, JobSummary } from "../types/engineering";
-import { sampleJobs, sampleJobDetails } from "./fixtures";
+import type {
+  JobDetail,
+  JobRequest,
+  JobSummary,
+  LoginRequest,
+  SignupRequest,
+  AuthResponse,
+  PairedAgentInfo,
+} from "../types/engineering";
+import { sampleJobs, sampleJobDetails, sampleAgents } from "./fixtures";
+
 
 /**
  * Mock API client. Function signatures here are the CONTRACT — build UI
@@ -74,6 +83,21 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
     drawingStatus: "not_generated",
   };
   jobs = [newJob, ...jobs];
+
+  // Mirrors the real API: POST /api/jobs runs the engineering/BOM calc in
+  // the background and settles to completed/failed within a couple seconds
+  // (see mega-agent-api's Program.cs). Without this, a mock job never
+  // leaves "queued" - JobDetailView polls for exactly this transition and
+  // would otherwise wait on it forever.
+  setTimeout(() => {
+    const job = jobs.find((j) => j.id === newJob.id);
+    if (job) job.status = "running";
+  }, 600);
+  setTimeout(() => {
+    const job = jobs.find((j) => j.id === newJob.id);
+    if (job) job.status = "completed";
+  }, 2200);
+
   return delay(newJob);
 }
 
@@ -115,4 +139,56 @@ export async function checkAgentByCode(
   }
   return { agentId: `mock-agent-${pairingCode.trim()}`, isOnline: true };
 }
+
+let agents: PairedAgentInfo[] = [...sampleAgents];
+
+export async function login(request: LoginRequest): Promise<AuthResponse> {
+  await delay(undefined);
+  if (!request.email || !request.password) {
+    throw new Error("Email and password are required.");
+  }
+  return {
+    userId: `user-mock-${request.email.split("@")[0] || "1"}`,
+    apiKey: `mock-key-${Math.random().toString(36).substring(2, 10)}`,
+    email: request.email,
+  };
+}
+
+export async function signup(request: SignupRequest): Promise<AuthResponse> {
+  await delay(undefined);
+  if (!request.email || !request.password) {
+    throw new Error("Email and password are required.");
+  }
+  return {
+    userId: `user-mock-${request.email.split("@")[0] || "new"}`,
+    apiKey: `mock-key-${Math.random().toString(36).substring(2, 10)}`,
+    email: request.email,
+  };
+}
+
+export async function listAgents(): Promise<PairedAgentInfo[]> {
+  return delay([...agents]);
+}
+
+export async function pairAgent(pairingCode: string): Promise<PairedAgentInfo> {
+  await delay(undefined);
+  const trimmed = pairingCode.trim();
+  if (!/^\d{3}-\d{3}$/.test(trimmed)) {
+    throw new Error("Invalid pairing code format. Expected XXX-XXX (e.g. 482-913).");
+  }
+  const existing = agents.find((a) => a.agentId === `agent-${trimmed}`);
+  if (existing) {
+    existing.online = true;
+    return existing;
+  }
+  const newAgent: PairedAgentInfo = {
+    agentId: `agent-${trimmed}`,
+    name: `Workstation-${trimmed}`,
+    online: true,
+    pairedAt: new Date().toISOString(),
+  };
+  agents = [newAgent, ...agents];
+  return newAgent;
+}
+
 

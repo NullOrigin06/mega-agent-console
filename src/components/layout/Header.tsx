@@ -1,6 +1,7 @@
-import { IconRefresh, IconGrid, IconList } from "../common/Icon";
+import { IconRefresh, IconGrid, IconList, IconUser, IconLogOut } from "../common/Icon";
 import type { JobSummary } from "../../types/engineering";
 import { API_MODE } from "../../api";
+import type { AuthSession } from "../../utils/authSession";
 import megaLogo from "../../assets/mega-logo.png";
 
 interface HeaderProps {
@@ -10,6 +11,8 @@ interface HeaderProps {
   onRefresh: () => void;
   isRefreshing?: boolean;
   onGoHome: () => void;
+  session?: AuthSession | null;
+  onLogout?: () => void;
 }
 
 export function Header({
@@ -19,7 +22,10 @@ export function Header({
   onRefresh,
   isRefreshing = false,
   onGoHome,
+  session,
+  onLogout,
 }: HeaderProps) {
+
   const total = jobs.length;
   const running = jobs.filter((j) => j.status === "running").length;
   const queued = jobs.filter((j) => j.status === "queued").length;
@@ -102,6 +108,13 @@ export function Header({
       </div>
 
       <div className="header-actions">
+        {session && (
+          <div className="header-account-pill" title={`Logged in as ${session.email}`}>
+            <IconUser size={14} className="text-accent" />
+            <span className="header-account-email text-mono">{session.email}</span>
+          </div>
+        )}
+
         <button
           type="button"
           className="btn btn-secondary btn-icon"
@@ -115,7 +128,20 @@ export function Header({
           />
           <span className="hide-mobile">Refresh</span>
         </button>
+
+        {onLogout && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-icon"
+            onClick={onLogout}
+            title="Sign Out"
+          >
+            <IconLogOut size={16} />
+            <span className="hide-mobile">Sign Out</span>
+          </button>
+        )}
       </div>
     </header>
+
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   IconAlertTriangle,
   IconDrafting,
@@ -6,8 +7,8 @@ import {
   IconLoader,
 } from "../common/Icon";
 import type { DrawingStatus } from "../../types/engineering";
+import { listAgents } from "../../api";
 import { AgentPairingPanel } from "./AgentPairingPanel";
-import type { PairedAgent } from "../../utils/agentPairing";
 
 interface DrawingViewProps {
   drawingStatus: DrawingStatus;
@@ -29,8 +30,30 @@ export function DrawingView({
   isTriggering,
 }: DrawingViewProps) {
   const isGenerating = isTriggering || drawingStatus === "generating";
-  const [pairedAgent, setPairedAgent] = useState<PairedAgent | null>(null);
-  const canGenerate = Boolean(pairedAgent);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+
+  const {
+    data: agents = [],
+    isFetching: isFetchingAgents,
+    refetch,
+  } = useQuery({
+    queryKey: ["agents"],
+    queryFn: listAgents,
+  });
+
+  const loadAgents = async () => {
+    await refetch();
+  };
+
+  const onlineAgents = agents.filter((a) => a.online);
+  const activeAgentId =
+    selectedAgentId && onlineAgents.some((a) => a.agentId === selectedAgentId)
+      ? selectedAgentId
+      : onlineAgents[0]?.agentId ?? null;
+
+  const canGenerate = Boolean(activeAgentId);
+
+
 
   return (
     <div className="drawing-view">
@@ -73,19 +96,60 @@ export function DrawingView({
             </p>
             <p className="drawing-meta-text">
               Generation runs on <strong>your own paired machine</strong>, using your own
-              GstarCAD — not on the server. Pair your Mega Local Agent below before generating.
+              GstarCAD — not on the server. Select your target workstation below.
             </p>
           </div>
         </div>
 
         <div className="drawing-actions">
+          {onlineAgents.length > 1 && (
+            <div className="workstation-picker-container">
+              <label htmlFor="workstation-select" className="workstation-picker-label">
+                CAD Machine:
+              </label>
+              <select
+                id="workstation-select"
+                className="form-input workstation-picker-dropdown"
+                value={activeAgentId || ""}
+                onChange={(e) => setSelectedAgentId(e.target.value)}
+                disabled={isGenerating}
+              >
+                {onlineAgents.map((a) => (
+                  <option key={a.agentId} value={a.agentId}>
+                    {a.name || a.agentId} (Online)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {onlineAgents.length === 1 && (
+            <div className="workstation-single-tag" title={`Agent ID: ${onlineAgents[0].agentId}`}>
+              <span className="workstation-tag-label">Target:</span>
+              <span className="workstation-tag-name text-mono">
+                {onlineAgents[0].name || onlineAgents[0].agentId}
+              </span>
+              <span className="badge badge-status badge-completed">
+                <IconCheckCircle size={10} />
+                <span>Online</span>
+              </span>
+            </div>
+          )}
+
+          {onlineAgents.length === 0 && (
+            <div className="workstation-offline-notice">
+              <IconAlertTriangle size={14} className="text-amber" />
+              <span>No online CAD agent</span>
+            </div>
+          )}
+
           {drawingStatus === "generated" ? (
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => onGenerate(pairedAgent?.agentId)}
+              onClick={() => onGenerate(activeAgentId || undefined)}
               disabled={isGenerating || !canGenerate}
-              title={canGenerate ? undefined : "Pair a Local Agent below first"}
+              title={canGenerate ? undefined : "Connect or start an online Local Agent below first"}
             >
               <IconDrafting size={16} />
               <span>Generate Again</span>
@@ -94,9 +158,9 @@ export function DrawingView({
             <button
               type="button"
               className="btn btn-primary"
-              onClick={() => onGenerate(pairedAgent?.agentId)}
+              onClick={() => onGenerate(activeAgentId || undefined)}
               disabled={isGenerating || !canGenerate}
-              title={canGenerate ? undefined : "Pair a Local Agent below first"}
+              title={canGenerate ? undefined : "Connect or start an online Local Agent below first"}
             >
               {isGenerating ? (
                 <>
@@ -116,7 +180,15 @@ export function DrawingView({
         </div>
       </div>
 
-      <AgentPairingPanel onPairedAgentChange={setPairedAgent} />
+      <AgentPairingPanel
+        agents={agents}
+        selectedAgentId={activeAgentId}
+        onSelectAgent={setSelectedAgentId}
+        onRefreshAgents={loadAgents}
+        isRefreshing={isFetchingAgents}
+      />
+
+
 
       {isGenerating && (
         <div className="alert-banner alert-banner-info">

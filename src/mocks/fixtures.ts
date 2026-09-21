@@ -3,7 +3,9 @@ import type {
   BomRow,
   JobSummary,
   JobDetail,
+  PairedAgentInfo,
 } from "../types/engineering";
+
 
 /**
  * Sample values below are illustrative only, loosely modeled on default
@@ -154,3 +156,25 @@ export const sampleJobDetails: Record<string, JobDetail> = {
     bom: sampleBom,
   },
 };
+
+export const sampleAgents: PairedAgentInfo[] = [
+  {
+    agentId: "agent-wks-01",
+    name: "Engineering-CAD-01",
+    online: true,
+    pairedAt: "2026-09-20T10:00:00.000Z",
+  },
+  {
+    agentId: "agent-wks-02",
+    name: "Workshop-CAD-02",
+    online: true,
+    pairedAt: "2026-09-19T14:30:00.000Z",
+  },
+  {
+    agentId: "agent-wks-03",
+    name: "Remote-Office-PC",
+    online: false,
+    pairedAt: "2026-09-18T09:15:00.000Z",
+  },
+];
+
