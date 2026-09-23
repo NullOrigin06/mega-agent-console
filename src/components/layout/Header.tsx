@@ -1,7 +1,9 @@
-import { IconRefresh, IconGrid, IconList, IconUser, IconLogOut } from "../common/Icon";
+import { useState } from "react";
+import { IconRefresh, IconGrid, IconList, IconUser, IconLogOut, IconKey } from "../common/Icon";
 import type { JobSummary } from "../../types/engineering";
 import { API_MODE } from "../../api";
 import type { AuthSession } from "../../utils/authSession";
+import { RotateKeyModal } from "../auth/RotateKeyModal";
 import megaLogo from "../../assets/mega-logo.png";
 
 interface HeaderProps {
@@ -13,6 +15,7 @@ interface HeaderProps {
   onGoHome: () => void;
   session?: AuthSession | null;
   onLogout?: () => void;
+  onSessionUpdate?: (session: AuthSession) => void;
 }
 
 export function Header({
@@ -24,7 +27,9 @@ export function Header({
   onGoHome,
   session,
   onLogout,
+  onSessionUpdate,
 }: HeaderProps) {
+  const [showRotateKey, setShowRotateKey] = useState(false);
 
   const total = jobs.length;
   const running = jobs.filter((j) => j.status === "running").length;
@@ -33,6 +38,7 @@ export function Header({
   const failed = jobs.filter((j) => j.status === "failed").length;
 
   return (
+    <>
     <header className="console-header">
       <div className="header-brand-container">
         <button
@@ -115,6 +121,18 @@ export function Header({
           </div>
         )}
 
+        {session && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-icon"
+            onClick={() => setShowRotateKey(true)}
+            title="Rotate API Key"
+          >
+            <IconKey size={16} />
+            <span className="hide-mobile">Rotate Key</span>
+          </button>
+        )}
+
         <button
           type="button"
           className="btn btn-secondary btn-icon"
@@ -143,5 +161,13 @@ export function Header({
       </div>
     </header>
 
+    {showRotateKey && session && (
+      <RotateKeyModal
+        session={session}
+        onClose={() => setShowRotateKey(false)}
+        onKeyRotated={(updated) => onSessionUpdate?.(updated)}
+      />
+    )}
+    </>
   );
 }

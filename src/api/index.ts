@@ -110,6 +110,50 @@ export async function signup(request: SignupRequest): Promise<AuthResponse> {
 }
 
 /**
+ * Requests a password-reset link (always generic-response for the
+ * requesting user regardless of whether the email exists).
+ */
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  return getApiMode() === "real" ? realApi.forgotPassword(email) : mockApi.forgotPassword(email);
+}
+
+/**
+ * Completes a password reset using the token from the emailed link.
+ */
+export async function resetPassword(token: string, newPassword: string): Promise<AuthResponse> {
+  return getApiMode() === "real"
+    ? realApi.resetPassword(token, newPassword)
+    : mockApi.resetPassword(token, newPassword);
+}
+
+/**
+ * Confirms an email address using the token from the emailed link.
+ */
+export async function verifyEmail(token: string): Promise<{ message: string }> {
+  return getApiMode() === "real" ? realApi.verifyEmail(token) : mockApi.verifyEmail(token);
+}
+
+/**
+ * Re-sends the email verification link.
+ */
+export async function resendVerification(email: string): Promise<{ message: string }> {
+  return getApiMode() === "real"
+    ? realApi.resendVerification(email)
+    : mockApi.resendVerification(email);
+}
+
+/**
+ * Issues a new API key for the account, invalidating the previous one.
+ * Requires the current password, not the current key, so a leaked key
+ * alone can't be used to lock the real owner out.
+ */
+export async function rotateApiKey(email: string, password: string): Promise<AuthResponse> {
+  return getApiMode() === "real"
+    ? realApi.rotateApiKey(email, password)
+    : mockApi.rotateApiKey(email, password);
+}
+
+/**
  * Lists all paired Local Agents associated with the active account.
  */
 export async function listAgents(): Promise<PairedAgentInfo[]> {

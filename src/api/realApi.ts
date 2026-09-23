@@ -432,6 +432,58 @@ export async function signup(request: SignupRequest): Promise<AuthResponse> {
   };
 }
 
+async function postAuth(path: string, body: unknown): Promise<Response> {
+  return fetch(`${getApiRootUrl()}/auth/${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+async function throwIfNotOk(res: Response, fallbackMessage: string): Promise<void> {
+  if (res.ok) return;
+  let errorText = "";
+  try {
+    const data = await res.json();
+    errorText = data.error || data.message || "";
+  } catch {
+    errorText = await res.text().catch(() => "");
+  }
+  throw new Error(errorText || `${fallbackMessage} (${res.status} ${res.statusText})`);
+}
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const res = await postAuth("forgot-password", { email });
+  await throwIfNotOk(res, "Request failed");
+  return res.json();
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<AuthResponse> {
+  const res = await postAuth("reset-password", { token, newPassword });
+  await throwIfNotOk(res, "Reset failed");
+  const data = (await res.json()) as AuthResponse;
+  return { userId: String(data.userId), apiKey: String(data.apiKey) };
+}
+
+export async function verifyEmail(token: string): Promise<{ message: string }> {
+  const res = await postAuth("verify-email", { token });
+  await throwIfNotOk(res, "Verification failed");
+  return res.json();
+}
+
+export async function resendVerification(email: string): Promise<{ message: string }> {
+  const res = await postAuth("resend-verification", { email });
+  await throwIfNotOk(res, "Request failed");
+  return res.json();
+}
+
+export async function rotateApiKey(email: string, password: string): Promise<AuthResponse> {
+  const res = await postAuth("rotate-key", { email, password });
+  await throwIfNotOk(res, "Key rotation failed");
+  const data = (await res.json()) as AuthResponse;
+  return { userId: String(data.userId), apiKey: String(data.apiKey) };
+}
+
 export async function listAgents(): Promise<PairedAgentInfo[]> {
   const url = `${getApiRootUrl()}/agents`;
   const res = await apiFetch(url, {

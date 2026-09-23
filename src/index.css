@@ -1197,6 +1197,26 @@ body {
   color: #93c5fd;
 }
 
+.alert-banner-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.auth-link-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: -8px;
+  flex-wrap: wrap;
+}
+
+.auth-link-row .btn-link {
+  font-size: 12px;
+  padding: 0;
+}
+
 /* ==========================================================================
    Job Detail View Layout
    ========================================================================== */

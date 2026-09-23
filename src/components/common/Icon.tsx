@@ -202,6 +202,15 @@ export function IconTrash({ size = 18, className = "", ...props }: IconProps) {
   );
 }
 
+export function IconKey({ size = 18, className = "", ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <circle cx="7.5" cy="15.5" r="5.5" />
+      <path d="M11 11l7-7M15 5l3 3M18 2l4 4" />
+    </svg>
+  );
+}
+
 export function IconDrafting({ size = 18, className = "", ...props }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>

@@ -20,3 +20,25 @@ export interface PairedAgentInfo {
   online: boolean;
   pairedAt: string;
 }
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
+export interface VerifyEmailRequest {
+  token: string;
+}
+
+export interface ResendVerificationRequest {
+  email: string;
+}
+
+export interface RotateKeyRequest {
+  email: string;
+  password: string;
+}

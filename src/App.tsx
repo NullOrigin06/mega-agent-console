@@ -15,6 +15,7 @@ import {
   subscribeAuth,
   type AuthSession,
 } from "./utils/authSession";
+import { readUrlToken } from "./utils/urlToken";
 
 type Page = "modules" | "jobs";
 
@@ -96,7 +97,11 @@ export function App() {
     clearAuthSession();
   };
 
-  if (!session) {
+  // A password-reset/email-verification link must be actionable even if
+  // this browser already has a session (e.g. right after signup, which
+  // auto-logs in - the verification email sent during that same signup
+  // still needs to work when clicked).
+  if (!session || readUrlToken()) {
     return <AuthScreen onLoginSuccess={setSession} />;
   }
 
@@ -153,6 +158,7 @@ export function App() {
         onGoHome={handleGoToModules}
         session={session}
         onLogout={handleLogout}
+        onSessionUpdate={setSession}
       />
 
       <main className="main-content">{content}</main>

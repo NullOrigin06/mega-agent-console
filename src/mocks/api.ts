@@ -176,6 +176,49 @@ export async function signup(request: SignupRequest): Promise<AuthResponse> {
   };
 }
 
+// Mock mode has no real inbox to check, so these just simulate the same
+// generic, enumeration-safe responses the real API returns - permissive
+// about the actual token value (like checkAgentByCode above), since there's
+// no real link for a developer to click here anyway.
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  await delay(undefined);
+  console.info(`[mock] Password reset requested for ${email} - in mock mode, use any token to reset.`);
+  return { message: "If an account with that email exists, a reset link has been sent." };
+}
+
+export async function resetPassword(_token: string, newPassword: string): Promise<AuthResponse> {
+  await delay(undefined);
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("Password must be at least 6 characters.");
+  }
+  return {
+    userId: "user-mock-reset",
+    apiKey: `mock-key-${Math.random().toString(36).substring(2, 10)}`,
+  };
+}
+
+export async function verifyEmail(_token: string): Promise<{ message: string }> {
+  await delay(undefined);
+  return { message: "Email verified." };
+}
+
+export async function resendVerification(email: string): Promise<{ message: string }> {
+  await delay(undefined);
+  console.info(`[mock] Verification email resent for ${email}.`);
+  return { message: "If that account needs verification, a new link has been sent." };
+}
+
+export async function rotateApiKey(email: string, password: string): Promise<AuthResponse> {
+  await delay(undefined);
+  if (!password) {
+    throw new Error("Password is required.");
+  }
+  return {
+    userId: `user-mock-${email.split("@")[0] || "1"}`,
+    apiKey: `mock-key-${Math.random().toString(36).substring(2, 10)}`,
+  };
+}
+
 export async function listAgents(): Promise<PairedAgentInfo[]> {
   return delay([...agents]);
 }
