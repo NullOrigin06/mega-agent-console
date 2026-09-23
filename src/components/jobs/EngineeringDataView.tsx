@@ -67,7 +67,7 @@ const CATEGORIES: CategoryGroup[] = [
     fields: [
       { key: "bonnetShellFSLength", label: "Bonnet Shell FS Length", unit: "mm", type: "number", description: "Front-side channel cylindrical length" },
       { key: "bonnetShellRSLength", label: "Bonnet Shell RS Length", unit: "mm", type: "number", description: "Rear-side channel cylindrical length" },
-      { key: "bonnetShellTHK", label: "Bonnet Shell THK", unit: "mm", type: "number", description: "Channel cylindrical shell thickness" },
+      { key: "bonnetShellTHK", label: "Shell/Bonnet Thk", unit: "mm", type: "number", description: "Channel cylindrical shell thickness" },
       { key: "dishendTHK", label: "Dish End THK", unit: "mm", type: "number", description: "Formed dished head nominal thickness" },
     ],
   },
