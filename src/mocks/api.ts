@@ -43,11 +43,23 @@ export async function listJobs(): Promise<JobSummary[]> {
 }
 
 export async function getJob(jobId: string): Promise<JobDetail | undefined> {
-  const detail = sampleJobDetails[jobId];
-  if (detail) return delay(detail);
   const summary = jobs.find((j) => j.id === jobId);
   if (!summary) return delay(undefined);
-  return delay({ ...summary, ...jobExtras[jobId] } as JobDetail);
+
+  // sampleJobDetails (job-1001/job-1005) has the SAME staleness problem
+  // jobExtras was built to avoid: it's a frozen object, but generateDrawing()
+  // below always mutates the live `jobs` array entry's drawingStatus - never
+  // sampleJobDetails. Returning the fixture object directly (as this used to)
+  // meant "Generate Again" on a fixture job silently did nothing: the mock
+  // dutifully flips drawingStatus on an object nobody ever reads again. Only
+  // pull engineeringData/bom/drawingUrl from the fixture; status/drawingStatus
+  // always come from the live summary.
+  const fixture = sampleJobDetails[jobId];
+  const extra = fixture
+    ? { engineeringData: fixture.engineeringData, bom: fixture.bom, drawingUrl: fixture.drawingUrl }
+    : jobExtras[jobId];
+
+  return delay({ ...summary, ...extra } as JobDetail);
 }
 
 /**
