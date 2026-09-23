@@ -6,8 +6,10 @@ import type {
   SignupRequest,
   AuthResponse,
   PairedAgentInfo,
+  EngineeringDataModel,
+  BomRow,
 } from "../types/engineering";
-import { sampleJobs, sampleJobDetails, sampleAgents } from "./fixtures";
+import { sampleJobs, sampleJobDetails, sampleAgents, sampleEngineeringData, sampleBom } from "./fixtures";
 
 
 /**
@@ -27,6 +29,15 @@ function delay<T>(value: T): Promise<T> {
 
 let jobs: JobSummary[] = [...sampleJobs];
 
+// EngineeringData/Bom for jobs submitted through the UI (as opposed to the
+// pre-seeded sampleJobDetails fixtures). Kept separate from `jobs` itself -
+// and merged onto the LIVE summary in getJob() below, never stored as a
+// frozen copy - because generateDrawing() below mutates the `jobs` array
+// entry directly (drawingStatus/drawingUrl). A one-time snapshot taken at
+// completion would freeze drawingStatus forever and silently break
+// "Generate Drawing" for any job submitted through the UI.
+const jobExtras: Record<string, { engineeringData: EngineeringDataModel; bom: BomRow[] }> = {};
+
 export async function listJobs(): Promise<JobSummary[]> {
   return delay([...jobs]);
 }
@@ -35,7 +46,8 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
   const detail = sampleJobDetails[jobId];
   if (detail) return delay(detail);
   const summary = jobs.find((j) => j.id === jobId);
-  return delay(summary as JobDetail | undefined);
+  if (!summary) return delay(undefined);
+  return delay({ ...summary, ...jobExtras[jobId] } as JobDetail);
 }
 
 /**
@@ -105,7 +117,26 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
   }, 600);
   setTimeout(() => {
     const job = jobs.find((j) => j.id === newJob.id);
-    if (job) job.status = "completed";
+    if (!job) return;
+    job.status = "completed";
+    job.completedAt = new Date().toISOString();
+
+    // Also mirrors the real API: ProcessX() attaches EngineeringData/Bom to
+    // the job record as part of that same background calc. Without this,
+    // JobDetailView's hasEngData check (job.engineeringData) never passes
+    // for a job submitted through the UI - only the pre-seeded fixtures
+    // (job-1001/job-1005) had it, so every other job would sit at
+    // "Data Extraction Pending" forever with no Drawing tab and no way to
+    // ever generate a drawing.
+    jobExtras[newJob.id] = {
+      engineeringData: {
+        ...sampleEngineeringData,
+        shellID: shellId,
+        actual: { ...sampleEngineeringData.actual, shellID: shellId },
+        estimated: { ...sampleEngineeringData.estimated, shellID: shellId },
+      },
+      bom: sampleBom,
+    };
   }, 2200);
 
   return delay(newJob);
