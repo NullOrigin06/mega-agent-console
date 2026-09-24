@@ -71,6 +71,6 @@ confirmed working.
 
 ### CI
 
-`.github/workflows/ci.yml` runs `npm ci`, `npm run lint`, and
+`.github/workflows/ci.yml` runs `npm ci`, `npm run lint`, `npx tsc -b`, and
 `npm run build` on every push/PR to `main`.
 
