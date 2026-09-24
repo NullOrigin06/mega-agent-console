@@ -1,16 +1,19 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import type { JobSummary, ModuleKind, JobStatus } from "../../types/engineering";
 import { StatusBadge, ModuleBadge } from "../common/Badge";
-import { IS_REAL_API, API_BASE_URL } from "../../api";
+import { IS_REAL_API, API_BASE_URL, type PairedAgentInfo } from "../../api";
+import { RunningJobPanel } from "./RunningJobPanel";
 import {
   IconSearch,
   IconAlertTriangle,
   IconExternalLink,
   IconTrash,
+  IconArrowRight,
 } from "../common/Icon";
 
 interface JobListProps {
   jobs: JobSummary[];
+  agents?: PairedAgentInfo[];
   selectedJobId?: string | null;
   onSelectJob: (jobId: string) => void;
   onGoToModules: () => void;
@@ -19,6 +22,7 @@ interface JobListProps {
 
 export function JobList({
   jobs,
+  agents = [],
   selectedJobId,
   onSelectJob,
   onGoToModules,
@@ -33,6 +37,26 @@ export function JobList({
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (jobId: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
+      return next;
+    });
+  };
+
+  // Whichever job is actually running becomes the hero panel - the most
+  // recently started one, if somehow more than one is running at once.
+  const runningJob = useMemo(
+    () =>
+      jobs
+        .filter((j) => j.status === "running")
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0],
+    [jobs]
+  );
 
   const handleDeleteClick = async (jobId: string) => {
     if (confirmDeleteId !== jobId) {
@@ -123,6 +147,10 @@ export function JobList({
         </div>
       </div>
 
+      {runningJob && (
+        <RunningJobPanel job={runningJob} agents={agents} onView={onSelectJob} />
+      )}
+
       {/* Control Bar: Filters & Search */}
       <div className="controls-bar">
         <div className="filter-group">
@@ -207,6 +235,7 @@ export function JobList({
         <table className="jobs-table" aria-label="Engineering Jobs Table">
           <thead>
             <tr>
+              <th aria-label="Expand" />
               <th>Job ID</th>
               <th>Module</th>
               <th>Shell ID</th>
@@ -220,7 +249,7 @@ export function JobList({
           <tbody>
             {filteredJobs.length === 0 ? (
               <tr>
-                <td colSpan={8} className="empty-state-cell">
+                <td colSpan={9} className="empty-state-cell">
                   <div className="empty-state">
                     <p className="empty-state-title">No matching jobs found</p>
                     <p className="empty-state-text">
@@ -248,10 +277,11 @@ export function JobList({
                   job.completedAt
                 );
                 const isSelected = selectedJobId === job.id;
+                const isExpanded = expandedIds.has(job.id);
 
                 return (
+                  <Fragment key={job.id}>
                   <tr
-                    key={job.id}
                     className={`job-row ${isSelected ? "job-row-selected" : ""} job-row-status-${job.status}`}
                     onClick={() => onSelectJob(job.id)}
                     tabIndex={0}
@@ -261,6 +291,20 @@ export function JobList({
                       }
                     }}
                   >
+                    <td className="text-center">
+                      <button
+                        type="button"
+                        className={`job-row-expand-toggle ${isExpanded ? "job-row-expand-toggle-open" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpanded(job.id);
+                        }}
+                        aria-label={isExpanded ? "Collapse row" : "Expand row"}
+                        aria-expanded={isExpanded}
+                      >
+                        <IconArrowRight size={13} />
+                      </button>
+                    </td>
                     <td className="job-id-cell">
                       <span className="text-mono job-id-text">{job.id}</span>
                     </td>
@@ -343,6 +387,55 @@ export function JobList({
                       </div>
                     </td>
                   </tr>
+                  {isExpanded && (
+                    <tr className="job-row-expanded-detail">
+                      <td colSpan={9}>
+                        <div className="job-row-expanded-grid">
+                          <div className="job-row-expanded-field">
+                            <span className="job-row-expanded-label">Created</span>
+                            <span className="job-row-expanded-value text-mono">
+                              {formatTimestamp(job.createdAt)}
+                            </span>
+                          </div>
+                          <div className="job-row-expanded-field">
+                            <span className="job-row-expanded-label">Completed</span>
+                            <span className="job-row-expanded-value text-mono">
+                              {job.completedAt ? formatTimestamp(job.completedAt) : "—"}
+                            </span>
+                          </div>
+                          <div className="job-row-expanded-field">
+                            <span className="job-row-expanded-label">Drawing Status</span>
+                            <span className="job-row-expanded-value">
+                              {job.drawingStatus === "generated"
+                                ? "Generated"
+                                : job.drawingStatus === "generating"
+                                  ? "Generating..."
+                                  : job.drawingStatus === "failed"
+                                    ? "Failed"
+                                    : "Not generated yet"}
+                            </span>
+                          </div>
+                          {job.errorMessage && (
+                            <div className="job-row-expanded-field">
+                              <span className="job-row-expanded-label">Error</span>
+                              <span className="job-row-expanded-value text-mono">{job.errorMessage}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="job-row-expanded-actions">
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => onSelectJob(job.id)}
+                          >
+                            <span>Open Full Detail</span>
+                            <IconExternalLink size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })
             )}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import * as Tabs from "@radix-ui/react-tabs";
 import type { JobDetail } from "../../types/engineering";
 import { getJob, generateDrawing } from "../../api";
 import { StatusBadge, ModuleBadge } from "../common/Badge";
@@ -387,47 +388,35 @@ export function JobDetailView({
 
       {/* Tabs Navigation (Shown for jobs with data, or completed jobs) */}
       {hasEngData ? (
-        <div className="detail-tabs-wrapper">
-          <nav className="detail-tabs-nav" aria-label="Job Detail Sections">
-            <button
-              type="button"
-              className={`detail-tab-btn ${activeTab === "values" ? "detail-tab-active" : ""}`}
-              onClick={() => setActiveTab("values")}
-            >
+        <Tabs.Root
+          className="detail-tabs-wrapper"
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as TabType)}
+        >
+          <Tabs.List className="detail-tabs-nav" aria-label="Job Detail Sections">
+            <Tabs.Trigger value="values" className="detail-tab-btn">
               <IconLayers size={16} />
               <span>Calculated Values</span>
               <span className="tab-pill">Actual vs. Estimated</span>
-            </button>
+            </Tabs.Trigger>
 
-            <button
-              type="button"
-              className={`detail-tab-btn ${activeTab === "specs" ? "detail-tab-active" : ""}`}
-              onClick={() => setActiveTab("specs")}
-            >
+            <Tabs.Trigger value="specs" className="detail-tab-btn">
               <IconFileText size={16} />
               <span>Specifications & Nozzles</span>
               <span className="tab-pill">
                 {job.engineeringData?.nozzles.length || 0} Nozzles
               </span>
-            </button>
+            </Tabs.Trigger>
 
-            <button
-              type="button"
-              className={`detail-tab-btn ${activeTab === "bom" ? "detail-tab-active" : ""}`}
-              onClick={() => setActiveTab("bom")}
-            >
+            <Tabs.Trigger value="bom" className="detail-tab-btn">
               <IconCheckCircle size={16} />
               <span>Bill of Materials</span>
               <span className="tab-pill">
                 {job.bom?.length || 0} Items
               </span>
-            </button>
+            </Tabs.Trigger>
 
-            <button
-              type="button"
-              className={`detail-tab-btn ${activeTab === "drawing" ? "detail-tab-active" : ""}`}
-              onClick={() => setActiveTab("drawing")}
-            >
+            <Tabs.Trigger value="drawing" className="detail-tab-btn">
               <IconDrafting size={16} />
               <span>CAD Drawing & Output</span>
               {job.drawingStatus === "generated" && (
@@ -436,36 +425,38 @@ export function JobDetailView({
               {job.drawingStatus === "generating" && (
                 <span className="tab-pill">Generating</span>
               )}
-            </button>
-          </nav>
+            </Tabs.Trigger>
+          </Tabs.List>
 
           {/* Active Tab Panel */}
-          <div className="tab-panel-content">
-            {activeTab === "values" && job.engineeringData && (
+          <Tabs.Content value="values" className="tab-panel-content">
+            {job.engineeringData && (
               <EngineeringDataView initialData={job.engineeringData} />
             )}
+          </Tabs.Content>
 
-            {activeTab === "specs" && job.engineeringData && (
+          <Tabs.Content value="specs" className="tab-panel-content">
+            {job.engineeringData && (
               <SpecsAndNozzlesView data={job.engineeringData} />
             )}
+          </Tabs.Content>
 
-            {activeTab === "bom" && (
-              <BomView bom={job.bom} jobId={job.id} />
-            )}
+          <Tabs.Content value="bom" className="tab-panel-content">
+            <BomView bom={job.bom} jobId={job.id} />
+          </Tabs.Content>
 
-            {activeTab === "drawing" && (
-              <DrawingView
-                drawingStatus={job.drawingStatus}
-                drawingError={job.drawingError}
-                jobId={job.id}
-                module={job.module}
-                shellId={job.shellId}
-                onGenerate={handleGenerateDrawing}
-                isTriggering={isTriggeringGeneration}
-              />
-            )}
-          </div>
-        </div>
+          <Tabs.Content value="drawing" className="tab-panel-content">
+            <DrawingView
+              drawingStatus={job.drawingStatus}
+              drawingError={job.drawingError}
+              jobId={job.id}
+              module={job.module}
+              shellId={job.shellId}
+              onGenerate={handleGenerateDrawing}
+              isTriggering={isTriggeringGeneration}
+            />
+          </Tabs.Content>
+        </Tabs.Root>
       ) : (
         /* When job does not have engineeringData attached yet (e.g. newly queued or running) */
         <div className="no-data-card">

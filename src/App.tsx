@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JobSummary, ModuleKind } from "./types/engineering";
-import { listJobs, deleteJob } from "./api";
-import { Header } from "./components/layout/Header";
+import { listJobs, deleteJob, listAgents } from "./api";
+import { AppShell } from "./components/layout/AppShell";
 import { JobList } from "./components/jobs/JobList";
 import { JobDetailView } from "./components/jobs/JobDetailView";
 import { ModulesHome } from "./components/modules/ModulesHome";
@@ -41,12 +41,22 @@ export function App() {
     data: jobs = [],
     isLoading,
     isRefetching: isRefreshing,
+    isError: jobsErrored,
     refetch,
   } = useQuery({
     queryKey: JOBS_QUERY_KEY,
     queryFn: listJobs,
     enabled: Boolean(session),
     meta: { errorMessage: "Failed to load jobs" },
+  });
+
+  // Shared with the pipeline status rail and the sidebar's agent summary —
+  // same ["agents"] query key DrawingView uses, so this is a cache hit, not
+  // an extra request, once a module workspace has loaded it too.
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents"],
+    queryFn: listAgents,
+    enabled: Boolean(session),
   });
 
 
@@ -134,11 +144,12 @@ export function App() {
       />
     );
   } else if (page === "modules") {
-    content = <ModulesHome onSelectModule={handleSelectModule} />;
+    content = <ModulesHome onSelectModule={handleSelectModule} jobs={jobs} />;
   } else {
     content = (
       <JobList
         jobs={jobs}
+        agents={agents}
         selectedJobId={selectedJobId}
         onSelectJob={handleSelectJob}
         onGoToModules={handleGoToModules}
@@ -148,21 +159,23 @@ export function App() {
   }
 
   return (
-    <div className="console-app">
-      <Header
-        jobs={jobs}
-        page={page}
-        onNavigate={(p) => (p === "modules" ? handleGoToModules() : handleGoToAllJobs())}
-        onRefresh={() => refetch()}
-        isRefreshing={isRefreshing}
-        onGoHome={handleGoToModules}
-        session={session}
-        onLogout={handleLogout}
-        onSessionUpdate={setSession}
-      />
-
-      <main className="main-content">{content}</main>
-    </div>
+    <AppShell
+      page={page}
+      workspaceModule={workspaceModule}
+      jobs={jobs}
+      agents={agents}
+      apiOk={!jobsErrored}
+      onGoHome={handleGoToModules}
+      onNavigate={(p) => (p === "modules" ? handleGoToModules() : handleGoToAllJobs())}
+      onSelectModule={handleSelectModule}
+      onRefresh={() => refetch()}
+      isRefreshing={isRefreshing}
+      session={session}
+      onLogout={handleLogout}
+      onSessionUpdate={setSession}
+    >
+      {content}
+    </AppShell>
   );
 }
 

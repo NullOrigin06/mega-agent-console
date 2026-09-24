@@ -1,17 +1,63 @@
-import type { ModuleKind } from "../../types/engineering";
-import { MODULE_OPTIONS } from "../../constants/modules";
+import type { JobSummary, ModuleKind } from "../../types/engineering";
+import { MODULE_OPTIONS, type ModuleOption } from "../../constants/modules";
 import { IconArrowRight } from "../common/Icon";
 
 interface ModulesHomeProps {
   onSelectModule: (module: ModuleKind) => void;
+  jobs?: JobSummary[];
+}
+
+function timeAgo(iso?: string): string {
+  if (!iso) return "";
+  const ms = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+function latestJobFor(jobs: JobSummary[], kind: ModuleKind): JobSummary | undefined {
+  return jobs
+    .filter((j) => j.module === kind)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 }
 
 /**
  * Landing page mirroring the desktop suite's Form2 ("Structure Selection")
  * - pick a module first, then land on that module's own full workspace page
  * (ModuleWorkspace), rather than a generic job-submission modal.
+ *
+ * Laid out as an asymmetric bento: whichever module has a job running (or,
+ * failing that, the most recently touched one) is the hero tile, so the
+ * layout reflects actual activity instead of giving all three equal weight.
  */
-export function ModulesHome({ onSelectModule }: ModulesHomeProps) {
+export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
+  const withActivity = MODULE_OPTIONS.map((mod) => {
+    const latest = latestJobFor(jobs, mod.kind);
+    const isRunning = latest?.status === "running" || latest?.status === "queued";
+    return { mod, latest, isRunning };
+  });
+
+  const heroIndex = (() => {
+    const runningIdx = withActivity.findIndex((m) => m.isRunning);
+    if (runningIdx !== -1) return runningIdx;
+    let bestIdx = 0;
+    let bestTime = -Infinity;
+    withActivity.forEach((m, i) => {
+      const t = m.latest ? new Date(m.latest.createdAt).getTime() : -Infinity;
+      if (t > bestTime) {
+        bestTime = t;
+        bestIdx = i;
+      }
+    });
+    return bestIdx;
+  })();
+
+  const hero = withActivity[heroIndex];
+  const secondary = withActivity.filter((_, i) => i !== heroIndex);
+
   return (
     <div className="modules-home">
       <div className="modules-home-header">
@@ -22,33 +68,74 @@ export function ModulesHome({ onSelectModule }: ModulesHomeProps) {
         </p>
       </div>
 
-      <div className="modules-home-grid">
-        {MODULE_OPTIONS.map((mod) => {
-          const IconComponent = mod.icon;
-          return (
-            <button
-              key={mod.kind}
-              type="button"
-              className="module-home-card"
-              onClick={() => onSelectModule(mod.kind)}
-            >
-              <div className="module-home-card-glow" aria-hidden="true" />
-              <div className="module-home-card-top">
-                <div className="module-home-card-icon">
-                  <IconComponent size={30} />
-                </div>
-                <span className="module-card-badge">{mod.badge}</span>
-              </div>
-              <h2 className="module-home-card-title">{mod.title}</h2>
-              <p className="module-home-card-desc">{mod.description}</p>
-              <div className="module-home-card-cta">
-                <span>Open Module</span>
-                <IconArrowRight size={16} />
-              </div>
-            </button>
-          );
-        })}
+      <div className="modules-bento-grid">
+        <ModuleTile
+          entry={hero}
+          hero
+          onSelect={() => onSelectModule(hero.mod.kind)}
+        />
+        <div className="modules-bento-secondary-col">
+          {secondary.map((entry) => (
+            <ModuleTile
+              key={entry.mod.kind}
+              entry={entry}
+              onSelect={() => onSelectModule(entry.mod.kind)}
+            />
+          ))}
+        </div>
       </div>
     </div>
+  );
+}
+
+function ModuleTile({
+  entry,
+  hero = false,
+  onSelect,
+}: {
+  entry: { mod: ModuleOption; latest?: JobSummary; isRunning: boolean };
+  hero?: boolean;
+  onSelect: () => void;
+}) {
+  const { mod, latest, isRunning } = entry;
+  const Preview = mod.preview;
+
+  return (
+    <button
+      type="button"
+      className={`module-home-card ${hero ? "module-bento-hero" : "module-bento-secondary"}`}
+      onClick={onSelect}
+    >
+      <div className="module-home-card-glow" aria-hidden="true" />
+      <div className="module-home-card-top">
+        <div className={`module-home-card-icon ${isRunning ? "module-home-card-icon-active" : ""}`}>
+          <Preview size={hero ? 64 : 40} />
+        </div>
+        <div className="module-card-badge-cluster">
+          {isRunning && (
+            <span className="module-card-live-dot" title="Job in progress" />
+          )}
+          <span className="module-card-badge">{mod.badge}</span>
+        </div>
+      </div>
+      <h2 className="module-home-card-title">{mod.title}</h2>
+      {hero && <p className="module-home-card-desc">{mod.description}</p>}
+
+      <div className="module-card-stat-row">
+        {latest ? (
+          <span className="module-card-stat text-mono">
+            {isRunning ? "Running" : "Last run"} · Shell Ø{latest.shellId}mm ·{" "}
+            {timeAgo(latest.createdAt)}
+          </span>
+        ) : (
+          <span className="module-card-stat module-card-stat-empty">No runs yet</span>
+        )}
+      </div>
+
+      <div className="module-home-card-cta">
+        <span>Open Module</span>
+        <IconArrowRight size={16} />
+      </div>
+    </button>
   );
 }

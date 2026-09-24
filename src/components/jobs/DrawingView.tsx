@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   IconAlertTriangle,
   IconDrafting,
@@ -104,22 +105,35 @@ export function DrawingView({
         <div className="drawing-actions">
           {onlineAgents.length > 1 && (
             <div className="workstation-picker-container">
-              <label htmlFor="workstation-select" className="workstation-picker-label">
-                CAD Machine:
-              </label>
-              <select
-                id="workstation-select"
-                className="form-input workstation-picker-dropdown"
-                value={activeAgentId || ""}
-                onChange={(e) => setSelectedAgentId(e.target.value)}
-                disabled={isGenerating}
-              >
-                {onlineAgents.map((a) => (
-                  <option key={a.agentId} value={a.agentId}>
-                    {a.name || a.agentId} (Online)
-                  </option>
-                ))}
-              </select>
+              <span className="workstation-picker-label">CAD Machine:</span>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    className="workstation-single-tag workstation-dropdown-trigger"
+                    disabled={isGenerating}
+                  >
+                    <span className="workstation-tag-name text-mono">
+                      {onlineAgents.find((a) => a.agentId === activeAgentId)?.name || activeAgentId}
+                    </span>
+                    <span className="workstation-dropdown-caret" aria-hidden>▾</span>
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content className="workstation-dropdown-content" align="end" sideOffset={6}>
+                    {onlineAgents.map((a) => (
+                      <DropdownMenu.Item
+                        key={a.agentId}
+                        className="workstation-dropdown-item"
+                        onSelect={() => setSelectedAgentId(a.agentId)}
+                      >
+                        <IconCheckCircle size={12} className="text-success" />
+                        <span>{a.name || a.agentId}</span>
+                      </DropdownMenu.Item>
+                    ))}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
             </div>
           )}
 

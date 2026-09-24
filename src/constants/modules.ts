@@ -4,6 +4,9 @@ import {
   IconCylinder,
   IconLayers,
 } from "../components/common/Icon";
+import { CadTubeSheetPreview } from "../components/cad/CadTubeSheetPreview";
+import { CadFlangePreview } from "../components/cad/CadFlangePreview";
+import { CadHeatExchangerPreview } from "../components/cad/CadHeatExchangerPreview";
 
 export interface ModuleOption {
   kind: ModuleKind;
@@ -11,6 +14,8 @@ export interface ModuleOption {
   badge: string;
   description: string;
   icon: typeof IconDisc;
+  /** Real CAD line-art for this module, used on the Command Center bento cards. */
+  preview: typeof CadTubeSheetPreview;
 }
 
 /**
@@ -26,6 +31,7 @@ export const MODULE_OPTIONS: ModuleOption[] = [
     description:
       "Generates tube sheet layout, tube pitch pattern, drilling holes, and tube sheet raw/finish geometry.",
     icon: IconDisc,
+    preview: CadTubeSheetPreview,
   },
   {
     kind: "BonnetFlange",
@@ -34,6 +40,7 @@ export const MODULE_OPTIONS: ModuleOption[] = [
     description:
       "Calculates body flange dimensions, bonnet front/rear shell lengths, dishend geometry, and bolting PCD.",
     icon: IconCylinder,
+    preview: CadFlangePreview,
   },
   {
     kind: "HeatExchangerFab",
@@ -42,5 +49,6 @@ export const MODULE_OPTIONS: ModuleOption[] = [
     description:
       "Full heat exchanger fabrication package: Shell, Tube Bundle, Baffles, Nozzles, CAD Drawing & BOM generation.",
     icon: IconLayers,
+    preview: CadHeatExchangerPreview,
   },
 ];
