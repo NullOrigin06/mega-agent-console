@@ -61,6 +61,9 @@ SPA like this one, so it's the recommended target going forward.
 5. Attach a custom domain (e.g. `app.your-domain.com`) as a Pages custom
    domain, and set `CORS_ALLOWED_ORIGINS` on the API to that same origin.
 
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the detailed step-by-step cutover checklist and DNS configuration once a custom domain is acquired.
+
+
 ### Vercel (legacy)
 
 `vercel.json`'s rewrite currently points at a temporary Cloudflare quick

@@ -6,26 +6,20 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   build: {
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks(id: string) {
-          let chunk: string | undefined
-          if (/[\\/]node_modules[\\/]three[\\/]/.test(id)) {
-            chunk = 'vendor-three'
-          } else if (/[\\/]node_modules[\\/](@react-three|three-stdlib)[\\/]/.test(id)) {
-            chunk = 'vendor-r3f'
-          } else if (/[\\/]node_modules[\\/](recharts|d3-)/.test(id)) {
-            chunk = 'vendor-charts'
-          } else if (/[\\/]node_modules[\\/]framer-motion[\\/]/.test(id)) {
-            chunk = 'vendor-motion'
+          if (/[\\/]node_modules[\\/](three|@react-three|three-stdlib)/.test(id)) {
+            return 'vendor-three'
           }
-          if (chunk) {
-            console.log(`CHUNK [${chunk}] <- ${id.slice(-40)}`)
+          if (/[\\/]node_modules[\\/](recharts|d3-)/.test(id)) {
+            return 'vendor-charts'
           }
-          return chunk
+          if (/[\\/]node_modules[\\/]framer-motion[\\/]/.test(id)) {
+            return 'vendor-motion'
+          }
         },
-
-
       },
     },
   },
