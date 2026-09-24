@@ -35,3 +35,42 @@ npm run build
 ```
 The compiled output in `dist/` can be copied into `mega-agent-api/wwwroot/` for same-origin deployment.
 
+## Deployment
+
+### Cloudflare Pages (recommended)
+
+Vercel's free Hobby tier is non-commercial-use only per its own terms —
+not valid for an actual business tool. Cloudflare Pages' free tier
+explicitly allows commercial use and has no meaningful limit for a static
+SPA like this one, so it's the recommended target going forward.
+
+1. In the Cloudflare dashboard, create a Pages project connected to this
+   GitHub repo.
+2. Build settings:
+   - Build command: `npm run build`
+   - Output directory: `dist`
+3. Project environment variables:
+   ```
+   VITE_API_MODE=real
+   VITE_API_BASE_URL=https://api.your-domain.com/api/jobs
+   ```
+4. `public/_redirects` (already in this repo) tells Cloudflare Pages to
+   serve `index.html` for every path with a 200, so this client-side app's
+   own routing (`?resetToken=`/`?verifyToken=` on the root path — see
+   `src/utils/urlToken.ts`) keeps working on a hard refresh or direct link.
+5. Attach a custom domain (e.g. `app.your-domain.com`) as a Pages custom
+   domain, and set `CORS_ALLOWED_ORIGINS` on the API to that same origin.
+
+### Vercel (legacy)
+
+`vercel.json`'s rewrite currently points at a temporary Cloudflare quick
+tunnel and predates the per-user account / Cloudflare Pages work above —
+kept for now since it's still a live deployment, but new work should
+target Cloudflare Pages instead. Retire this once Cloudflare Pages is
+confirmed working.
+
+### CI
+
+`.github/workflows/ci.yml` runs `npm ci`, `npm run lint`, and
+`npm run build` on every push/PR to `main`.
+
