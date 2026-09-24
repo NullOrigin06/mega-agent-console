@@ -509,30 +509,6 @@ export async function listAgents(): Promise<PairedAgentInfo[]> {
 
 export async function pairAgent(pairingCode: string): Promise<PairedAgentInfo> {
   const trimmed = pairingCode.trim();
-  const url = `${getApiRootUrl()}/agents/pair`;
-  try {
-    const res = await apiFetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ pairingCode: trimmed, code: trimmed }),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as Record<string, unknown>;
-      return {
-        agentId: String(data.agentId ?? data.id ?? `agent-${trimmed}`),
-        name: data.name ? String(data.name) : `Agent-${trimmed}`,
-        online: Boolean(data.online ?? data.isOnline ?? true),
-        pairedAt: String(data.pairedAt ?? new Date().toISOString()),
-      };
-    }
-  } catch (err) {
-    console.warn("[realApi] pairAgent POST failed, attempting by-code fallback:", err);
-  }
-
   const status = await checkAgentByCode(trimmed);
   return {
     agentId: status.agentId,
@@ -541,5 +517,6 @@ export async function pairAgent(pairingCode: string): Promise<PairedAgentInfo> {
     pairedAt: new Date().toISOString(),
   };
 }
+
 
 
