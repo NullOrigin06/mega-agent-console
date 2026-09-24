@@ -168,6 +168,7 @@ export function App() {
       onGoHome={handleGoToModules}
       onNavigate={(p) => (p === "modules" ? handleGoToModules() : handleGoToAllJobs())}
       onSelectModule={handleSelectModule}
+      onSelectJob={handleSelectJob}
       onRefresh={() => refetch()}
       isRefreshing={isRefreshing}
       session={session}

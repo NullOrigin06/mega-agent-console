@@ -1,4 +1,5 @@
 import { useState, useMemo, Fragment } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { JobSummary, ModuleKind, JobStatus } from "../../types/engineering";
 import { StatusBadge, ModuleBadge } from "../common/Badge";
 import { IS_REAL_API, API_BASE_URL, type PairedAgentInfo } from "../../api";
@@ -387,8 +388,15 @@ export function JobList({
                       </div>
                     </td>
                   </tr>
+                  <AnimatePresence>
                   {isExpanded && (
-                    <tr className="job-row-expanded-detail">
+                    <motion.tr
+                      className="job-row-expanded-detail"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.12 }}
+                    >
                       <td colSpan={9}>
                         <div className="job-row-expanded-grid">
                           <div className="job-row-expanded-field">
@@ -433,8 +441,9 @@ export function JobList({
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   )}
+                  </AnimatePresence>
                   </Fragment>
                 );
               })

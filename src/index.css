@@ -2824,6 +2824,215 @@ body {
   margin-top: var(--space-3);
 }
 
+/* Command Palette (cmdk) — one of the glass surfaces per the design system's glass rule */
+.command-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(4, 7, 13, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 300;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.command-palette-content {
+  position: fixed;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 560px;
+  z-index: 301;
+  animation: scaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.command-palette[cmdk-root] {
+  background: var(--bg-glass);
+  backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-blue);
+  overflow: hidden;
+}
+
+.command-palette [cmdk-input] {
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  outline: none;
+}
+
+.command-palette [cmdk-input]::placeholder {
+  color: var(--text-dim);
+}
+
+.command-palette [cmdk-list] {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.command-palette [cmdk-group-heading] {
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.command-palette [cmdk-item] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.command-palette [cmdk-item][data-selected="true"] {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.command-palette [cmdk-separator] {
+  height: 1px;
+  background-color: var(--border-subtle);
+  margin: var(--space-2) 0;
+}
+
+.command-palette [cmdk-empty] {
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+}
+
+.command-palette-item-meta {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+}
+
+/* Recent completion-time trend (Command Center) */
+.duration-trend-card {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+}
+
+.duration-trend-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.duration-trend-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.duration-trend-subtitle {
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+}
+
+.duration-trend-chart {
+  width: 100%;
+}
+
+/* 3D Digital Twin viewport (Command Center) */
+.vessel-panel {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.vessel-panel-placeholder {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 40px;
+  background-color: var(--bg-card);
+  border: 1px dashed var(--border-medium);
+  border-radius: var(--radius-lg);
+  color: var(--accent-blue);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.vessel-panel-placeholder:hover {
+  border-color: var(--accent-blue);
+  background-color: var(--bg-card-hover);
+}
+
+.vessel-panel-placeholder-hint {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.vessel-panel-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 360px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.vessel-viewport {
+  width: 100%;
+  height: 360px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: grab;
+}
+
+.vessel-viewport:active {
+  cursor: grabbing;
+}
+
+.vessel-panel-close {
+  margin-top: var(--space-2);
+}
+
+.vessel-hotspot-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-glass);
+  backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
 .module-home-card {
   position: relative;
   overflow: hidden;

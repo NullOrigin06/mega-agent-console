@@ -1,6 +1,15 @@
+import { Suspense, lazy, useState } from "react";
 import type { JobSummary, ModuleKind } from "../../types/engineering";
 import { MODULE_OPTIONS, type ModuleOption } from "../../constants/modules";
-import { IconArrowRight } from "../common/Icon";
+import { IconArrowRight, IconDrafting, IconLoader } from "../common/Icon";
+import { DurationTrendChart } from "./DurationTrendChart";
+
+// The 3D viewport pulls in three.js + react-three-fiber (a genuinely heavy
+// dependency) - lazy-loaded so it's only fetched once someone actually asks
+// to see it, not on every Command Center visit.
+const VesselViewport3D = lazy(() =>
+  import("../cad/VesselViewport3D").then((m) => ({ default: m.VesselViewport3D }))
+);
 
 interface ModulesHomeProps {
   onSelectModule: (module: ModuleKind) => void;
@@ -34,6 +43,7 @@ function latestJobFor(jobs: JobSummary[], kind: ModuleKind): JobSummary | undefi
  * layout reflects actual activity instead of giving all three equal weight.
  */
 export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
+  const [showVessel, setShowVessel] = useState(false);
   const withActivity = MODULE_OPTIONS.map((mod) => {
     const latest = latestJobFor(jobs, mod.kind);
     const isRunning = latest?.status === "running" || latest?.status === "queued";
@@ -68,6 +78,36 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
         </p>
       </div>
 
+      <div className="vessel-panel">
+        {showVessel ? (
+          <Suspense
+            fallback={
+              <div className="vessel-panel-loading">
+                <IconLoader size={24} className="animate-spin text-accent" />
+                <span>Loading 3D viewport...</span>
+              </div>
+            }
+          >
+            <VesselViewport3D onSelectModule={onSelectModule} />
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm vessel-panel-close"
+              onClick={() => setShowVessel(false)}
+            >
+              Hide 3D View
+            </button>
+          </Suspense>
+        ) : (
+          <button type="button" className="vessel-panel-placeholder" onClick={() => setShowVessel(true)}>
+            <IconDrafting size={22} />
+            <span>View Interactive 3D Digital Twin</span>
+            <span className="vessel-panel-placeholder-hint">
+              Hover a part to identify it, click to open its module
+            </span>
+          </button>
+        )}
+      </div>
+
       <div className="modules-bento-grid">
         <ModuleTile
           entry={hero}
@@ -84,6 +124,8 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
           ))}
         </div>
       </div>
+
+      <DurationTrendChart jobs={jobs} />
     </div>
   );
 }
