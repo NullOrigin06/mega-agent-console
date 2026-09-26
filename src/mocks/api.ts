@@ -10,6 +10,7 @@ import type {
   BomRow,
 } from "../types/engineering";
 import { sampleJobs, sampleJobDetails, sampleAgents, sampleEngineeringData, sampleBom } from "./fixtures";
+import { validateEmail, validatePassword } from "../utils/accountValidation";
 
 
 /**
@@ -209,13 +210,18 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
 
 export async function signup(request: SignupRequest): Promise<AuthResponse> {
   await delay(undefined);
-  if (!request.email || !request.password) {
-    throw new Error("Email and password are required.");
+  const { normalized, error: emailError } = validateEmail(request.email);
+  if (emailError) {
+    throw new Error(emailError);
+  }
+  const passwordError = validatePassword(request.password);
+  if (passwordError) {
+    throw new Error(passwordError);
   }
   return {
-    userId: `user-mock-${request.email.split("@")[0] || "new"}`,
+    userId: `user-mock-${normalized.split("@")[0] || "new"}`,
     apiKey: `mock-key-${Math.random().toString(36).substring(2, 10)}`,
-    email: request.email,
+    email: normalized,
   };
 }
 
@@ -231,8 +237,9 @@ export async function forgotPassword(email: string): Promise<{ message: string }
 
 export async function resetPassword(_token: string, newPassword: string): Promise<AuthResponse> {
   await delay(undefined);
-  if (!newPassword || newPassword.length < 8) {
-    throw new Error("Password must be at least 8 characters.");
+  const passwordError = validatePassword(newPassword);
+  if (passwordError) {
+    throw new Error(passwordError);
   }
   return {
     userId: "user-mock-reset",

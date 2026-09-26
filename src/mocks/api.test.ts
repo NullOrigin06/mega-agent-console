@@ -5,6 +5,8 @@ import {
   submitJob,
   deleteJob,
   generateDrawing,
+  signup,
+  resetPassword,
 } from "./api";
 
 // These tests target the exact regressions found and fixed in this mock
@@ -87,6 +89,48 @@ describe("mock api: getJob live-merge", () => {
   it("returns undefined for a job id that doesn't exist", async () => {
     const detail = await getJob("job-does-not-exist");
     expect(detail).toBeUndefined();
+  });
+});
+
+describe("mock api: signup enforces the same rules as the real backend", () => {
+  // This is the mock-mode counterpart to mega-agent-api's AccountValidation:
+  // the public/demo deployment (Vercel, no real API attached) only ever
+  // calls this mock, so without these checks here too, the backend's
+  // disposable-domain/weak-password hardening would be invisible on it.
+
+  it("rejects a disposable email domain", async () => {
+    await expect(
+      signup({ email: "user@mailinator.com", password: "Correcthorse42" })
+    ).rejects.toThrow(/Disposable/);
+  });
+
+  it("rejects a common weak password", async () => {
+    await expect(
+      signup({ email: "user@example.com", password: "password123" })
+    ).rejects.toThrow();
+  });
+
+  it("rejects a malformed email", async () => {
+    await expect(
+      signup({ email: "not-an-email", password: "Correcthorse42" })
+    ).rejects.toThrow();
+  });
+
+  it("accepts a well-formed email and strong password", async () => {
+    const result = await signup({ email: "new.engineer@example.com", password: "Correcthorse42" });
+    expect(result.email).toBe("new.engineer@example.com");
+    expect(result.apiKey).toBeTruthy();
+  });
+});
+
+describe("mock api: resetPassword enforces the same password rules", () => {
+  it("rejects a common weak password", async () => {
+    await expect(resetPassword("any-token", "password123")).rejects.toThrow();
+  });
+
+  it("accepts a strong password", async () => {
+    const result = await resetPassword("any-token", "Correcthorse42");
+    expect(result.apiKey).toBeTruthy();
   });
 });
 
