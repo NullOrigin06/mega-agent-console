@@ -146,8 +146,8 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     e.preventDefault();
     setError(null);
     setInfo(null);
-    if (!password || password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (!password || password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
     if (password !== confirmPassword) {

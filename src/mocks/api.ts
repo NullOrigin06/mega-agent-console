@@ -231,8 +231,8 @@ export async function forgotPassword(email: string): Promise<{ message: string }
 
 export async function resetPassword(_token: string, newPassword: string): Promise<AuthResponse> {
   await delay(undefined);
-  if (!newPassword || newPassword.length < 6) {
-    throw new Error("Password must be at least 6 characters.");
+  if (!newPassword || newPassword.length < 8) {
+    throw new Error("Password must be at least 8 characters.");
   }
   return {
     userId: "user-mock-reset",
