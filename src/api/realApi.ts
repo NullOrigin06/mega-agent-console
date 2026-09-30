@@ -23,6 +23,53 @@ export function applyRuntimeApiBaseUrl(apiOrigin: string): void {
   REAL_API_BASE_URL = `${apiOrigin.replace(/\/+$/, "")}/api/jobs`;
 }
 
+function currentApiOrigin(): string {
+  return new URL(REAL_API_BASE_URL, window.location.origin).origin;
+}
+
+/**
+ * Re-reads public/runtime-config.json (the file the Local Agent also reads)
+ * and applies its API address. Returns true only if the address changed.
+ * Never throws; on any failure the current address stays in effect.
+ */
+export async function refreshRuntimeApiBaseUrl(timeoutMs = 3000): Promise<boolean> {
+  const before = REAL_API_BASE_URL;
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`/runtime-config.json?t=${Date.now()}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) return false;
+    const config = (await res.json()) as { apiBaseUrl?: unknown };
+    if (typeof config.apiBaseUrl === "string" && /^https?:\/\//i.test(config.apiBaseUrl.trim())) {
+      applyRuntimeApiBaseUrl(config.apiBaseUrl.trim());
+    }
+  } catch {
+    // Missing/invalid file or timeout.
+  } finally {
+    window.clearTimeout(timer);
+  }
+  return REAL_API_BASE_URL !== before;
+}
+
+/**
+ * fetch() that survives the API moving to a new tunnel address while this
+ * page is open: on a network-level failure it re-reads runtime-config.json
+ * and, only if the address actually changed, retries once there. Retrying
+ * is safe because a dead tunnel never delivers the first request to the API.
+ */
+async function fetchApi(input: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (err) {
+    const oldOrigin = currentApiOrigin();
+    if (!input.startsWith(oldOrigin) || !(await refreshRuntimeApiBaseUrl())) throw err;
+    return fetch(currentApiOrigin() + input.slice(oldOrigin.length), init);
+  }
+}
+
 export function getApiRootUrl(): string {
   return REAL_API_BASE_URL.replace(/\/jobs\/?$/, "");
 }
@@ -38,7 +85,7 @@ function authHeaders(extra?: Record<string, string>): Record<string, string> {
 
 async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
   const headers = authHeaders(init?.headers as Record<string, string> | undefined);
-  const res = await fetch(input, {
+  const res = await fetchApi(input, {
     ...init,
     headers,
   });
@@ -382,7 +429,7 @@ export async function listShellIds(): Promise<number[]> {
 
 export async function login(request: LoginRequest): Promise<AuthResponse> {
   const url = `${getApiRootUrl()}/auth/login`;
-  const res = await fetch(url, {
+  const res = await fetchApi(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -412,7 +459,7 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
 
 export async function signup(request: SignupRequest): Promise<AuthResponse> {
   const url = `${getApiRootUrl()}/auth/signup`;
-  const res = await fetch(url, {
+  const res = await fetchApi(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -441,7 +488,7 @@ export async function signup(request: SignupRequest): Promise<AuthResponse> {
 }
 
 async function postAuth(path: string, body: unknown): Promise<Response> {
-  return fetch(`${getApiRootUrl()}/auth/${path}`, {
+  return fetchApi(`${getApiRootUrl()}/auth/${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(body),

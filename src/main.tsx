@@ -12,11 +12,11 @@ import '@fontsource/jetbrains-mono/600.css'
 import './index.css'
 import App from './App.tsx'
 import { queryClient } from './queryClient'
-import { loadRuntimeConfig } from './runtimeConfig'
+import { refreshRuntimeApiBaseUrl } from './api/realApi'
 
 // Resolve the API address before the first query fires, so no request is
 // ever sent to a stale build-time URL.
-void loadRuntimeConfig().finally(() => {
+void refreshRuntimeApiBaseUrl().finally(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
