@@ -12,8 +12,16 @@ import type {
 } from "../types/engineering";
 import { getAuthSession, clearAuthSession } from "../utils/authSession";
 
-export const REAL_API_BASE_URL =
+// `let`, not `const`: public/runtime-config.json can replace the build-time
+// value at startup (see applyRuntimeApiBaseUrl), so a new API address only
+// needs a JSON change - not a Vercel env-var edit plus a forced rebuild.
+export let REAL_API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5299/api/jobs";
+
+/** Accepts the API's bare origin (e.g. "https://host") as published in runtime-config.json. */
+export function applyRuntimeApiBaseUrl(apiOrigin: string): void {
+  REAL_API_BASE_URL = `${apiOrigin.replace(/\/+$/, "")}/api/jobs`;
+}
 
 export function getApiRootUrl(): string {
   return REAL_API_BASE_URL.replace(/\/jobs\/?$/, "");

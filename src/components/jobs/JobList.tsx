@@ -2,7 +2,7 @@ import { useState, useMemo, Fragment } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { JobSummary, ModuleKind, JobStatus } from "../../types/engineering";
 import { StatusBadge, ModuleBadge } from "../common/Badge";
-import { IS_REAL_API, API_BASE_URL, type PairedAgentInfo } from "../../api";
+import { IS_REAL_API, getApiBaseUrl, type PairedAgentInfo } from "../../api";
 import { RunningJobPanel } from "./RunningJobPanel";
 import {
   IconSearch,
@@ -459,7 +459,7 @@ export function JobList({
         </span>
         <span className="text-dim">
           {IS_REAL_API
-            ? `Connected to ${new URL(API_BASE_URL, window.location.origin).origin}`
+            ? `Connected to ${new URL(getApiBaseUrl(), window.location.origin).origin}`
             : "Mock API delay: 400ms"}{" "}
           • Contract source: <code>src/types/engineering.ts</code>
         </span>

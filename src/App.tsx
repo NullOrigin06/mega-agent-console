@@ -57,6 +57,7 @@ export function App() {
     queryKey: ["agents"],
     queryFn: listAgents,
     enabled: Boolean(session),
+    refetchInterval: 15000,
   });
 
 

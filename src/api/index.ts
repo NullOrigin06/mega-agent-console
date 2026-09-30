@@ -23,9 +23,11 @@ export function getApiMode(): ApiMode {
 
 export const API_MODE = getApiMode();
 export const IS_REAL_API = API_MODE === "real";
-export const API_BASE_URL = IS_REAL_API
-  ? realApi.REAL_API_BASE_URL
-  : "mock://internal";
+// A function, not a constant: the real URL can be replaced at startup by
+// public/runtime-config.json, after this module has already been evaluated.
+export function getApiBaseUrl(): string {
+  return IS_REAL_API ? realApi.REAL_API_BASE_URL : "mock://internal";
+}
 
 /**
  * Lists jobs from the active backend (real or mock).

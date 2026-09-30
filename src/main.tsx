@@ -12,12 +12,17 @@ import '@fontsource/jetbrains-mono/600.css'
 import './index.css'
 import App from './App.tsx'
 import { queryClient } from './queryClient'
+import { loadRuntimeConfig } from './runtimeConfig'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-      <Toaster theme="dark" position="top-right" richColors />
-    </QueryClientProvider>
-  </StrictMode>,
-)
+// Resolve the API address before the first query fires, so no request is
+// ever sent to a stale build-time URL.
+void loadRuntimeConfig().finally(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <App />
+        <Toaster theme="dark" position="top-right" richColors />
+      </QueryClientProvider>
+    </StrictMode>,
+  )
+})

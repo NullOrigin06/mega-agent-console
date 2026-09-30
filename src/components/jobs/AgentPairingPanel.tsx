@@ -104,7 +104,8 @@ export function AgentPairingPanel({
           <div className="agent-roster-empty">
             <p>No Local Agents connected to your account yet.</p>
             <span className="agent-roster-empty-hint">
-              Install the Mega Local Agent app on your PC, start it, and enter the code below.
+              Click Download Agent, run it on your PC, and click Connect with this same email and
+              password — your machine appears here automatically within a few seconds.
             </span>
           </div>
         ) : (

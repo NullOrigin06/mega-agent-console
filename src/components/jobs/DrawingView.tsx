@@ -40,6 +40,9 @@ export function DrawingView({
   } = useQuery({
     queryKey: ["agents"],
     queryFn: listAgents,
+    // A freshly started agent (or one that just went offline) should show
+    // up here on its own - nobody should have to know to press Refresh.
+    refetchInterval: 5000,
   });
 
   const loadAgents = async () => {
