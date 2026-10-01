@@ -10,13 +10,12 @@ import {
   IconPlus,
 } from "../common/Icon";
 
-// Hosted as a GitHub Release asset rather than bundled into this repo's
-// public/ folder - the self-contained build is ~50MB zipped (~126MB
-// unpacked, single-file, no .NET runtime install required on the target
-// PC), well past what's sane to commit into a web app's git history or
-// serve from a static-hosting deployment.
+// Hosted as a GitHub Release asset rather than bundled into public/ (the
+// self-contained build is ~50MB zipped). "latest/download" always resolves
+// to the newest release made by MegaEngineeringSuite.LocalAgent/
+// publish-release.ps1, so this link never needs editing per release.
 const AGENT_INSTALLER_URL =
-  "https://github.com/NullOrigin06/mega-agent-console/releases/download/local-agent-demo/MegaLocalAgent-Demo.zip";
+  "https://github.com/NullOrigin06/mega-agent-console/releases/latest/download/MegaLocalAgent.zip";
 
 interface AgentPairingPanelProps {
   agents: PairedAgentInfo[];
