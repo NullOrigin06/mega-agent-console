@@ -54,19 +54,35 @@ export async function refreshRuntimeApiBaseUrl(timeoutMs = 3000): Promise<boolea
   return REAL_API_BASE_URL !== before;
 }
 
+// Long enough to ride out a tunnel replacement on the demo host: the
+// watchdog notices (~30s), opens a new tunnel (~20s), and Vercel deploys
+// the new runtime-config.json (~60s).
+export const API_RELOCATION_WINDOW_MS = 150_000;
+const RETRY_DELAYS_MS = [2_000, 4_000, 8_000, 10_000];
+
+const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+
 /**
- * fetch() that survives the API moving to a new tunnel address while this
- * page is open: on a network-level failure it re-reads runtime-config.json
- * and, only if the address actually changed, retries once there. Retrying
- * is safe because a dead tunnel never delivers the first request to the API.
+ * fetch() that survives the API being briefly unreachable or moving to a
+ * new tunnel address while this page is open. On a network-level failure
+ * it keeps retrying with backoff for API_RELOCATION_WINDOW_MS, re-reading
+ * runtime-config.json before each attempt so it switches to a newly
+ * published address as soon as one appears. Network-level failures from a
+ * dead tunnel never reach the API, so the retried request isn't a repeat.
  */
 async function fetchApi(input: string, init?: RequestInit): Promise<Response> {
-  try {
-    return await fetch(input, init);
-  } catch (err) {
-    const oldOrigin = currentApiOrigin();
-    if (!input.startsWith(oldOrigin) || !(await refreshRuntimeApiBaseUrl())) throw err;
-    return fetch(currentApiOrigin() + input.slice(oldOrigin.length), init);
+  const deadline = Date.now() + API_RELOCATION_WINDOW_MS;
+  let url = input;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetch(url, init);
+    } catch (err) {
+      const origin = currentApiOrigin();
+      if (init?.signal?.aborted || !url.startsWith(origin) || Date.now() >= deadline) throw err;
+      await sleep(RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)]);
+      await refreshRuntimeApiBaseUrl();
+      url = currentApiOrigin() + url.slice(origin.length);
+    }
   }
 }
 
