@@ -176,6 +176,7 @@ export function App() {
       page={page}
       workspaceModule={workspaceModule}
       detailModule={detailModule}
+      jobsDashboard={!isLoading && !workspaceModule && !selectedJobId && page === "jobs"}
       jobs={jobs}
       agents={agents}
       apiOk={!jobsErrored}

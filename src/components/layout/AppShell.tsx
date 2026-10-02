@@ -19,6 +19,8 @@ interface AppShellProps {
   workspaceModule: ModuleKind | null;
   /** Module of the job open in Job detail, when that job is running (ambient glow). */
   detailModule?: ModuleKind | null;
+  /** True only on the Jobs Dashboard list - the one page with the job-stream background. */
+  jobsDashboard?: boolean;
   jobs: JobSummary[];
   agents: PairedAgentInfo[];
   apiOk: boolean;
@@ -38,6 +40,7 @@ export function AppShell({
   page,
   workspaceModule,
   detailModule = null,
+  jobsDashboard = false,
   jobs,
   agents,
   apiOk,
@@ -95,7 +98,7 @@ export function AppShell({
           agents={agents}
           apiOk={apiOk}
         />
-        {page === "jobs" && <JobStreamBackground jobs={jobs} apiOk={apiOk} />}
+        {jobsDashboard && <JobStreamBackground jobs={jobs} apiOk={apiOk} />}
         <Sidebar
           page={page}
           workspaceModule={workspaceModule}
