@@ -951,14 +951,16 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     const r0 = Math.max(0, Math.floor((hcy - hry) / RS));
     const cols = Math.max(1, Math.ceil((hcx + hrx) / P) + 1 - c0);
     const rows = Math.max(1, Math.ceil((hcy + hry) / RS) + 1 - r0);
-    const streaks = pose === "porthole" ? 0 : Math.min(cols * rows, dbg.stress ? STREAKS.counts[3] : def.streaks);
+    // FACE: no bore streaks - converging on the face they read as stray radial scratches.
+    const streaks = pose === "porthole" || face ? 0 : Math.min(cols * rows, dbg.stress ? STREAKS.counts[3] : def.streaks);
     i4(UBO.C4, c0, r0, cols, rows);
     const jobsK = state.page === "jobs" ? FLOW.jobsPageScale : 1;
     const port = pose === "porthole";
     const lanes = Math.min(paths.tube.count, port ? paths.tube.count : FLOW.counts[tier === 0 ? 1 : tier].tubeLanes);
     const nShell = paths.shell.count ? Math.round((port ? FLOW.portholeCrossflow : def.shellParticles) * jobsK) : 0;
-    const nTube = lanes ? Math.round((port ? FLOW.portholeAnnulus : pose === "bonnet" ? FLOW.bonnetPoseParticles : def.tubeParticles) * jobsK) : 0;
-    const nProc = paths.process.count ? Math.round((port ? FLOW.portholeAnnulus : def.processParticles) * jobsK) : 0;
+    // FACE: tube-side particles would fly straight at the camera as radial dashes; the face stays clean.
+    const nTube = lanes && !face ? Math.round((port ? FLOW.portholeAnnulus : pose === "bonnet" ? FLOW.bonnetPoseParticles : def.tubeParticles) * jobsK) : 0;
+    const nProc = paths.process.count && !face ? Math.round((port ? FLOW.portholeAnnulus : def.processParticles) * jobsK) : 0;
     const nMouth = Math.min(geo.faceMouthCount, DATA_W);
     const nBolt = Math.min(48, geo.boltFront.count);
     const nXray = shotCur.shellR >= SCAN_BAND.xrayMinRadiusPx && band > 0 ? Math.min(geo.xrayDotCount, DATA_W) : 0;

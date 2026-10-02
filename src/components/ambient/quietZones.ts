@@ -9,6 +9,7 @@
  * down to at most QUIET_MAX. They're stored in doc px, so the engine follows
  * scroll with one uniform and no layout reads.
  */
+import { POSE_PARAMS } from "../../ambient/constants";
 import type { AmbientLayout, Rect } from "../../ambient/types";
 
 const QUIET_MAX = 12;
@@ -155,7 +156,7 @@ export function measureAmbientLayout(root: HTMLElement): MeasuredLayout {
     // Keep the twin inside the content column so its ends never clip at the viewport edge.
     const right = Math.min(column.x + column.w - 24, controlLeft - 16);
     // The twin may tuck its lower edge 28 px behind the first card (cards slide over it), which buys a bigger, clearer model.
-    const bottom = next ? toCanvas(next).y + 28 : toCanvas(rectOf(header) ?? column).y + 160;
+    const bottom = next ? toCanvas(next).y + POSE_PARAMS.stageTuckPx : toCanvas(rectOf(header) ?? column).y + 160;
     if (right - left > 0 && bottom > 0) stage = { x: left, y: 0, w: right - left, h: bottom };
   }
 

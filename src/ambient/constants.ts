@@ -301,7 +301,8 @@ export const POSE_CLASS_ALPHA: Record<PoseName, Readonly<Partial<Record<number, 
   telemetry: {},
   wide: {},
   porthole: {},
-  face: {},
+  // Tube Sheet: just the face - no process pipes or lanes crossing it.
+  face: { [ALPHA_CLASS.PIPE]: 0, [ALPHA_CLASS.LANE]: 0, [ALPHA_CLASS.NOZZLE]: 0, [ALPHA_CLASS.SADDLE]: 0 },
   // HX Fab section: near-half cutaway.
   section: { [ALPHA_CLASS.BAFFLE]: 0.3, [ALPHA_CLASS.LANE]: 0.16 },
   // Bonnet Flange: the shell recedes into fog.
@@ -445,7 +446,9 @@ export const POSE_PARAMS = {
   telemetryEmblemMinStageW: 300,
   telemetryEmblemMaxPx: 132,
   telemetryEmblemGutterPad: 24,
-  faceDiameterK: 0.76,
+  faceDiameterK: 0.6,
+  /** How far the measured stage extends behind the first card (quietZones.ts). */
+  stageTuckPx: 28,
   bonnetScale: 1.4,
   sectionFillW: 0.76,
   wideMinGutter: 200,

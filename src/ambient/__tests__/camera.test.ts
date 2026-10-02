@@ -106,7 +106,7 @@ describe("other poses", () => {
     expect(f.vanishing).not.toBeNull();
     expect(Math.hypot(f.vanishing!.x - f.frontFace.x, f.vanishing!.y - f.frontFace.y)).toBeLessThan(2);
     // Face diameter = faceDiameterK x stageH (tube-sheet OD).
-    expect(Math.abs(2 * f.frontFace.radiusPx * model.tubeSheetOD - POSE_PARAMS.faceDiameterK * STAGE.h)).toBeLessThan(4);
+    expect(Math.abs(2 * f.frontFace.radiusPx * model.tubeSheetOD - POSE_PARAMS.faceDiameterK * (STAGE.h - POSE_PARAMS.stageTuckPx))).toBeLessThan(4);
   });
 
   it("TELEMETRY is the (unfitted) overview D_px at 0.7x", () => {
@@ -150,7 +150,7 @@ describe("LOD numbers", () => {
     expect(twinLod(model, 500, "overview")).toMatchObject({ meridians: LOD.meridianMax, ringSegments: 64 });
     const face = solveCamera(input("face"));
     const l = twinLod(model, face.shellRadiusPx, "face");
-    expect([91, 127, 169]).toContain(l.mouthCount);
+    expect([61, 91, 127, 169]).toContain(l.mouthCount);
     expect(twinLod(model, 55, "section").mouthCount).toBe(0);
   });
 

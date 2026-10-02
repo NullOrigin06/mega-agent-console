@@ -345,7 +345,9 @@ function plan(input: CameraInput, stage: Rect, pose: PoseName, p: Plan): void {
     case "face":
       p.targetX = lay.front.face;
       p.refSize = model.tubeSheetOD;
-      p.sizePx = POSE_PARAMS.faceDiameterK * stage.h;
+      // Frame the face on the stage's visible part (the stage tucks under the first card).
+      p.sizePx = POSE_PARAMS.faceDiameterK * Math.max(1, stage.h - POSE_PARAMS.stageTuckPx);
+      p.anchorY = stage.y + Math.max(1, stage.h - POSE_PARAMS.stageTuckPx) / 2;
       p.eyeOnAxis = true;
       return;
     case "bonnet":
