@@ -19,6 +19,32 @@
   overflow: hidden;
 }
 
+.jobstream-root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--ambient-top, 91px);
+  height: calc(100lvh - var(--ambient-top, 91px));
+  z-index: 0;
+  contain: strict;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Jobs Dashboard: cards let the job stream show through faintly. */
+html[data-jobstream="on"] .controls-bar,
+html[data-jobstream="on"] .table-card,
+html[data-jobstream="on"] .running-job-panel {
+  background-color: rgba(19, 28, 48, 0.8);
+}
+
+.jobstream-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .ambient-poster,
 .ambient-canvas {
   position: absolute;
@@ -75,7 +101,8 @@ html[data-ambient="live"] .workstation-dropdown-content {
 }
 
 @media print {
-  .ambient-root {
+  .ambient-root,
+  .jobstream-root {
     display: none;
   }
 }

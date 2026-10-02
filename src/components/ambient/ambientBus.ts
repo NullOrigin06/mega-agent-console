@@ -14,7 +14,8 @@
 import type { AmbientMotionPref } from "../../ambient/types";
 import type { ModuleKind } from "../../types/engineering";
 
-export type AmbientSuspendReason = "twin3d" | "palette" | "modal";
+/** "page": a page with its own background (Jobs Dashboard job stream) is showing. */
+export type AmbientSuspendReason = "twin3d" | "palette" | "modal" | "page";
 
 export interface AmbientBusSnapshot {
   /** True while any suspend reason is held. */
@@ -62,7 +63,7 @@ function query(media: string): MediaQueryList | null {
   }
 }
 
-const counts: Record<AmbientSuspendReason, number> = { twin3d: 0, palette: 0, modal: 0 };
+const counts: Record<AmbientSuspendReason, number> = { twin3d: 0, palette: 0, modal: 0, page: 0 };
 const listeners = new Set<() => void>();
 let highlighted: ModuleKind | null = null;
 let pref: AmbientMotionPref | null = null;

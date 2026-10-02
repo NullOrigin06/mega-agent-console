@@ -9,6 +9,7 @@ import { PipelineStatusRail } from "./PipelineStatusRail";
 import { CommandPalette } from "../common/CommandPalette";
 import { RotateKeyModal } from "../auth/RotateKeyModal";
 import { AmbientBackground } from "../ambient/AmbientBackground";
+import { JobStreamBackground } from "../ambient/JobStreamBackground";
 import { useAmbientSuspend } from "../ambient/useAmbientBus";
 
 type Page = "modules" | "jobs";
@@ -94,6 +95,7 @@ export function AppShell({
           agents={agents}
           apiOk={apiOk}
         />
+        {page === "jobs" && <JobStreamBackground jobs={jobs} apiOk={apiOk} />}
         <Sidebar
           page={page}
           workspaceModule={workspaceModule}
