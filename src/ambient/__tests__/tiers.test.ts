@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createGovernor, effectiveDpr, isSoftwareRenderer, startTier, type TierEnv } from "../tiers";
+import { createGovernor, effectiveDpr, tierDef, isSoftwareRenderer, startTier, type TierEnv } from "../tiers";
 
 const env = (over: Partial<TierEnv> = {}): TierEnv => ({
   reducedMotion: false,
@@ -45,12 +45,14 @@ describe("start tier", () => {
 
 describe("pixel-budget DPR", () => {
   it("is min(tier cap, devicePixelRatio, sqrt(budget / cssPx))", () => {
-    expect(effectiveDpr(3, 2, 1440, 809)).toBe(1.5);
-    expect(effectiveDpr(2, 2, 1440, 809)).toBe(1.25);
-    expect(effectiveDpr(1, 2, 1440, 809)).toBe(1);
+    const px = 1440 * 809;
+    for (const t of [1, 2, 3] as const) {
+      const d = tierDef(t);
+      expect(effectiveDpr(t, 2, 1440, 809)).toBeCloseTo(Math.min(d.dprCap, 2, Math.sqrt(d.pixelBudget / px)), 6);
+    }
     expect(effectiveDpr(3, 1, 1440, 809)).toBe(1);
-    // 4K: the 3.0 MP budget caps it below the tier cap.
-    expect(effectiveDpr(3, 2, 3840, 2000)).toBeCloseTo(Math.sqrt(3e6 / (3840 * 2000)), 6);
+    // 4K: the pixel budget caps it below the tier cap.
+    expect(effectiveDpr(3, 2, 3840, 2000)).toBeCloseTo(Math.sqrt(tierDef(3).pixelBudget / (3840 * 2000)), 6);
   });
 });
 

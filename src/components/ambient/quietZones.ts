@@ -154,7 +154,8 @@ export function measureAmbientLayout(root: HTMLElement): MeasuredLayout {
     const left = Math.max(textRight + 40, column.x + 0.5 * column.w);
     // Keep the twin inside the content column so its ends never clip at the viewport edge.
     const right = Math.min(column.x + column.w - 24, controlLeft - 16);
-    const bottom = next ? toCanvas(next).y - 12 : toCanvas(rectOf(header) ?? column).y + 160;
+    // The twin may tuck its lower edge 28 px behind the first card (cards slide over it), which buys a bigger, clearer model.
+    const bottom = next ? toCanvas(next).y + 28 : toCanvas(rectOf(header) ?? column).y + 160;
     if (right - left > 0 && bottom > 0) stage = { x: left, y: 0, w: right - left, h: bottom };
   }
 

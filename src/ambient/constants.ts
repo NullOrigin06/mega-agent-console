@@ -277,20 +277,20 @@ export const ALPHA_CLASS_COUNT = 16;
 
 /** Base alpha per ALPHA_CLASS id (MERIDIAN uses WIRE.meridian instead). */
 export const CLASS_ALPHA: readonly number[] = [
-  0.38, // MERIDIAN (near; see WIRE.meridian)
-  0.5, // SILHOUETTE
-  0.22, // SHELL_RING
-  0.22, // TUBESHEET
-  0.22, // BAFFLE
-  0.18, // BONNET
-  0.24, // NOZZLE
-  0.12, // SADDLE
-  0.22, // FLANGE
-  0.1, // PIPE
-  0.16, // LANE
-  0.06, // SECTION_NEAR
-  0.22, // SECTION_FAR
-  0.18, // PASS_PARTITION
+  0.46, // MERIDIAN (near; see WIRE.meridian)
+  0.72, // SILHOUETTE
+  0.34, // SHELL_RING
+  0.36, // TUBESHEET
+  0.32, // BAFFLE
+  0.3, // BONNET
+  0.36, // NOZZLE
+  0.2, // SADDLE
+  0.34, // FLANGE
+  0.14, // PIPE
+  0.22, // LANE
+  0.08, // SECTION_NEAR
+  0.3, // SECTION_FAR
+  0.24, // PASS_PARTITION
   0, // EVENT_RING
   0,
 ];
@@ -328,8 +328,8 @@ export const ROLLING_CLASS_MASK =
   (1 << ALPHA_CLASS.PASS_PARTITION);
 
 export const WIRE = {
-  meridian: { near: 0.38, far: 0.14, back: 0.08 },
-  faceMouthAlpha: 0.3,
+  meridian: { near: 0.46, far: 0.16, back: 0.06 },
+  faceMouthAlpha: 0.38,
   faceMouthAlphaFacePose: 0.34,
   xrayAlpha: 0.25,
   xrayDotsPerBaffle: 37,
@@ -349,8 +349,8 @@ export const WIRE = {
 /** LOD rules from projected shell radius R_px. */
 export const LOD = {
   meridianDivisor: 4.5,
-  meridianMin: 8,
-  meridianMax: 16,
+  meridianMin: 6,
+  meridianMax: 10,
   ringSegDivisor: 7,
   ringSegMin: 24,
   ringSegMax: 64,
@@ -443,11 +443,11 @@ export const POSES: Record<PoseName, PoseDef> = {
 export const POSE_PARAMS = {
   telemetryScale: 0.7,
   telemetryEmblemMinStageW: 300,
-  telemetryEmblemMaxPx: 96,
+  telemetryEmblemMaxPx: 132,
   telemetryEmblemGutterPad: 24,
-  faceDiameterK: 0.9,
+  faceDiameterK: 0.76,
   bonnetScale: 1.4,
-  sectionFillW: 0.9,
+  sectionFillW: 0.76,
   wideMinGutter: 200,
   wideDpxMax: 160,
   wideDpxK: 0.62,
@@ -651,9 +651,9 @@ export interface TierDef {
 }
 
 export const TIERS: Record<1 | 2 | 3, TierDef> = {
-  3: { dprCap: 1.5, pixelBudget: 3.0e6, shellParticles: 360, tubeParticles: 210, processParticles: 120, wireMax: 1900, streaks: 600, hazeHz: 10, scanlines: true, glassFill: true, fps: 30 },
-  2: { dprCap: 1.25, pixelBudget: 2.2e6, shellParticles: 220, tubeParticles: 140, processParticles: 80, wireMax: 1300, streaks: 300, hazeHz: 5, scanlines: false, glassFill: true, fps: 30 },
-  1: { dprCap: 1.0, pixelBudget: 1.4e6, shellParticles: 110, tubeParticles: 70, processParticles: 40, wireMax: 700, streaks: 120, hazeHz: 0, scanlines: false, glassFill: false, fps: 20 },
+  3: { dprCap: 2, pixelBudget: 3.6e6, shellParticles: 360, tubeParticles: 210, processParticles: 120, wireMax: 1900, streaks: 600, hazeHz: 10, scanlines: true, glassFill: true, fps: 30 },
+  2: { dprCap: 1.5, pixelBudget: 2.8e6, shellParticles: 220, tubeParticles: 140, processParticles: 80, wireMax: 1300, streaks: 300, hazeHz: 5, scanlines: false, glassFill: true, fps: 30 },
+  1: { dprCap: 1.25, pixelBudget: 2.0e6, shellParticles: 110, tubeParticles: 70, processParticles: 40, wireMax: 700, streaks: 120, hazeHz: 0, scanlines: false, glassFill: false, fps: 24 },
 };
 
 export const GOVERNOR = {

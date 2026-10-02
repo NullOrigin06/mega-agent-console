@@ -138,7 +138,7 @@ describe("other poses", () => {
 describe("LOD numbers", () => {
   it("matches the spec at R_px 55 in OVERVIEW", () => {
     const l = twinLod(model, 55, "overview");
-    expect(l.meridians).toBe(12);
+    expect(l.meridians).toBe(Math.min(LOD.meridianMax, Math.round(55 / LOD.meridianDivisor)));
     expect(l.ringSegments).toBe(49);
     expect(l.shellRings).toBe(LOD.shellRingsDense);
     expect(l.boltCount).toBe(24);
@@ -146,8 +146,8 @@ describe("LOD numbers", () => {
   });
 
   it("clamps at the extremes and uses 127-169 mouths in FACE", () => {
-    expect(twinLod(model, 10, "overview")).toMatchObject({ meridians: 8, ringSegments: 24, mouthCount: 61 });
-    expect(twinLod(model, 500, "overview")).toMatchObject({ meridians: 16, ringSegments: 64 });
+    expect(twinLod(model, 10, "overview")).toMatchObject({ meridians: LOD.meridianMin, ringSegments: 24, mouthCount: 61 });
+    expect(twinLod(model, 500, "overview")).toMatchObject({ meridians: LOD.meridianMax, ringSegments: 64 });
     const face = solveCamera(input("face"));
     const l = twinLod(model, face.shellRadiusPx, "face");
     expect([127, 169]).toContain(l.mouthCount);

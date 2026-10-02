@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { TYPICAL_VESSEL } from "../../components/cad/vesselSpec";
 import type { VesselSpec } from "../../components/cad/vesselSpec";
 import { solveCamera } from "../camera";
-import { ALPHA_CLASS, ALPHA_CLASS_COUNT, EVENT_RINGS, VESSEL_CLAMP, WIRE } from "../constants";
+import { ALPHA_CLASS, ALPHA_CLASS_COUNT, CLASS_ALPHA, EVENT_RINGS, VESSEL_CLAMP, WIRE } from "../constants";
 import { SEG_STRIDE, baffleStations, baffleWindowSign, buildTwinGeometry, classAlphaTable, segmentBudget, toVesselModel, tubeFieldRadius, twinLod, writeEventRing, writeSilhouettes } from "../twinGeometry";
 import type { PoseName } from "../types";
 
@@ -171,6 +171,6 @@ describe("per-frame writers", () => {
   it("applies pose alpha overrides", () => {
     expect(classAlphaTable("section")[ALPHA_CLASS.BAFFLE]).toBeCloseTo(0.3, 6);
     expect(classAlphaTable("bonnet")[ALPHA_CLASS.SHELL_RING]).toBeCloseTo(0.1, 6);
-    expect(classAlphaTable("overview")[ALPHA_CLASS.NOZZLE]).toBeCloseTo(0.24, 6);
+    expect(classAlphaTable("overview")[ALPHA_CLASS.NOZZLE]).toBeCloseTo(CLASS_ALPHA[ALPHA_CLASS.NOZZLE], 6);
   });
 });
