@@ -216,7 +216,9 @@ export function createAmbientController(opts: {
   const fallback = (reason: AmbientFallbackReason) => {
     if (fellBack || destroyed) return;
     fellBack = true;
-    if (import.meta.env.DEV) console.info(`[ambient] falling back to the Canvas2D still (${reason})`);
+    // Visible in production (console + html[data-ambient-fallback]) so "motion unavailable" can be diagnosed.
+    console.info(`[ambient] falling back to the Canvas2D still (${reason})`);
+    document.documentElement.dataset.ambientFallback = reason;
     const old = engine;
     engine = null;
     old?.destroy();

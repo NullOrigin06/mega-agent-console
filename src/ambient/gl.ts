@@ -72,9 +72,8 @@ export function programDone(gl: WebGL2RenderingContext, parallel: boolean, p: Pr
  */
 export function finishProgram(gl: WebGL2RenderingContext, p: Program, samplers: readonly string[]): boolean {
   if (!gl.getProgramParameter(p.prog, gl.LINK_STATUS)) {
-    if (import.meta.env.DEV) {
-      console.warn("[ambient] link failed", gl.getProgramInfoLog(p.prog), gl.getShaderInfoLog(p.vs), gl.getShaderInfoLog(p.fs));
-    }
+    // Logged in production too: driver-specific compile failures only show up on users' machines.
+    console.warn("[ambient] link failed", gl.getProgramInfoLog(p.prog), gl.getShaderInfoLog(p.vs), gl.getShaderInfoLog(p.fs));
     return false;
   }
   const block = gl.getUniformBlockIndex(p.prog, "S");
