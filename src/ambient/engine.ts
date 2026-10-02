@@ -26,6 +26,7 @@ import {
   rollDegAt,
   solveCamera,
   swingYawDeg,
+  telemetryEmblem,
 } from "./camera";
 import {
   CAMERA,
@@ -41,7 +42,6 @@ import {
   NETWORK,
   PACING,
   PAGE_WEIGHTS,
-  POSE_PARAMS,
   RESOLVE,
   SCAN_BAND,
   STREAKS,
@@ -290,7 +290,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
   let batteryCap: Tier = 3;
   let tierKnown = false;
   readBattery().then((b) => {
-    if (!b || b.charging) return;
+    if (destroyed || !b || b.charging) return;
     batteryCap = b.level < 0.2 ? 0 : b.level < 0.3 ? 1 : 3;
     if (batteryCap < 3) onTierChange();
   });
@@ -395,7 +395,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     out.axis[1] = frame.axisScreenDir.y;
     out.shellR = frame.shellRadiusPx;
     const lay = vesselLayout(model, p);
-    const emblem = p === "telemetry" && stageOf().w < POSE_PARAMS.telemetryEmblemMinStageW;
+    const emblem = p === "telemetry" && telemetryEmblem(stageOf());
     out.pivot = p === "face" || p === "wide" || p === "porthole" || emblem ? lay.front.face : p === "bonnet" ? (lay.front.channelFlangeBack + lay.front.cylEnd) / 2 : 0;
   };
 
@@ -566,6 +566,10 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
   const reframe = (layoutOnly: boolean) => {
     if (!model || !layout) return;
     const next = targetPose();
+    // Transition stamps use the wall clock when no frame has rendered lately (frozen by
+    // blur / idle): `clock` can be minutes old, which would finish tweens and dips at once.
+    const wall = performance.now();
+    const t0 = wall - clock > PACING.maxDtMs ? wall : clock;
     const animate = isLive() && bufW > 0 && geo !== null;
     if (!animate) {
       pose = next;
@@ -578,7 +582,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     }
     if (dipAt >= 0 || (next !== pose && !layoutOnly && isLargePoseChange(pose, next))) {
       // Haze-dip match cut: the pose jumps at 400 ms (writeFrame), solved against the latest layout.
-      if (dipAt < 0) dipAt = clock;
+      if (dipAt < 0) dipAt = t0;
       dipPose = next;
       return;
     }
@@ -593,14 +597,14 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
       vpOldX = vpX;
       vpOldY = vpY;
       vpOldInf = vpInf;
-      xfAt = clock;
+      xfAt = t0;
     }
     // Small delta (or a stage change mid-tween): tween from the current value, never restart.
-    const remaining = tweenAt >= 0 ? Math.max(200, tweenMs - (clock - tweenAt)) : TRANSITIONS.smallTweenMs;
+    const remaining = tweenAt >= 0 ? Math.max(200, tweenMs - (t0 - tweenAt)) : TRANSITIONS.smallTweenMs;
     lerpShot(shotCur, shotCur, 0, shotFrom);
     pose = next;
     solveInto(pose, shotTo);
-    tweenAt = clock;
+    tweenAt = t0;
     tweenMs = remaining;
     rebuildScene();
   };
@@ -626,6 +630,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     queued: 0,
     hover: new Float64Array(4),
     run: new Float64Array(4),
+    detail: new Float64Array(4),
     tint: 0,
     poolX: 0,
     poolY: 0,
@@ -671,38 +676,45 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
   };
 
   // ---------------------------------------------------------------- per-frame uniforms
-  const writeFrame = (now: number, dt: number, still: boolean) => {
+  const writeFrame = (now: number, dt: number, still: boolean, snapNow = false) => {
     if (!layout || !state || !model || !geo || !paths || !lay) return;
     const sig = state.signals;
     const def = tierDef(tier);
     const page = PAGE_WEIGHTS[state.page];
     const pw = PW;
+    // The first frame and a one-off frame while frozen by blur / idle must show the target
+    // state (easing would leave every weight at its start value: twin weight 0 = an empty
+    // field). The caller says so explicitly; a live wake-up frame eases with a nominal dt.
+    const snap = still || snapNow;
     pw[0] = page.twin;
     pw[1] = page.flows;
     pw[2] = page.lattice;
     pw[3] = page.streaks;
     pw[4] = page.network;
     pw[5] = page.haze;
-    for (let i = 0; i < 6; i++) ease.w[i] += (pw[i] - ease.w[i]) * lk(dt, 0.3, still);
-    ease.lost += ((sig.apiOk ? 0 : 1) - ease.lost) * lk(dt, sig.apiOk ? 0.67 : 0.4, still);
-    ease.flowOn += ((sig.apiOk ? 1 : 0) - ease.flowOn) * lk(dt, 0.67, still);
-    ease.halo += ((sig.running > 0 ? 1 : 0) - ease.halo) * lk(dt, CRESCENT.haloRunningEaseSec / 3, still);
-    ease.activity += (sat(sig.activity) - ease.activity) * lk(dt, FLOW.activityTauSec / 3, still);
+    // prefers-contrast: more - lattice and haze only (the CSS halves the root's alpha).
+    if (state.contrastMore) pw[0] = pw[1] = pw[3] = pw[4] = 0;
+    for (let i = 0; i < 6; i++) ease.w[i] += (pw[i] - ease.w[i]) * lk(dt, 0.3, snap);
+    ease.lost += ((sig.apiOk ? 0 : 1) - ease.lost) * lk(dt, sig.apiOk ? 0.67 : 0.4, snap);
+    ease.flowOn += ((sig.apiOk ? 1 : 0) - ease.flowOn) * lk(dt, 0.67, snap);
+    ease.halo += ((sig.running > 0 ? 1 : 0) - ease.halo) * lk(dt, CRESCENT.haloRunningEaseSec / 3, snap);
+    ease.activity += (sat(sig.activity) - ease.activity) * lk(dt, FLOW.activityTauSec / 3, snap);
     const q = Math.min(sig.queued, geo.boltFront.count);
-    ease.queued = still ? q : ease.queued + Math.sign(q - ease.queued) * Math.min(Math.abs(q - ease.queued), dt / (NETWORK.queuedBoltFadeMs / 1000));
+    ease.queued = snap ? q : ease.queued + Math.sign(q - ease.queued) * Math.min(Math.abs(q - ease.queued), dt / (NETWORK.queuedBoltFadeMs / 1000));
     for (let r = 1; r < 4; r++) {
       const m = MODULES[r - 1];
       const hv = state.highlight === m ? 1 : 0;
       const step = dt / ((hv > ease.hover[r] ? WIRE.hoverInMs : WIRE.hoverOutMs) / 1000);
-      ease.hover[r] = still ? hv : ease.hover[r] + Math.sign(hv - ease.hover[r]) * Math.min(Math.abs(hv - ease.hover[r]), step);
-      ease.run[r] += ((sig.runningByModule[m] > 0 ? 1 : 0) - ease.run[r]) * lk(dt, 0.4, still);
+      ease.hover[r] = snap ? hv : ease.hover[r] + Math.sign(hv - ease.hover[r]) * Math.min(Math.abs(hv - ease.hover[r]), step);
+      ease.run[r] += ((sig.runningByModule[m] > 0 ? 1 : 0) - ease.run[r]) * lk(dt, 0.4, snap);
+      ease.detail[r] += ((state.page === "jobs" && state.detailModule === m ? 1 : 0) - ease.detail[r]) * lk(dt, 0.4, snap);
     }
     const ws = state.workspaceModule;
-    ease.tint += ((ws ? HAZE.workspaceTint[ws] : 0) - ease.tint) * lk(dt, 0.3, still);
+    ease.tint += ((ws ? HAZE.workspaceTint[ws] : 0) - ease.tint) * lk(dt, 0.3, snap);
     const camX = layout.canvas.x - elemLeft;
-    ease.camX += (camX - ease.camX) * lk(dt, TRANSITIONS.sidebarGlideMs / 3000, still);
+    ease.camX += (camX - ease.camX) * lk(dt, TRANSITIONS.sidebarGlideMs / 3000, snap);
     const st = stage;
-    const ek = still ? 1 : easeK(dt);
+    const ek = snap ? 1 : easeK(dt);
     ease.poolX += (camX + st.x + st.w / 2 - ease.poolX) * ek;
     ease.poolY += (st.y + st.h / 2 - ease.poolY) * ek;
 
@@ -899,7 +911,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     for (let r = 0; r < 4; r++) {
       const wsOther = ws && r > 0 && REGION[ws] !== r ? WIRE.otherRegionsWorkspace : 1;
       ubo[UBO.REGA * 4 + r] = (1 + WIRE.hoverBoost * ease.hover[r]) * wsOther;
-      ubo[UBO.REGB * 4 + r] = WIRE.regionRunningAlpha * ease.run[r];
+      ubo[UBO.REGB * 4 + r] = WIRE.regionRunningAlpha * ease.run[r] + WIRE.jobDetailRunningBoost * ease.detail[r];
       ubo[UBO.REGT * 4 + r] = WIRE.regionRunningMix * ease.run[r];
     }
     ubo[UBO.REGA * 4] = ws ? WIRE.otherRegionsWorkspace : 1;
@@ -969,13 +981,16 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
   const writeQuiet = () => {
     if (!layout) return;
     const n = Math.min(layout.quiet.length, RESOLVE.maxQuietRects);
+    // prefers-contrast: more widens the feathered protection to 96 px: the shader's feather
+    // is a compile-time 56 px, so the cores grow by the difference instead.
+    const g = state?.contrastMore ? RESOLVE.quietFeatherHighContrastPx - RESOLVE.quietFeatherPx : 0;
     for (let i = 0; i < n; i++) {
       const r = layout.quiet[i];
       const o = (UBO.Q + i) * 4;
-      ubo[o] = r.x - elemLeft;
-      ubo[o + 1] = r.y - layout.canvas.y;
-      ubo[o + 2] = r.x + r.w - elemLeft;
-      ubo[o + 3] = r.y + r.h - layout.canvas.y;
+      ubo[o] = r.x - elemLeft - g;
+      ubo[o + 1] = r.y - layout.canvas.y - g;
+      ubo[o + 2] = r.x + r.w - elemLeft + g;
+      ubo[o + 3] = r.y + r.h - layout.canvas.y + g;
     }
     uboI[UBO.C6 * 4 + 2] = n;
   };
@@ -1008,10 +1023,13 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     const sx = Math.max(0, Math.floor(ease.camX * (bufW / cssW)));
     gl.bindFramebuffer(gl.FRAMEBUFFER, accT.fb);
     gl.viewport(0, 0, bufW, bufH);
-    gl.enable(gl.SCISSOR_TEST);
-    gl.scissor(sx, 0, bufW - sx, bufH);
+    // Full clear (the composite samples uAcc across the whole canvas, including the strip
+    // left of camX while the sidebar glides); only the instanced draw is scissored.
+    gl.disable(gl.SCISSOR_TEST);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(sx, 0, bufW - sx, bufH);
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE);
     gl.useProgram(progs[1].prog);
@@ -1106,7 +1124,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     const fps = targetFps(now);
     if (fps === 0) {
       // Frozen (blur / idle): one composed frame for any pending change, then stop.
-      if (dirty) render(now, false);
+      if (dirty) render(now, false, 0, true);
       lastTick = lastRender = 0;
       return;
     }
@@ -1121,17 +1139,19 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
       if (governor.tier !== before) onTierChange();
     }
     worstTick = 0;
-    render(now, hints.windowFocused);
+    render(now, hints.windowFocused, fps);
   }
 
-  const render = (now: number, steady: boolean) => {
-    const dt = lastRender ? Math.min(now - lastRender, PACING.maxDtMs) / 1000 : 0;
+  /** `fps` > 0 = continuous rendering; its first frame (no lastRender) eases with dt = 1 / fps. */
+  const render = (now: number, steady: boolean, fps: number, frozen = false) => {
+    const snap = frozen || firstFrame;
+    const dt = lastRender ? Math.min(now - lastRender, PACING.maxDtMs) / 1000 : snap || fps <= 0 ? 0 : 1 / fps;
     lastRender = now;
     clock = now;
     if (steady) sceneT += dt;
     evClock += dt;
     writeQuiet();
-    writeFrame(now, dt, false);
+    writeFrame(now, dt, false, snap);
     draw(now);
     dirty = false;
     if (dbg.overlay) overlay(now);
@@ -1168,6 +1188,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
   };
 
   const onTierChange = () => {
+    if (destroyed) return;
     const next = computeTier();
     if (next === tier) return;
     tier = next;
@@ -1307,7 +1328,11 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
         gl.deleteTexture(noiseTex);
         gl.deleteBuffer(uboBuf);
         gl.deleteVertexArray(vao);
+        // Release the context now rather than at GC: remounts and the fallback swap make
+        // new canvases, and browsers force-lose the oldest context past ~16.
+        gl.getExtension("WEBGL_lose_context")?.loseContext();
       }
+      ready = false;
       if (current?.canvas === canvas) current = null;
     },
   };

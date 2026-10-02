@@ -3,7 +3,7 @@ import { TYPICAL_VESSEL } from "../../components/cad/vesselSpec";
 import type { VesselSpec } from "../../components/cad/vesselSpec";
 import { solveCamera } from "../camera";
 import { ALPHA_CLASS, ALPHA_CLASS_COUNT, EVENT_RINGS, VESSEL_CLAMP, WIRE } from "../constants";
-import { SEG_STRIDE, baffleStations, baffleWindowSign, buildTwinGeometry, classAlphaTable, segmentBudget, toVesselModel, tubeFieldRadius, writeEventRing, writeSilhouettes } from "../twinGeometry";
+import { SEG_STRIDE, baffleStations, baffleWindowSign, buildTwinGeometry, classAlphaTable, segmentBudget, toVesselModel, tubeFieldRadius, twinLod, writeEventRing, writeSilhouettes } from "../twinGeometry";
 import type { PoseName } from "../types";
 
 const model = toVesselModel(TYPICAL_VESSEL);
@@ -75,21 +75,26 @@ describe("buildTwinGeometry", () => {
     expect(budget).toBeLessThanOrEqual(1900);
     const g = buildTwinGeometry(model, { shellRadiusPx: f.shellRadiusPx, maxSegments: budget }, "overview");
     expect(g.segmentCount).toBeLessThanOrEqual(budget);
-    expect(g.lod.meridians).toBe(12);
-    expect(g.faceMouthCount).toBe(91);
+    // The stage fit sizes the twin (R_px ~47 here); the budget must not shed below that LOD.
+    const lod = twinLod(model, f.shellRadiusPx, "overview");
+    expect(g.lod.meridians).toBe(lod.meridians);
+    expect(g.faceMouthCount).toBe(lod.mouthCount);
   });
 
   it("tags every segment with a valid region and alpha class, and finite coordinates", () => {
     for (const pose of POSES) {
       const g = buildTwinGeometry(model, { shellRadiusPx: 55, maxSegments: 1900 }, pose);
+      // Collect offenders instead of one expect() per value (~100k calls timed out under load).
+      const bad: string[] = [];
       for (let i = 0; i < g.totalSegmentCount; i++) {
         const o = i * SEG_STRIDE;
-        for (let k = 0; k < 6; k++) expect(Number.isFinite(g.segments[o + k])).toBe(true);
-        expect([0, 1, 2, 3]).toContain(g.segments[o + 6]);
+        for (let k = 0; k < 6; k++) if (!Number.isFinite(g.segments[o + k])) bad.push(`${pose}#${i} coord ${k}`);
+        if (![0, 1, 2, 3].includes(g.segments[o + 6])) bad.push(`${pose}#${i} region`);
         const cls = g.segments[o + 7];
-        expect(Number.isInteger(cls) && cls >= 0 && cls < ALPHA_CLASS_COUNT).toBe(true);
-        if (i >= g.segmentCount) expect(cls).toBe(ALPHA_CLASS.EVENT_RING);
+        if (!(Number.isInteger(cls) && cls >= 0 && cls < ALPHA_CLASS_COUNT)) bad.push(`${pose}#${i} class ${cls}`);
+        if (i >= g.segmentCount && cls !== ALPHA_CLASS.EVENT_RING) bad.push(`${pose}#${i} not an event ring`);
       }
+      expect(bad.slice(0, 5)).toEqual([]);
       // Silhouettes come first.
       expect(g.segments[7]).toBe(ALPHA_CLASS.SILHOUETTE);
       expect(g.segments[SEG_STRIDE + 7]).toBe(ALPHA_CLASS.SILHOUETTE);

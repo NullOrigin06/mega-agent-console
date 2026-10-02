@@ -26,6 +26,11 @@ export interface AmbientBusSnapshot {
   contrastMore: boolean;
   /** What the preference resolves to right now. */
   motion: "live" | "still";
+  /**
+   * False when nothing can move whatever the preference: the renderer is not
+   * allowed (forced colours, jsdom) or the Canvas2D still replaced the engine.
+   */
+  motionAvailable: boolean;
 }
 
 export const MOTION_STORAGE_KEY = "mega.ambient.motion";
@@ -64,6 +69,7 @@ let pref: AmbientMotionPref | null = null;
 let reducedMq: MediaQueryList | null | undefined;
 let contrastMq: MediaQueryList | null | undefined;
 let snapshot: AmbientBusSnapshot | null = null;
+let available = true;
 
 function ensureMedia() {
   if (reducedMq !== undefined) return;
@@ -81,7 +87,7 @@ function build(): AmbientBusSnapshot {
   const reducedMotion = Boolean(reducedMq?.matches);
   const contrastMore = Boolean(contrastMq?.matches);
   const motion = pref === "on" ? "live" : pref === "off" || reducedMotion || contrastMore ? "still" : "live";
-  return { suspended: reasons.length > 0, reasons, highlight: highlighted, motionPref: pref, reducedMotion, contrastMore, motion };
+  return { suspended: reasons.length > 0, reasons, highlight: highlighted, motionPref: pref, reducedMotion, contrastMore, motion, motionAvailable: available };
 }
 
 function emit() {
@@ -129,11 +135,19 @@ export const ambientBus = {
     emit();
   },
 
+  /** Set by AmbientBackground / the controller: whether the renderer can animate at all. */
+  setMotionAvailable(next: boolean) {
+    if (available === next) return;
+    available = next;
+    emit();
+  },
+
   /** Test helper: forget all in-memory state (storage is re-read lazily). */
   reset() {
     counts.twin3d = counts.palette = counts.modal = 0;
     highlighted = null;
     pref = null;
+    available = true;
     snapshot = null;
   },
 };

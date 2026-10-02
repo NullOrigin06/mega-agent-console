@@ -22,6 +22,6 @@ c=mix(c,${v3(COLORS.hazeTeal)},${f1(HAZE.tealMix)}*n*pool);
 vec3 t=TINT.rgb*dot(c,W3)/max(dot(TINT.rgb,W3),1e-3);c=mix(c,t,TINT.w);
 float bl=clamp(length((px-vec2(CAM.x+CAM.z,0.))/CAM.zw)*.7071,0.,1.);
 float w=(.35+.65*max(pool,.7*sec))*mix(1.,${f1(HAZE.bottomLeftFloor)},bl)*HZ2.z*HZ2.w;
-o=vec4(max(capL(mix(BASE,c,clamp(w,0.,1.3)),${HAZE.peakL})-BASE,0.),1.);
+o=vec4(max(capL(mix(BASE,c,clamp(w,0.,1.3)),${f1(HAZE.peakL)})-BASE,0.),1.);
 }
 `;

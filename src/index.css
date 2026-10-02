@@ -3557,6 +3557,20 @@ body {
   padding: 24px;
 }
 
+/* From 1024 px the header is on-background text (like .modules-home-header):
+   no card, text block <= 520 px, so the right of the band stays free as the
+   ambient twin's stage instead of hiding it under an opaque card. */
+@media (min-width: 1024px) {
+  .module-workspace-header {
+    background-color: transparent;
+    border-color: transparent;
+    padding: 8px 0;
+  }
+  .module-workspace-header > div:last-child {
+    max-width: 520px;
+  }
+}
+
 .module-workspace-icon {
   width: 56px;
   height: 56px;
@@ -3960,6 +3974,21 @@ body {
   font-size: 12px;
   color: var(--text-primary);
   max-width: 220px;
+}
+
+.header-menu-label {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.header-menu-check {
+  display: inline-flex;
+  width: 14px;
+  color: var(--accent-blue);
 }
 
 .header-account-email {

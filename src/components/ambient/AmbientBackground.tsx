@@ -4,6 +4,7 @@ import type { PairedAgentInfo } from "../../api";
 import type { AmbientDocState } from "../../ambient/types";
 import { useTwinVesselSpec } from "../cad/useTwinVesselSpec";
 import type { AmbientController, AmbientInputs } from "./ambientController";
+import { ambientBus } from "./ambientBus";
 import { useAmbientBus } from "./useAmbientBus";
 import "./ambient.css";
 
@@ -13,6 +14,8 @@ interface AmbientBackgroundProps {
   jobs: JobSummary[];
   agents: PairedAgentInfo[];
   apiOk: boolean;
+  /** Module of the job open in Job detail, when that job is running. */
+  detailModule?: ModuleKind | null;
 }
 
 /**
@@ -59,7 +62,7 @@ function whenIdleAfterLoad(cb: () => void): () => void {
  * own chunk), which brings up the WebGL2 engine. Purely decorative -
  * everything it shows is also in the status rail, sidebar and job views.
  */
-export function AmbientBackground({ page, workspaceModule, jobs, agents, apiOk }: AmbientBackgroundProps) {
+export function AmbientBackground({ page, workspaceModule, jobs, agents, apiOk, detailModule = null }: AmbientBackgroundProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const posterRef = useRef<HTMLDivElement>(null);
   const controller = useRef<AmbientController | null>(null);
@@ -78,6 +81,8 @@ export function AmbientBackground({ page, workspaceModule, jobs, agents, apiOk }
     mode: bus.motion,
     suspended: bus.suspended,
     reducedMotion: bus.reducedMotion,
+    contrastMore: bus.contrastMore,
+    detailModule: workspaceModule ? null : detailModule,
   };
   const routeKey = `${inputs.page}:${workspaceModule ?? ""}`;
   const latest = useRef({ inputs, routeKey });
@@ -102,7 +107,13 @@ export function AmbientBackground({ page, workspaceModule, jobs, agents, apiOk }
 
   useEffect(() => {
     setDocState("off");
-    if (!enabled) return () => setDocState(null);
+    if (!enabled) {
+      ambientBus.setMotionAvailable(false);
+      return () => {
+        setDocState(null);
+        ambientBus.setMotionAvailable(true);
+      };
+    }
     let cancelled = false;
     let c: AmbientController | null = null;
     const cancelIdle = whenIdleAfterLoad(() => {
@@ -116,6 +127,7 @@ export function AmbientBackground({ page, workspaceModule, jobs, agents, apiOk }
             initial: latest.current.inputs,
             routeKey: latest.current.routeKey,
             onDocState: setDocState,
+            onMotionAvailable: ambientBus.setMotionAvailable,
           });
           controller.current = c;
         })
@@ -129,6 +141,7 @@ export function AmbientBackground({ page, workspaceModule, jobs, agents, apiOk }
       c?.destroy();
       controller.current = null;
       setDocState(null);
+      ambientBus.setMotionAvailable(true);
     };
   }, [enabled]);
 

@@ -102,8 +102,8 @@ precision highp float;precision highp int;precision highp sampler2D;
 layout(std140) uniform S{vec4 V,CAM,COL,STG,BOX,T,VP,VPM,PTR,HZ,HZ2,TINT,FX,FX2,BAND,BAND2,MDL,EYE;mat4 MVP,IVP;vec4 REGA,REGB,REGT,LAT,HALO,FLOW,PH,BOLT,HUB,CLS[4];ivec4 C0,C1,C2,C3,C4,C5,C6;vec4 LCUR[4],EV[8],BC,Q[${RESOLVE.maxQuietRects}];};
 const vec3 W3=vec3(.2126,.7152,.0722),BASE=${v3(C.base)},QBASE=${v3(C.quietBase)},CY=${v3(C.wire)},CYL=${v3(C.silhouette)},ICE=${v3(C.xray)},EM=${v3(C.completeRing)},RO=${v3(C.failure)},FOG=${v3(C.farFog)};
 float lum(vec3 c){return dot(pow(max(c,0.),vec3(2.2)),W3);}
-vec3 capL(vec3 c,float m){float l=lum(c);return l>m?c*pow(m/l,.4545):c;}
-vec3 softclip(vec3 c){const float k=${RESOLVE.softclipKnee},h=${RESOLVE.softclipCeiling};float l=lum(c);if(l<=k)return c;return c*pow((k+(h-k)*(1.-exp(-(l-k)/(h-k))))/l,.4545);}
+vec3 capL(vec3 c,float m){float l=lum(c);return l>m?c*pow(m/l,1./2.2):c;}
+vec3 softclip(vec3 c){const float k=${f1(RESOLVE.softclipKnee)},h=${f1(RESOLVE.softclipCeiling)};float l=lum(c);if(l<=k)return c;return c*pow((k+(h-k)*(1.-exp(-(l-k)/(h-k))))/l,1./2.2);}
 float ign(vec2 p){return fract(52.9829189*fract(dot(p,vec2(.06711056,.00583715))));}
 float qdist(vec2 p){const float r=${f1(RESOLVE.quietRadius)};float d=1e5;for(int i=0;i<${RESOLVE.maxQuietRects};i++){if(i>=C6.z)break;vec4 b=Q[i];b.yw-=T.z;vec2 q=abs(p-(b.xy+b.zw)*.5)-(b.zw-b.xy)*.5+r;d=min(d,length(max(q,0.))+min(max(q.x,q.y),0.)-r);}return d;}
 float quiet(vec2 p){return smoothstep(0.,1.,smoothstep(0.,${f1(RESOLVE.quietFeatherPx)},qdist(p)));}

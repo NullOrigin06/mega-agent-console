@@ -121,6 +121,32 @@ describe("createAmbientController", () => {
     controller.destroy();
   });
 
+  it("treats a fresh empty list as unchanged, and forwards contrast and the job-detail module", async () => {
+    const engine = fakeEngine();
+    engineMock.create.mockReturnValue(engine);
+    const { controller } = setup(inputs({ jobs: [] }));
+    await vi.waitFor(() => expect(engine.setState).toHaveBeenCalled());
+    const calls = vi.mocked(engine.setState).mock.calls.length;
+    controller.setInputs(inputs({ jobs: [], agents: [] }));
+    expect(engine.setState).toHaveBeenCalledTimes(calls);
+
+    controller.setInputs(inputs({ jobs: [], page: "jobs", detailModule: "BonnetFlange", contrastMore: true }));
+    expect(vi.mocked(engine.setState).mock.lastCall?.[0]).toMatchObject({ detailModule: "BonnetFlange", contrastMore: true });
+    controller.destroy();
+  });
+
+  it("reports motion unavailable once it falls back to the Canvas2D still", async () => {
+    engineMock.create.mockReturnValue(null);
+    const available: boolean[] = [];
+    const root = document.createElement("div");
+    const poster = document.createElement("div");
+    root.appendChild(poster);
+    document.body.appendChild(root);
+    const controller = createAmbientController({ root, poster, flags: parseAmbientFlags(""), initial: inputs(), routeKey: "modules:", onDocState: () => {}, onMotionAvailable: (a) => available.push(a) });
+    await vi.waitFor(() => expect(available.at(-1)).toBe(false));
+    controller.destroy();
+  });
+
   it("parses the debug query flags", () => {
     expect(parseAmbientFlags("?ambient=still&t=12&pose=face")).toEqual({
       debug: { forceStill: true, stillTime: 12, pose: "face" },

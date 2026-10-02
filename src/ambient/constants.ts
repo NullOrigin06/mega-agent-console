@@ -457,6 +457,12 @@ export const POSE_PARAMS = {
   portholeCy: 0.06,
   portholeFlangeRK: 0.34,
   largeChangeDeg: 15,
+  /** Telemetry falls back to the FACE emblem on stages shorter than this (job detail's one-row header). */
+  telemetryEmblemMinStageH: 120,
+  /** Stage-framed poses (overview, telemetry, section): the twin's swing + tilt envelope stays this far inside the stage. */
+  stageFitPadPx: 8,
+  /** The stage fit never shrinks the projected shell below this (px); past it the twin may overflow the stage. */
+  stageFitMinPx: 56,
 } as const;
 
 // ---------------------------------------------------------------- layers 7/8: flows

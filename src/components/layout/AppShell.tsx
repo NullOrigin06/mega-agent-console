@@ -16,6 +16,8 @@ type Page = "modules" | "jobs";
 interface AppShellProps {
   page: Page;
   workspaceModule: ModuleKind | null;
+  /** Module of the job open in Job detail, when that job is running (ambient glow). */
+  detailModule?: ModuleKind | null;
   jobs: JobSummary[];
   agents: PairedAgentInfo[];
   apiOk: boolean;
@@ -34,6 +36,7 @@ interface AppShellProps {
 export function AppShell({
   page,
   workspaceModule,
+  detailModule = null,
   jobs,
   agents,
   apiOk,
@@ -86,6 +89,7 @@ export function AppShell({
         <AmbientBackground
           page={page}
           workspaceModule={workspaceModule}
+          detailModule={detailModule}
           jobs={jobs}
           agents={agents}
           apiOk={apiOk}

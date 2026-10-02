@@ -36,7 +36,7 @@ RATIONALE: **Base: Duty Field.** Both judges picked it (51 and 49 points). It is
 - Module-owned completion landings.
 - Filmic soft-clip into an accumulation target.
 - The haze-dip match cut for large pose changes.
-- The scroll-synced CSS scrim.
+- ~~The scroll-synced CSS scrim.~~ Removed (see Lead decision in Text protection).
 - Pixel-budget DPR.
 - The once-per-session 'print' opening.
 - Freeze after 10 min idle.
@@ -412,7 +412,7 @@ colour: out = base + haze + lattice + glass + softclip(2 x accum).
   - content column ≤ L 0.020
   - stage and gutters ≤ L 0.040
 - Lines and points: x 0.4 in the content column, and the soft-clip ceiling applies everywhere.
-- Inside a quiet core everything is 0, the base is pulled to #04060b (L 0.0018), and there is no dither.
+- Inside a quiet core everything is 0, the base stays exact #05070d (no pull to #04060b: it read as a dark box), and there is no dither.
 - Vignette: 1 - 0.20·smoothstep(0.55, 1.15, r).
 - IGN dither outside cores: c += (ign(gl_FragCoord.xy) - 0.5)/255, static rather than temporal.
 - Alpha written as 1.
@@ -423,13 +423,12 @@ tech: Reads the haze FBO (bilinear) and the accum target.
 data: - Quiet rects, stage rect, content-column rect and gutters come from DOM measurement.
 - Page intensity and transition fog come from state.
 
---- LAYER 11: DOM safety net: scroll-synced scrim and chrome and overlay rules
-placement: - Scrim: [data-ambient-quiet]::before, inset -32 px, z-index -1 inside an isolation:isolate wrapper. Elements marked: .modules-home-header, .view-header, .controls-bar, .detail-header-nav, .module-workspace-header text, and empty and loading states.
+--- LAYER 11: DOM safety net: chrome and overlay rules (no scrim)
+placement: - No CSS scrim (lead decision): a [data-ambient-quiet]::before scrim the size of the 1100 px header showed as a visible dark box. Elements marked [data-ambient-quiet]: .modules-home-header, .view-header, .controls-bar, .detail-header-nav, .module-workspace-header text, and empty and loading states.
 - Under html[data-ambient='live'], .tooltip-content and .workstation-dropdown-content switch to solid surfaces.
 - .modal-backdrop, .command-palette-overlay and .command-palette suspend the loop instead.
-motion: None. The scrim scrolls with its text, covering the ≤ 33 ms mask lag on fast scroll.
-colour: Scrim: an eased 13-stop radial of rgba(5,7,13,a), a = 0.85 at the core to 0 at the edge.
-
+motion: None. The ≤ 33 ms mask lag on fast scroll is covered by the 56 px feather alone.
+colour: 
 Solid overlay variants: background #131c30 (opacity 0.98), backdrop-filter none.
 tech: Static CSS in ambient.css. No blend modes.
 data: html[data-ambient] is 'live', 'still' or 'off', set by AmbientBackground.
@@ -606,7 +605,7 @@ Move .modules-home-subtitle (index.css ~2535) and .view-subtitle (~1006) from --
   - Block rect for the gradient title.
   - Line boxes from Range.getClientRects for other text.
   - Inflated 16 x 12 px, with a 56 px eased feather.
-- Inside a core: all motifs, haze and dither are 0 and the base is #04060b, so the max L is 0.0018 in the brightest possible frame.
+- Inside a core: all motifs, haze and dither are 0 and the base is exact #05070d, so the core is the plain page background in the brightest possible frame. The Canvas2D still clears cores to the same base.
 - Stars, nodes, links, process lines and streaks are rejected at layout time anywhere within core + feather + 36 px, so nothing is cut in half.
 
 **3. Zone caps**
@@ -618,8 +617,8 @@ These cover unmarked text that is secondary or large:
 **4. Fallback guard**
 For routes that register no rect: the top 140 px x left 60% of the canvas at 60% suppression, plus a dev warning.
 
-**5. Scroll-synced CSS scrim**
-::before on each quiet element, eased radial rgba(5,7,13,0.85 → 0). It covers the ≤ 33 ms mask lag. The 56 px feather alone already covers 2,000 px/s x 16-33 ms.
+**5. Scroll-synced CSS scrim (removed)**
+Lead decision: no CSS scrim and no QBASE pull inside cores; both showed as a visible dark box the size of the header. The 56 px feather alone covers the ≤ 33 ms mask lag (2,000 px/s x 16-33 ms).
 
 **6. Chrome**
 The canvas starts below the glass header and rail, which keep their current look:
@@ -766,7 +765,7 @@ Instance budget at T3: about 1.6-1.9k wire + ≤ 600 streaks + ≤ 32 links + 28
 - Large pose changes are hidden in a 1.0 s haze dip, not shown as visible pans. All of this is disabled under reduced motion (WCAG 2.3.3).
 
 **Contrast (1.4.3)**
-Guaranteed by quiet cores, zone caps, soft-clip, the scrim and the mandatory subtitle promotion. Non-text contrast (1.4.11) is unchanged because cards and controls stay solid.
+Guaranteed by quiet cores, zone caps, soft-clip and the mandatory subtitle promotion (no scrim; see Text protection 5). Non-text contrast (1.4.11) is unchanged because cards and controls stay solid.
 
 **Other media**
 - forced-colors: active → hide .ambient-root.
@@ -797,7 +796,7 @@ All paths are under C:\Users\PARTH\source\repos\mega-agent-console.
   - Diffs job status by id and agent online state into events: silent baseline, 60 s completedAt grace, 1.5 s coalescing, cap of 3 concurrent, queue of 6, batch ring.
 - src\components\ambient\useQuietZones.ts: rect tracking, document coordinates, the fallback guard.
 - src\components\ambient\AmbientMotionToggle.tsx: Header icon button plus the account-menu radio group.
-- src\components\ambient\ambient.css: root and poster, the lattice SVG tiles (34 and 28 px), glow, the scrim, html[data-ambient='live'] solid overlay variants, forced-colors, prefers-contrast and print rules.
+- src\components\ambient\ambient.css: root and poster, the lattice SVG tiles (34 and 28 px), glow, html[data-ambient='live'] solid overlay variants, forced-colors, prefers-contrast and print rules.
 - src\components\cad\useTwinVesselSpec.ts: extracted from ModulesHome (twinSource selection plus the ['vessel-twin-job', id] query plus vesselSpecFromJob plus clamps). Used by both ModulesHome and AmbientBackground.
 
 **New: lazy engine chunk** (src\ambient\, ≤ 14 KB gzip)
@@ -870,7 +869,7 @@ All paths are under C:\Users\PARTH\source\repos\mega-agent-console.
 
 7. **Glass surfaces.** Any new backdrop-filter element over the canvas re-composites every frame. A CI grep or lint flags new backdrop-filter rules for review. Tooltips and dropdowns switch to solid variants under data-ambient='live'.
 
-8. **Scroll lag of the shader mask at 30 fps.** Covered by the 60 fps scroll boost, the 56 px feather and the CSS scrim.
+8. **Scroll lag of the shader mask at 30 fps.** Covered by the 60 fps scroll boost and the 56 px feather.
 
 9. **Cross-browser.**
    - Safari lacks device-pixel-content-box and older Safari lacks requestIdleCallback; both have fallbacks.

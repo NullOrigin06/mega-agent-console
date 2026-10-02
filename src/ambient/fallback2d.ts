@@ -21,7 +21,9 @@ export const renderAmbientStill2D: RenderAmbientStill2D = (canvas, { state, layo
   const s = canvas.width / layout.viewportW;
   const cssH = canvas.height / s;
   const cv = layout.canvas;
-  const w = PAGE_WEIGHTS[state.page];
+  // prefers-contrast: more - lattice and haze only (the CSS halves the root's alpha).
+  const hc = state.contrastMore === true;
+  const w = hc ? { ...PAGE_WEIGHTS[state.page], twin: 0, network: 0 } : PAGE_WEIGHTS[state.page];
   ctx.setTransform(s, 0, 0, s, 0, 0);
   ctx.globalAlpha = 1;
   ctx.fillStyle = COLORS.base;
@@ -90,7 +92,7 @@ export const renderAmbientStill2D: RenderAmbientStill2D = (canvas, { state, layo
   const taken = new Uint8Array(n);
   const mouthR = Math.max(1.2, frame.shellRadiusPx * 0.06);
   for (const e of state.signals.ledger) {
-    if (!n) break;
+    if (!n || hc) break;
     let k = fnv1a(e.key) % n;
     for (let p = 0; p < n && taken[k]; p++) k = (k + 1) % n;
     if (taken[k]) break;
@@ -143,11 +145,12 @@ export const renderAmbientStill2D: RenderAmbientStill2D = (canvas, { state, layo
   }
   ctx.restore();
 
-  // Quiet cores (feathered with a shadow) and the 24 px top fade to exact base.
+  // Quiet cores (feathered with a shadow) and the 24 px top fade, both to exact base - the
+  // GL resolve masks motifs there, it never paints a darker panel.
   ctx.globalAlpha = 1;
-  ctx.fillStyle = COLORS.quietBase;
-  ctx.shadowColor = COLORS.quietBase;
-  ctx.shadowBlur = RESOLVE.quietFeatherPx * s;
+  ctx.fillStyle = COLORS.base;
+  ctx.shadowColor = COLORS.base;
+  ctx.shadowBlur = (hc ? RESOLVE.quietFeatherHighContrastPx : RESOLVE.quietFeatherPx) * s;
   for (const q of layout.quiet.slice(0, RESOLVE.maxQuietRects)) {
     ctx.beginPath();
     ctx.roundRect(q.x, q.y - cv.y - scrollY, q.w, q.h, RESOLVE.quietRadius);

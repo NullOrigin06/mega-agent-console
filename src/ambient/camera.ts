@@ -257,6 +257,9 @@ export function overviewDpx(stageH: number, canvasW: number): number {
   return canvasW < CAMERA.tabletMaxW ? Math.min(d, CAMERA.tabletDpxMax) : d;
 }
 
+/** TELEMETRY on a stage too narrow or too short for the twin: a FACE emblem in the right gutter instead. */
+export const telemetryEmblem = (stage: Rect) => stage.w < POSE_PARAMS.telemetryEmblemMinStageW || stage.h < POSE_PARAMS.telemetryEmblemMinStageH;
+
 /** Stage used when the page registered none: the right ~45% of the top band. */
 export function defaultStage(canvasW: number, canvasH: number): Rect {
   const h = clamp(canvasH * 0.22, 120, 200);
@@ -311,11 +314,11 @@ function plan(input: CameraInput, stage: Rect, pose: PoseName, p: Plan): void {
     case "overview":
       return;
     case "telemetry": {
-      if (stage.w >= POSE_PARAMS.telemetryEmblemMinStageW) {
+      if (!telemetryEmblem(stage)) {
         p.sizePx = dpx * POSE_PARAMS.telemetryScale;
         return;
       }
-      // Narrow stage: a FACE emblem in the right gutter.
+      // Narrow or short stage: a FACE emblem in the right gutter.
       const g = gutterOf(input, stage);
       const size = clamp(g.w - POSE_PARAMS.telemetryEmblemGutterPad, 48, POSE_PARAMS.telemetryEmblemMaxPx);
       p.offAxisDeg = POSES.face.offAxisDeg;
@@ -553,7 +556,92 @@ export function solveCamera(input: CameraInput, out: CameraFrame = createCameraF
       finishFrame(inp, pose, out);
     }
   }
+  if (pose === "overview" || pose === "section" || (pose === "telemetry" && !telemetryEmblem(stage))) fitToStage(inp, stage, pose, p, out);
   return out;
+}
+
+// Union of the twin box over the swing + tilt extremes (module scratch, allocation-free).
+const ENV = { x: 0, y: 0, w: 0, h: 0 };
+let swungInput: CameraInput | null = null;
+
+/**
+ * The box the twin can occupy once the engine adds its swing and pointer tilt
+ * (OVERVIEW / TELEMETRY: +-(swing + tilt) yaw; SECTION: tilt only; +-tilt pitch):
+ * the union of the static box and the four extreme solves. Leaves `out` solved
+ * at the static pose.
+ */
+function envelope(input: CameraInput, pose: PoseName, p: Plan, out: CameraFrame): typeof ENV {
+  const b = out.twinBox;
+  let x0 = b.x;
+  let y0 = b.y;
+  let x1 = b.x + b.w;
+  let y1 = b.y + b.h;
+  const yawAmp = (pose === "section" ? 0 : CAMERA.swingAmpDeg) + CAMERA.tiltYawDeg;
+  const sw = (swungInput = Object.assign(swungInput ?? { ...input }, input));
+  for (const sy of [-1, 1]) {
+    for (const sp of [-1, 1]) {
+      sw.yawOffsetDeg = input.yawOffsetDeg + sy * yawAmp;
+      sw.pitchOffsetDeg = input.pitchOffsetDeg + sp * CAMERA.tiltPitchDeg;
+      solveInto(sw, p, out);
+      finishFrame(sw, pose, out);
+      x0 = Math.min(x0, b.x);
+      y0 = Math.min(y0, b.y);
+      x1 = Math.max(x1, b.x + b.w);
+      y1 = Math.max(y1, b.y + b.h);
+    }
+  }
+  solveInto(input, p, out);
+  finishFrame(input, pose, out);
+  ENV.x = x0;
+  ENV.y = y0;
+  ENV.w = x1 - x0;
+  ENV.h = y1 - y0;
+  return ENV;
+}
+
+/**
+ * Stage-framed poses: shrink (never grow, and never below stageFitMinPx)
+ * until the twin's swing + tilt envelope - bonnet tips, saddles and nozzles
+ * included - fits inside the stage less stageFitPadPx, then lens-shift it the
+ * minimum distance that brings it inside. A twin that already fits keeps its
+ * spec size and anchors.
+ */
+function fitToStage(input: CameraInput, stage: Rect, pose: PoseName, p: Plan, out: CameraFrame) {
+  const pad = POSE_PARAMS.stageFitPadPx;
+  const x0 = stage.x + pad;
+  const y0 = stage.y + pad;
+  const x1 = Math.max(x0 + 1, stage.x + stage.w - pad);
+  const y1 = Math.max(y0 + 1, stage.y + stage.h - pad);
+  let env = envelope(input, pose, p, out);
+  // Box size is ~linear in sizePx (only the perspective depth ratio shifts); a few passes converge.
+  for (let i = 0; i < 4; i++) {
+    const k = Math.min((x1 - x0) / Math.max(env.w, 1e-6), (y1 - y0) / Math.max(env.h, 1e-6));
+    if (k >= 1) break;
+    // Floor on the projected shell diameter (2 x shellRadiusPx tracks sizePx linearly).
+    const floor = POSE_PARAMS.stageFitMinPx / Math.max(2 * out.shellRadiusPx, 1e-6);
+    const kk = Math.max(k * (i === 0 ? 1 : 0.999), floor);
+    if (kk >= 1) break;
+    p.sizePx *= kk;
+    solveInto(input, p, out);
+    finishFrame(input, pose, out);
+    env = envelope(input, pose, p, out);
+  }
+  // Lens shift is a pure screen translation: move the envelope just enough to sit inside the padded stage.
+  const shift = (lo: number, hi: number, a: number, size: number) => (size >= hi - lo ? (lo + hi) / 2 - (a + size / 2) : a < lo ? lo - a : a + size > hi ? hi - (a + size) : 0);
+  const dx = shift(x0, x1, env.x, env.w);
+  const dy = shift(y0, y1, env.y, env.h);
+  if (dx === 0 && dy === 0) return;
+  p.anchorX += dx;
+  p.anchorY += dy;
+  solveInto(input, p, out);
+  finishFrame(input, pose, out);
+}
+
+/** The swing + tilt envelope of a solved stage-framed pose (tests and debugging; allocates). */
+export function swingEnvelope(input: CameraInput): Rect {
+  const out = solveCamera(input);
+  const e = envelope(input, input.pose, PLAN, out);
+  return { x: e.x, y: e.y, w: e.w, h: e.h };
 }
 
 /** Allocation-free projection of a twin-local (un-rolled) point; returns false when behind the camera. */

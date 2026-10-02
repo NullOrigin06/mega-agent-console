@@ -31,6 +31,8 @@ float A2=dot(dd,dd),B2=dot(oo,dd),D2=B2*B2-A2*(dot(oo,oo)-1.);
 if(D2>0.){D2=sqrt(D2);for(int i=0;i<2;i++){float t=(-B2+(i==0?-D2:D2))/A2;vec3 h=o+t*d;if(t>0.&&sx*(h.x-ce.x)>0.)c+=gs(h,normalize((h-ce)/(s*s)),d,i==0?1.:${f1(GLASS.backFace)},2);}}}
 if((int(V.w)&1)!=0)c*=1.-${f1(GLASS.scanlineModulation)}*(.5+.5*sin(6.2832*(fc.y/${f1(GLASS.scanlinePeriodDevicePx)}-FX2.w)));
 return c;}
+// Signal-lost desaturation, applied before the caps so it can never lift a pixel over its budget.
+vec3 desat(vec3 c){return mix(c,vec3(dot(c,W3)),${f1(-HAZE.apiDownSaturation)}*FX2.z);}
 vec3 heat(float l){float x=clamp(l/${f1(RESOLVE.capStageL)},0.,1.);return l>${f1(RESOLVE.capStageL)}?vec3(1):vec3(smoothstep(.3,1.,x),smoothstep(0.,.5,x)-smoothstep(.7,1.,x),1.-smoothstep(0.,.5,x));}
 void main(){
 vec2 fc=gl_FragCoord.xy,uv=fc/V.xy,p=vec2(fc.x,V.y-fc.y)/V.z;float sc=V.z;int fl=int(V.w);
@@ -51,12 +53,11 @@ lat=${v3(COLORS.latticeRim)}*a*rim+${v3(COLORS.crescent)}*${f1(CRESCENT.alpha / 
 vec3 g=vec3(0);
 if((fl&2)!=0&&p.x>BOX.x&&p.x<BOX.z&&p.y>BOX.y&&p.y<BOX.w)g=glass(p,fc)*FX2.y;
 vec3 base=mix(BASE,${v3(COLORS.boreBottom)},hole),hz=mix(texture(uHaze,uv).rgb,FOG-BASE,.6*dip)*(1.-.7*hole);
-vec3 c=capL(base+hz+(lat+g)*mix(1.,${f1(DIP)},dip),col?${f1(RESOLVE.capColumnL)}:${f1(RESOLVE.capStageL)})-base;
-c+=softclip(texture(uAcc,uv).rgb*${f1(RESOLVE.accumGain)}*(col?${f1(RESOLVE.lineColumnScale)}:1.)*mix(1.,${f1(DIP)},dip));
+vec3 c=capL(base+desat(hz+(lat+g)*mix(1.,${f1(DIP)},dip)),col?${f1(RESOLVE.capColumnL)}:${f1(RESOLVE.capStageL)})-base;
+c+=desat(softclip(texture(uAcc,uv).rgb*${f1(RESOLVE.accumGain)}*(col?${f1(RESOLVE.lineColumnScale)}:1.)*mix(1.,${f1(DIP)},dip)));
 c=capL(base+c,${f1(RESOLVE.softclipCeiling)})-base;
 float r=length((p-CAM.xy-CAM.zw*.5)/(CAM.zw*.5))*.7071;
 c*=q*top*(1.-${f1(V.amount)}*smoothstep(${f1(V.inner)},${f1(V.outer)},r));
-c=mix(c,vec3(dot(c,W3)),${f1(-HAZE.apiDownSaturation)}*FX2.z);
 vec3 res=base+c+(ign(fc)-.5)/255.*q;
 if((fl&4)!=0)res=heat(lum(res));
 o=vec4(res,1.);}

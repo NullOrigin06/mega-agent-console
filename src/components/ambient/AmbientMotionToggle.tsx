@@ -8,12 +8,14 @@ import { useAmbientBus } from "./useAmbientBus";
  * Stop, Hide) - always in .header-actions, so it's reachable whatever the
  * sidebar state. Pressed = motion on. A click flips the effective motion;
  * when "Auto" would already give the requested state it goes back to Auto,
- * so the OS reduced-motion setting keeps being followed.
+ * so the OS reduced-motion setting keeps being followed. When nothing can
+ * move (forced colours, no renderer, the Canvas2D still) it is disabled and
+ * not pressed, rather than offering a pause that does nothing.
  */
 export function AmbientMotionToggle() {
-  const { motion, reducedMotion, contrastMore } = useAmbientBus();
-  const playing = motion === "live";
-  const label = playing ? "Pause ambient motion" : "Resume ambient motion";
+  const { motion, reducedMotion, contrastMore, motionAvailable } = useAmbientBus();
+  const playing = motionAvailable && motion === "live";
+  const label = !motionAvailable ? "Ambient motion unavailable" : playing ? "Pause ambient motion" : "Resume ambient motion";
 
   const toggle = () => {
     const want = playing ? "still" : "live";
@@ -26,9 +28,10 @@ export function AmbientMotionToggle() {
       <Tooltip.Trigger asChild>
         <button
           type="button"
-          className="btn btn-secondary btn-icon"
+          className="btn btn-secondary btn-icon ambient-motion-toggle"
           aria-label="Ambient motion"
           aria-pressed={playing}
+          disabled={!motionAvailable}
           onClick={toggle}
         >
           {playing ? <IconPause size={16} /> : <IconPlay size={16} />}

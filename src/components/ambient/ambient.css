@@ -53,15 +53,10 @@
   }
 }
 
-/* Scroll-synced scrim behind on-background text: covers the shader quiet
-   mask's <= 1 frame lag on fast scroll. No isolation wrapper on purpose: the
-   z-index -1 pseudo then lands in .app-shell-body's stacking context, below
-   every card (a scrim that overhangs a neighbouring card never darkens it)
-   but above the ambient root. A feathered rect rather than a radial, so the
-   corners of wide, left-aligned headers stay covered. */
-/* Text on the background is protected by the shader's quiet mask; no CSS scrim
-   (a scrim the size of the header block showed as a visible dark box). */
-
+/* Text on the background is protected by the shader's quiet mask alone (motifs
+   masked to exact base, 56 px feather, which also covers the mask's <= 1 frame
+   lag on fast scroll). Deliberately no CSS scrim and no darker base: a scrim
+   the size of the header block showed as a visible dark box. */
 
 /* Glass overlays that can sit over the live canvas would re-composite their
    backdrop blur every frame - give them solid surfaces while it runs. */
@@ -73,7 +68,8 @@ html[data-ambient="live"] .workstation-dropdown-content {
 }
 
 @media (forced-colors: active) {
-  .ambient-root {
+  .ambient-root,
+  .ambient-motion-toggle {
     display: none;
   }
 }
@@ -84,8 +80,8 @@ html[data-ambient="live"] .workstation-dropdown-content {
   }
 }
 
-/* prefers-contrast: more also forces Still (ambientBus); halve the motif
-   light here and widen the scrim feather. */
+/* prefers-contrast: more: halves the motif alpha. Still mode, lattice + haze
+   only and the 96 px quiet-core feather are handled by ambientBus / the engine. */
 @media (prefers-contrast: more) {
   .ambient-root {
     opacity: 0.5;

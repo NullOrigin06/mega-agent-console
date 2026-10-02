@@ -76,7 +76,14 @@ export interface AmbientInputs {
   mode: AmbientRenderMode;
   suspended: boolean;
   reducedMotion: boolean;
+  /** prefers-contrast: more (lattice and haze only, wider quiet-core feather). */
+  contrastMore?: boolean;
+  /** Module of the job open in Job detail, when that job is running. */
+  detailModule?: ModuleKind | null;
 }
+
+/** Same list for change detection: one identity, or both empty (a fresh `[]` default each render). */
+const sameList = (a: readonly unknown[], b: readonly unknown[]) => a === b || (a.length === 0 && b.length === 0);
 
 export interface AmbientController {
   setInputs(inputs: AmbientInputs): void;
@@ -125,6 +132,8 @@ export function createAmbientController(opts: {
   initial: AmbientInputs;
   routeKey: string;
   onDocState: (state: AmbientDocState) => void;
+  /** False once the Canvas2D still (or nothing) replaced the engine: motion can't resume. */
+  onMotionAvailable?: (available: boolean) => void;
 }): AmbientController {
   const { root, poster, flags } = opts;
   let inputs = opts.initial;
@@ -153,6 +162,8 @@ export function createAmbientController(opts: {
       page: inputs.page,
       workspaceModule: inputs.workspaceModule,
       highlight: inputs.highlight,
+      detailModule: inputs.detailModule ?? null,
+      contrastMore: inputs.contrastMore === true,
       signals: demoSignals ? { ...signals, ...demoSignals } : signals,
     };
   };
@@ -168,6 +179,7 @@ export function createAmbientController(opts: {
       lastDoc = next;
       opts.onDocState(next);
     }
+    opts.onMotionAvailable?.(!fellBack);
   };
 
   // ---- crossfade -----------------------------------------------------------
@@ -404,13 +416,15 @@ export function createAmbientController(opts: {
       const prev = inputs;
       inputs = next;
       let redraw = false;
-      const dataChanged = next.jobs !== prev.jobs || next.agents !== prev.agents;
+      const dataChanged = !sameList(next.jobs, prev.jobs) || !sameList(next.agents, prev.agents);
       if (
         dataChanged ||
         next.apiOk !== prev.apiOk ||
         next.page !== prev.page ||
         next.workspaceModule !== prev.workspaceModule ||
-        next.highlight !== prev.highlight
+        next.highlight !== prev.highlight ||
+        (next.detailModule ?? null) !== (prev.detailModule ?? null) ||
+        next.contrastMore !== prev.contrastMore
       ) {
         redraw = true;
         activity();

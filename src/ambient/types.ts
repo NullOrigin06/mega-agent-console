@@ -133,6 +133,10 @@ export interface AmbientSceneState {
   /** Hover-linked module (tile / sidebar item), or null. */
   highlight: ModuleKind | null;
   signals: AmbientSignals;
+  /** Job detail of a running job (page "jobs"): that module's region glows +0.15. */
+  detailModule?: ModuleKind | null;
+  /** prefers-contrast: more - lattice and haze only, 96 px quiet-core feather. */
+  contrastMore?: boolean;
 }
 
 /** Measured DOM layout, re-sent on resize / route commit / sidebar change. */
