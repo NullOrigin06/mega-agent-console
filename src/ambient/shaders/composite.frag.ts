@@ -53,11 +53,13 @@ lat=${v3(COLORS.latticeRim)}*a*rim+${v3(COLORS.crescent)}*${f1(CRESCENT.alpha / 
 vec3 g=vec3(0);
 if((fl&2)!=0&&p.x>BOX.x&&p.x<BOX.z&&p.y>BOX.y&&p.y<BOX.w)g=glass(p,fc)*FX2.y;
 vec3 base=mix(BASE,${v3(COLORS.boreBottom)},hole),hz=mix(texture(uHaze,uv).rgb,FOG-BASE,.6*dip)*(1.-.7*hole);
-vec3 c=capL(base+desat(hz+(lat+g)*mix(1.,${f1(DIP)},dip)),col?${f1(RESOLVE.capColumnL)}:${f1(RESOLVE.capStageL)})-base;
+vec3 c=capL(base+desat(hz+(lat+g)*mix(1.,${f1(DIP)},dip)),col?${f1(RESOLVE.capColumnL)}:${f1(RESOLVE.capStageL)})-base;vec3 fld=c;
 c+=desat(softclip(texture(uAcc,uv).rgb*${f1(RESOLVE.accumGain)}*(col?${f1(RESOLVE.lineColumnScale)}:1.)*mix(1.,${f1(DIP)},dip)));
 c=capL(base+c,${f1(RESOLVE.softclipCeiling)})-base;
 float r=length((p-CAM.xy-CAM.zw*.5)/(CAM.zw*.5))*.7071;
 c*=q*top*(1.-${f1(V.amount)}*smoothstep(${f1(V.inner)},${f1(V.outer)},r));
+// Quiet cores keep a dimmed lattice + haze (no hard-edged empty box); only lines/points are fully masked there.
+c+=fld*(1.-q)*${f1(RESOLVE.quietFieldFloor)}*top*(1.-${f1(V.amount)}*smoothstep(${f1(V.inner)},${f1(V.outer)},r));
 vec3 res=base+c+(ign(fc)-.5)/255.*q;
 if((fl&4)!=0)res=heat(lum(res));
 o=vec4(res,1.);}

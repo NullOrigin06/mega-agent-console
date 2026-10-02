@@ -61,9 +61,11 @@ function resolve(p: Px): { field: V3; out: V3 } {
   const desat = (c: V3): V3 => mix(c, [dot(c, W3), dot(c, W3), dot(c, W3)], -HAZE.apiDownSaturation * p.lost);
   const field = capL(add(BASE, desat(add(p.haze, p.field))), col ? RESOLVE.capColumnL : RESOLVE.capStageL);
   let c = sub(field, BASE);
+  const fld = c;
   c = add(c, desat(softclip(mul(p.acc, RESOLVE.accumGain * (col ? RESOLVE.lineColumnScale : 1)))));
   c = sub(capL(add(BASE, c), RESOLVE.softclipCeiling), BASE);
   c = mul(c, p.q);
+  c = add(c, mul(fld, (1 - p.q) * RESOLVE.quietFieldFloor));
   const out = add(add(BASE, c), mul([1, 1, 1], ((p.ign - 0.5) / 255) * p.q));
   return { field, out };
 }
@@ -98,11 +100,13 @@ describe("luminance budget (composite resolve)", () => {
     expect(COMPOSITE_FRAG).toContain("vec3 res=base+c+(ign(fc)-.5)/255.*q;");
   });
 
-  it(`quiet cores resolve to base: max L <= ${RESOLVE.quietMaxL}`, () => {
+  it(`quiet cores keep only a dimmed field: max L <= ${RESOLVE.quietMaxL}`, () => {
     let max = 0;
     for (const zone of ["column", "stage"] as const) for (const p of samples(zone, 0)) max = Math.max(max, lum(resolve(p).out));
-    expect(max).toBeCloseTo(lum(BASE), 9);
     expect(max).toBeLessThanOrEqual(RESOLVE.quietMaxL);
+    // Lines and points add nothing inside a core.
+    const lineOnly: Px = { q: 0, zone: "stage", haze: [0, 0, 0], field: [0, 0, 0], acc: [4, 4, 4], lost: 0, ign: 0.5 };
+    expect(lum(resolve(lineOnly).out)).toBeCloseTo(lum(BASE), 9);
   });
 
   it(`column fields are capped at L ${RESOLVE.capColumnL}`, () => {
@@ -136,7 +140,7 @@ describe("luminance budget (composite resolve)", () => {
     for (const zone of ["column", "stage"] as const) for (const q of [1, 0.5, 0.1]) for (const p of samples(zone, q)) max = Math.max(max, lum(resolve(p).out));
     expect(max).toBeLessThanOrEqual(RESOLVE.softclipCeiling + ditherL(RESOLVE.softclipCeiling));
     // Ordering of the budgets themselves.
-    expect(RESOLVE.quietMaxL).toBeLessThan(RESOLVE.capColumnL);
+    expect(RESOLVE.quietMaxL).toBeLessThanOrEqual(RESOLVE.capColumnL);
     expect(RESOLVE.capColumnL).toBeLessThan(RESOLVE.capStageL);
     expect(RESOLVE.capStageL).toBeLessThan(RESOLVE.softclipKnee);
     expect(HAZE.peakL).toBeLessThan(RESOLVE.capColumnL);

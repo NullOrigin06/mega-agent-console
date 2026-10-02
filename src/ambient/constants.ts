@@ -573,6 +573,8 @@ export const RESOLVE = {
   quietInflateY: 12,
   quietRadius: 12,
   quietFeatherPx: 56,
+  /** Fraction of the lattice + haze field kept inside quiet cores (lines and points are fully masked). */
+  quietFieldFloor: 0.55,
   quietFeatherHighContrastPx: 96,
   fallbackGuard: { delayMs: 500, heightPx: 140, widthFrac: 0.6, suppression: 0.6 },
   topFadePx: 24,
@@ -584,7 +586,7 @@ export const RESOLVE = {
   capStageL: 0.04,
   lineColumnScale: 0.4,
   vignette: { amount: 0.2, inner: 0.55, outer: 1.15 },
-  quietMaxL: 0.0025,
+  quietMaxL: 0.02,
   meanFrameL: 0.012,
   nearBaseFrac: 0.6,
   nearBaseDeltaL: 0.002,
