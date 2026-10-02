@@ -3407,6 +3407,75 @@ body {
   pointer-events: none;
 }
 
+/* Faded part render behind each module card. Sits on the right and fades
+   out towards the text so labels keep full contrast. The tube sheet and
+   bonnet renders are near-square so they size by height; the exchanger is
+   long and sizes by width. */
+.module-home-card-art {
+  position: absolute;
+  top: 50%;
+  right: -3%;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  transform: translateY(-50%);
+  opacity: 0.18;
+  pointer-events: none;
+  user-select: none;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 60%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 60%);
+  filter: saturate(0.6);
+  transition: opacity 0.35s ease, transform 0.5s ease;
+}
+
+.module-home-card-art-HeatExchangerFab {
+  height: auto;
+  width: 64%;
+  right: -7%;
+  top: 50%;
+}
+
+.module-bento-hero .module-home-card-art {
+  height: 84%;
+  right: -2%;
+  top: 44%;
+}
+
+.module-bento-hero .module-home-card-art-HeatExchangerFab {
+  height: auto;
+  width: 96%;
+  right: -14%;
+  top: 50%;
+}
+
+@media (max-width: 640px) {
+  .module-home-card-art-HeatExchangerFab,
+  .module-bento-hero .module-home-card-art-HeatExchangerFab {
+    width: 100%;
+    right: -22%;
+  }
+}
+
+.module-home-card:hover .module-home-card-art,
+.module-home-card:focus-visible .module-home-card-art {
+  opacity: 0.3;
+  transform: translateY(-50%) scale(1.04);
+}
+
+.module-home-card > :not(.module-home-card-art):not(.module-home-card-glow) {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .module-home-card-art {
+    transition: opacity 0.35s ease;
+  }
+  .module-home-card:hover .module-home-card-art {
+    transform: translateY(-50%);
+  }
+}
+
 .module-home-card-top {
   display: flex;
   align-items: center;

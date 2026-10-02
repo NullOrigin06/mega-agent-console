@@ -8,6 +8,17 @@ import { IconArrowRight, IconDrafting, IconLoader } from "../common/Icon";
 import { CadHeatExchangerPreview } from "../cad/CadHeatExchangerPreview";
 import { TYPICAL_VESSEL, vesselSpecFromJob } from "../cad/vesselSpec";
 import { DurationTrendChart } from "./DurationTrendChart";
+import tubeSheetArt from "../../assets/module-art/tube-sheet.webp";
+import bonnetFlangeArt from "../../assets/module-art/bonnet-flange.webp";
+import heatExchangerArt from "../../assets/module-art/heat-exchanger.webp";
+
+// Faded renders of each module's part, generated from the same geometry as
+// the 3D twin so they stay consistent with it and with each other.
+const MODULE_ART: Record<ModuleKind, string> = {
+  TubeSheet: tubeSheetArt,
+  BonnetFlange: bonnetFlangeArt,
+  HeatExchangerFab: heatExchangerArt,
+};
 
 // The 3D viewport pulls in three.js + react-three-fiber (a genuinely heavy
 // dependency) - lazy-loaded so it's only fetched once someone actually asks
@@ -180,6 +191,14 @@ function ModuleTile({
       className={`module-home-card ${hero ? "module-bento-hero" : "module-bento-secondary"}`}
       onClick={onSelect}
     >
+      <img
+        className={`module-home-card-art module-home-card-art-${mod.kind}`}
+        src={MODULE_ART[mod.kind]}
+        alt=""
+        aria-hidden="true"
+        decoding="async"
+        draggable={false}
+      />
       <div className="module-home-card-glow" aria-hidden="true" />
       <div className="module-home-card-top">
         <div className={`module-home-card-icon ${isRunning ? "module-home-card-icon-active" : ""}`}>
