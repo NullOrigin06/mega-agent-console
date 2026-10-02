@@ -127,8 +127,8 @@ export function JobList({
   };
 
   return (
-    <div className="job-list-view">
-      <div className="view-header">
+    <div className="job-list-view" data-ambient-column>
+      <div className="view-header" data-ambient-header data-ambient-quiet>
         <div>
           <h1 className="view-title">Engineering Jobs Dashboard</h1>
           <p className="view-subtitle">
@@ -153,7 +153,7 @@ export function JobList({
       )}
 
       {/* Control Bar: Filters & Search */}
-      <div className="controls-bar">
+      <div className="controls-bar" data-ambient-quiet>
         <div className="filter-group">
           <span className="control-label">Module:</span>
           <div className="segmented-control">

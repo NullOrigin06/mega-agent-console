@@ -1,0 +1,116 @@
+/* ==========================================================================
+   Ambient background ("Duty Field") - root, static poster, DOM safety net.
+   The poster is the first-paint frame and the permanent underlay; the
+   engine's canvas crossfades in over it. Lattice = the production tube-sheet
+   drilling rule: 30 deg triangular pitch 34 px, mouth r 13.6 (OD = pitch/1.25),
+   row step 29.445, every 10th row an empty pass-partition lane. Origin is
+   the root's top-left (viewport x 0, y = --ambient-top), the same origin the
+   GL lattice uses, so the crossfade never jumps.
+   ========================================================================== */
+.ambient-root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--ambient-top, 91px);
+  height: calc(100lvh - var(--ambient-top, 91px));
+  z-index: 0;
+  contain: strict;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.jobstream-root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--ambient-top, 91px);
+  height: calc(100lvh - var(--ambient-top, 91px));
+  z-index: 0;
+  contain: strict;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Jobs Dashboard: cards let the job stream show through faintly. */
+html[data-jobstream="on"] .controls-bar,
+html[data-jobstream="on"] .table-card,
+html[data-jobstream="on"] .running-job-panel {
+  background-color: rgba(19, 28, 48, 0.8);
+}
+
+.jobstream-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ambient-poster,
+.ambient-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ambient-poster {
+  --ambient-lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='294.45' viewBox='0 0 34 294.45'%3E%3Cg fill='none' stroke='%233b82f6' stroke-opacity='.055'%3E%3Ccircle cx='0' cy='0' r='13.6'/%3E%3Ccircle cx='34' cy='0' r='13.6'/%3E%3Ccircle cx='17' cy='29.445' r='13.6'/%3E%3Ccircle cx='0' cy='58.89' r='13.6'/%3E%3Ccircle cx='34' cy='58.89' r='13.6'/%3E%3Ccircle cx='17' cy='88.335' r='13.6'/%3E%3Ccircle cx='0' cy='117.779' r='13.6'/%3E%3Ccircle cx='34' cy='117.779' r='13.6'/%3E%3Ccircle cx='17' cy='147.224' r='13.6'/%3E%3Ccircle cx='0' cy='176.669' r='13.6'/%3E%3Ccircle cx='34' cy='176.669' r='13.6'/%3E%3Ccircle cx='17' cy='206.114' r='13.6'/%3E%3Ccircle cx='0' cy='235.559' r='13.6'/%3E%3Ccircle cx='34' cy='235.559' r='13.6'/%3E%3Ccircle cx='0' cy='294.45' r='13.6'/%3E%3Ccircle cx='34' cy='294.45' r='13.6'/%3E%3C/g%3E%3C/svg%3E");
+  --ambient-lattice-size: 34px 294.45px;
+  background-color: var(--bg-app, #05070d);
+  background-image:
+    var(--ambient-lattice),
+    radial-gradient(30% 26% at 76% 11%, rgba(11, 26, 51, 0.85), transparent 72%),
+    radial-gradient(60% 50% at 100% 100%, rgba(6, 30, 40, 0.3), transparent 70%);
+  background-size: var(--ambient-lattice-size), 100% 100%, 100% 100%;
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-position: 0 0;
+}
+
+.ambient-canvas {
+  display: block;
+  opacity: 0;
+}
+
+/* Phones: the narrow lattice (pitch 28, r 11.2), same rules. */
+@media (max-width: 640px) {
+  .ambient-poster {
+    --ambient-lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='242.49' viewBox='0 0 28 242.49'%3E%3Cg fill='none' stroke='%233b82f6' stroke-opacity='.055'%3E%3Ccircle cx='0' cy='0' r='11.2'/%3E%3Ccircle cx='28' cy='0' r='11.2'/%3E%3Ccircle cx='14' cy='24.249' r='11.2'/%3E%3Ccircle cx='0' cy='48.497' r='11.2'/%3E%3Ccircle cx='28' cy='48.497' r='11.2'/%3E%3Ccircle cx='14' cy='72.746' r='11.2'/%3E%3Ccircle cx='0' cy='96.995' r='11.2'/%3E%3Ccircle cx='28' cy='96.995' r='11.2'/%3E%3Ccircle cx='14' cy='121.244' r='11.2'/%3E%3Ccircle cx='0' cy='145.492' r='11.2'/%3E%3Ccircle cx='28' cy='145.492' r='11.2'/%3E%3Ccircle cx='14' cy='169.741' r='11.2'/%3E%3Ccircle cx='0' cy='193.99' r='11.2'/%3E%3Ccircle cx='28' cy='193.99' r='11.2'/%3E%3Ccircle cx='0' cy='242.49' r='11.2'/%3E%3Ccircle cx='28' cy='242.49' r='11.2'/%3E%3C/g%3E%3C/svg%3E");
+    --ambient-lattice-size: 28px 242.49px;
+  }
+}
+
+/* Text on the background is protected by the shader's quiet mask alone (motifs
+   masked to exact base, 56 px feather, which also covers the mask's <= 1 frame
+   lag on fast scroll). Deliberately no CSS scrim and no darker base: a scrim
+   the size of the header block showed as a visible dark box. */
+
+/* Glass overlays that can sit over the live canvas would re-composite their
+   backdrop blur every frame - give them solid surfaces while it runs. */
+html[data-ambient="live"] .tooltip-content,
+html[data-ambient="live"] .workstation-dropdown-content {
+  background: rgba(19, 28, 48, 0.98);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (forced-colors: active) {
+  .ambient-root,
+  .ambient-motion-toggle {
+    display: none;
+  }
+}
+
+@media print {
+  .ambient-root,
+  .jobstream-root {
+    display: none;
+  }
+}
+
+/* prefers-contrast: more: halves the motif alpha. Still mode, lattice + haze
+   only and the 96 px quiet-core feather are handled by ambientBus / the engine. */
+@media (prefers-contrast: more) {
+  .ambient-root {
+    opacity: 0.5;
+  }
+}

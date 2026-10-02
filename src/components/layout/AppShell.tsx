@@ -8,12 +8,19 @@ import { Header } from "./Header";
 import { PipelineStatusRail } from "./PipelineStatusRail";
 import { CommandPalette } from "../common/CommandPalette";
 import { RotateKeyModal } from "../auth/RotateKeyModal";
+import { AmbientBackground } from "../ambient/AmbientBackground";
+import { JobStreamBackground } from "../ambient/JobStreamBackground";
+import { useAmbientSuspend } from "../ambient/useAmbientBus";
 
 type Page = "modules" | "jobs";
 
 interface AppShellProps {
   page: Page;
   workspaceModule: ModuleKind | null;
+  /** Module of the job open in Job detail, when that job is running (ambient glow). */
+  detailModule?: ModuleKind | null;
+  /** True only on the Jobs Dashboard list - the one page with the job-stream background. */
+  jobsDashboard?: boolean;
   jobs: JobSummary[];
   agents: PairedAgentInfo[];
   apiOk: boolean;
@@ -32,6 +39,8 @@ interface AppShellProps {
 export function AppShell({
   page,
   workspaceModule,
+  detailModule = null,
+  jobsDashboard = false,
   jobs,
   agents,
   apiOk,
@@ -50,6 +59,12 @@ export function AppShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [showRotateKey, setShowRotateKey] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // The palette and modals blur what's behind them - hold the ambient
+  // background on a static frame while they're open instead of re-blurring
+  // a moving one every frame.
+  useAmbientSuspend("palette", paletteOpen);
+  useAmbientSuspend("modal", showRotateKey && Boolean(session));
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -75,6 +90,15 @@ export function AppShell({
   return (
     <Tooltip.Provider delayDuration={300}>
       <div className="app-shell">
+        <AmbientBackground
+          page={page}
+          workspaceModule={workspaceModule}
+          detailModule={detailModule}
+          jobs={jobs}
+          agents={agents}
+          apiOk={apiOk}
+        />
+        {jobsDashboard && <JobStreamBackground jobs={jobs} apiOk={apiOk} />}
         <Sidebar
           page={page}
           workspaceModule={workspaceModule}

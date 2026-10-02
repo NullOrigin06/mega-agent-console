@@ -206,7 +206,7 @@ export function JobDetailView({
 
   if (isLoading) {
     return (
-      <div className="job-detail-loading">
+      <div className="job-detail-loading" data-ambient-quiet>
         <IconLoader size={36} className="text-accent" />
         <p className="loading-text">Loading job detail for {jobId} from mock API...</p>
       </div>
@@ -215,7 +215,7 @@ export function JobDetailView({
 
   if (!job) {
     return (
-      <div className="job-detail-not-found">
+      <div className="job-detail-not-found" data-ambient-quiet>
         <IconAlertTriangle size={48} className="text-rose" />
         <h2>Job Not Found</h2>
         <p>No job record exists with ID {jobId}.</p>
@@ -231,9 +231,9 @@ export function JobDetailView({
   const hasEngData = Boolean(job.engineeringData);
 
   return (
-    <div className="job-detail-container">
+    <div className="job-detail-container" data-ambient-column>
       {/* Detail Header & Navigation */}
-      <div className="detail-header-nav">
+      <div className="detail-header-nav" data-ambient-header data-ambient-quiet>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onBack}>
           <IconArrowLeft size={16} />
           <span>Back to Job List</span>

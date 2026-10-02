@@ -1,12 +1,11 @@
 import { Suspense, lazy, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import type { JobSummary, ModuleKind } from "../../types/engineering";
 import { MODULE_OPTIONS, type ModuleOption } from "../../constants/modules";
 import { MODULE_COLORS, MODULE_SHORT_NAMES } from "../../constants/moduleColors";
-import { getJob } from "../../api";
 import { IconArrowRight, IconDrafting, IconLoader } from "../common/Icon";
 import { CadHeatExchangerPreview } from "../cad/CadHeatExchangerPreview";
-import { TYPICAL_VESSEL, vesselSpecFromJob } from "../cad/vesselSpec";
+import { useTwinVesselSpec } from "../cad/useTwinVesselSpec";
+import { useAmbientHighlight, useAmbientSuspend } from "../ambient/useAmbientBus";
 import { DurationTrendChart } from "./DurationTrendChart";
 import tubeSheetArt from "../../assets/module-art/tube-sheet.webp";
 import bonnetFlangeArt from "../../assets/module-art/bonnet-flange.webp";
@@ -60,19 +59,10 @@ function latestJobFor(jobs: JobSummary[], kind: ModuleKind): JobSummary | undefi
  */
 export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
   const [showVessel, setShowVessel] = useState(false);
-
-  // The twin is modelled on the newest completed Heat Exchanger Fab run -
-  // the only module whose job carries the whole vessel's dimensions.
-  const twinSource = jobs
-    .filter((j) => j.module === "HeatExchangerFab" && j.status === "completed")
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-  const { data: twinJob } = useQuery({
-    queryKey: ["vessel-twin-job", twinSource?.id],
-    queryFn: () => getJob(twinSource!.id),
-    enabled: Boolean(twinSource),
-    staleTime: 5 * 60_000,
-  });
-  const vesselSpec = (twinJob && vesselSpecFromJob(twinJob)) || TYPICAL_VESSEL;
+  const vesselSpec = useTwinVesselSpec(jobs);
+  // Two WebGL scenes shouldn't share the GPU - the ambient background holds
+  // its last frame while the interactive twin is open.
+  useAmbientSuspend("twin3d", showVessel);
   const withActivity = MODULE_OPTIONS.map((mod) => {
     const latest = latestJobFor(jobs, mod.kind);
     const isRunning = latest?.status === "running" || latest?.status === "queued";
@@ -98,8 +88,8 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
   const secondary = withActivity.filter((_, i) => i !== heroIndex);
 
   return (
-    <div className="modules-home">
-      <div className="modules-home-header">
+    <div className="modules-home" data-ambient-column>
+      <div className="modules-home-header" data-ambient-header data-ambient-quiet>
         <h1 className="modules-home-title">Engineering Modules</h1>
         <p className="modules-home-subtitle">
           Choose a module to size, calculate, review, and generate a drawing
@@ -184,12 +174,14 @@ function ModuleTile({
 }) {
   const { mod, latest, isRunning } = entry;
   const Preview = mod.preview;
+  const highlight = useAmbientHighlight(mod.kind);
 
   return (
     <button
       type="button"
       className={`module-home-card ${hero ? "module-bento-hero" : "module-bento-secondary"}`}
       onClick={onSelect}
+      {...highlight}
     >
       <img
         className={`module-home-card-art module-home-card-art-${mod.kind}`}

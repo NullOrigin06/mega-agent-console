@@ -10,6 +10,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id: string) {
+          // React's runtime gets its own chunk first: otherwise the bundler hoists it (and
+          // scheduler) into whichever vendor group claims it, and the entry ends up statically
+          // importing vendor-three / vendor-charts just to get React.
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
+            return 'vendor-react'
+          }
           if (/[\\/]node_modules[\\/](three|@react-three|three-stdlib)/.test(id)) {
             return 'vendor-three'
           }

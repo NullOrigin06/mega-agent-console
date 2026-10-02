@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JobSummary, ModuleKind } from "./types/engineering";
-import { listJobs, deleteJob, listAgents } from "./api";
+import { listJobs, deleteJob, listAgents, type PairedAgentInfo } from "./api";
 import { AppShell } from "./components/layout/AppShell";
 import { JobList } from "./components/jobs/JobList";
 import { JobDetailView } from "./components/jobs/JobDetailView";
@@ -20,6 +20,9 @@ import { readUrlToken } from "./utils/urlToken";
 type Page = "modules" | "jobs";
 
 const JOBS_QUERY_KEY = ["jobs"] as const;
+// Stable defaults: a fresh `[]` per render would read as new data downstream (the ambient controller).
+const EMPTY_JOBS: JobSummary[] = [];
+const EMPTY_AGENTS: PairedAgentInfo[] = [];
 
 export function App() {
   const queryClient = useQueryClient();
@@ -38,7 +41,7 @@ export function App() {
   }, [queryClient]);
 
   const {
-    data: jobs = [],
+    data: jobs = EMPTY_JOBS,
     isLoading,
     isRefetching: isRefreshing,
     isError: jobsErrored,
@@ -48,12 +51,17 @@ export function App() {
     queryFn: listJobs,
     enabled: Boolean(session),
     meta: { errorMessage: "Failed to load jobs" },
+    // Poll fast only while something is in flight, so status changes (and the
+    // ambient background's job events) arrive promptly; never while hidden.
+    refetchInterval: (q) =>
+      q.state.data?.some((j) => j.status === "queued" || j.status === "running") ? 5000 : 60000,
+    refetchIntervalInBackground: false,
   });
 
   // Shared with the pipeline status rail and the sidebar's agent summary —
   // same ["agents"] query key DrawingView uses, so this is a cache hit, not
   // an extra request, once a module workspace has loaded it too.
-  const { data: agents = [] } = useQuery({
+  const { data: agents = EMPTY_AGENTS } = useQuery({
     queryKey: ["agents"],
     queryFn: listAgents,
     enabled: Boolean(session),
@@ -117,9 +125,11 @@ export function App() {
   }
 
   let content: React.ReactNode;
+  // Job detail of a running job: the ambient twin lights that module's region.
+  let detailModule: ModuleKind | null = null;
   if (isLoading) {
     content = (
-      <div className="job-detail-loading">
+      <div className="job-detail-loading" data-ambient-quiet>
         <IconLoader size={36} className="text-accent" />
         <p className="loading-text">Connecting to engineering agent console...</p>
       </div>
@@ -136,6 +146,8 @@ export function App() {
       />
     );
   } else if (selectedJobId) {
+    const detail = jobs.find((j) => j.id === selectedJobId);
+    if (detail?.status === "running") detailModule = detail.module;
     content = (
       <JobDetailView
         jobId={selectedJobId}
@@ -163,6 +175,8 @@ export function App() {
     <AppShell
       page={page}
       workspaceModule={workspaceModule}
+      detailModule={detailModule}
+      jobsDashboard={!isLoading && !workspaceModule && !selectedJobId && page === "jobs"}
       jobs={jobs}
       agents={agents}
       apiOk={!jobsErrored}

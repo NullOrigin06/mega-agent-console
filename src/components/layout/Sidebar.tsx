@@ -3,6 +3,7 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import type { ModuleKind } from "../../types/engineering";
 import { MODULE_OPTIONS } from "../../constants/modules";
 import { IconGrid, IconList, IconCpu, IconArrowLeft, IconArrowRight } from "../common/Icon";
+import { ambientBus } from "../ambient/ambientBus";
 import megaLogo from "../../assets/mega-logo.png";
 
 type Page = "modules" | "jobs";
@@ -90,6 +91,8 @@ export function Sidebar({
                 type="button"
                 className={`sidebar-link sidebar-link-sub ${workspaceModule === mod.kind ? "sidebar-link-active" : ""}`}
                 onClick={() => onSelectModule(mod.kind)}
+                onPointerEnter={() => ambientBus.highlight(mod.kind)}
+                onPointerLeave={() => ambientBus.highlight(null)}
               >
                 <mod.icon size={14} />
                 <span>{mod.title}</span>

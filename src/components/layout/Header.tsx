@@ -1,6 +1,17 @@
 import { IconRefresh, IconUser, IconLogOut, IconKey, IconList } from "../common/Icon";
 import { API_MODE } from "../../api";
 import type { AuthSession } from "../../utils/authSession";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { AmbientMotionToggle } from "../ambient/AmbientMotionToggle";
+import { ambientBus } from "../ambient/ambientBus";
+import { useAmbientBus } from "../ambient/useAmbientBus";
+import type { AmbientMotionPref } from "../../ambient/types";
+
+const MOTION_PREFS: Array<{ value: AmbientMotionPref; label: string }> = [
+  { value: "auto", label: "Auto" },
+  { value: "on", label: "On" },
+  { value: "off", label: "Off" },
+];
 
 interface HeaderProps {
   onRefresh: () => void;
@@ -19,6 +30,7 @@ export function Header({
   onOpenMobileNav,
   onOpenRotateKey,
 }: HeaderProps) {
+  const { motionPref } = useAmbientBus();
   return (
     <header className="console-header">
       <button
@@ -36,10 +48,38 @@ export function Header({
 
       <div className="header-actions">
         {session && (
-          <div className="header-account-pill" title={`Logged in as ${session.email}`}>
-            <IconUser size={14} className="text-accent" />
-            <span className="header-account-email text-mono">{session.email}</span>
-          </div>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                type="button"
+                className="header-account-pill workstation-dropdown-trigger"
+                title={`Logged in as ${session.email}`}
+                aria-label={`Account menu for ${session.email}`}
+              >
+                <IconUser size={14} className="text-accent" />
+                <span className="header-account-email text-mono">{session.email}</span>
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content className="workstation-dropdown-content" align="end" sideOffset={6}>
+                <DropdownMenu.Label className="header-menu-label">Ambient motion</DropdownMenu.Label>
+                <DropdownMenu.RadioGroup
+                  value={motionPref}
+                  onValueChange={(v) => ambientBus.setMotionPref(v as AmbientMotionPref)}
+                  aria-label="Ambient motion"
+                >
+                  {MOTION_PREFS.map((p) => (
+                    <DropdownMenu.RadioItem key={p.value} value={p.value} className="workstation-dropdown-item">
+                      <span className="header-menu-check" aria-hidden="true">
+                        <DropdownMenu.ItemIndicator>✓</DropdownMenu.ItemIndicator>
+                      </span>
+                      {p.label}
+                    </DropdownMenu.RadioItem>
+                  ))}
+                </DropdownMenu.RadioGroup>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         )}
 
         {session && (
@@ -53,6 +93,8 @@ export function Header({
             <span className="hide-mobile">Rotate Key</span>
           </button>
         )}
+
+        <AmbientMotionToggle />
 
         <button
           type="button"
