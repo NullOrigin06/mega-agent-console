@@ -1,7 +1,12 @@
 import { Suspense, lazy, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { JobSummary, ModuleKind } from "../../types/engineering";
 import { MODULE_OPTIONS, type ModuleOption } from "../../constants/modules";
+import { MODULE_COLORS, MODULE_SHORT_NAMES } from "../../constants/moduleColors";
+import { getJob } from "../../api";
 import { IconArrowRight, IconDrafting, IconLoader } from "../common/Icon";
+import { CadHeatExchangerPreview } from "../cad/CadHeatExchangerPreview";
+import { TYPICAL_VESSEL, vesselSpecFromJob } from "../cad/vesselSpec";
 import { DurationTrendChart } from "./DurationTrendChart";
 
 // The 3D viewport pulls in three.js + react-three-fiber (a genuinely heavy
@@ -44,6 +49,19 @@ function latestJobFor(jobs: JobSummary[], kind: ModuleKind): JobSummary | undefi
  */
 export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
   const [showVessel, setShowVessel] = useState(false);
+
+  // The twin is modelled on the newest completed Heat Exchanger Fab run -
+  // the only module whose job carries the whole vessel's dimensions.
+  const twinSource = jobs
+    .filter((j) => j.module === "HeatExchangerFab" && j.status === "completed")
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+  const { data: twinJob } = useQuery({
+    queryKey: ["vessel-twin-job", twinSource?.id],
+    queryFn: () => getJob(twinSource!.id),
+    enabled: Boolean(twinSource),
+    staleTime: 5 * 60_000,
+  });
+  const vesselSpec = (twinJob && vesselSpecFromJob(twinJob)) || TYPICAL_VESSEL;
   const withActivity = MODULE_OPTIONS.map((mod) => {
     const latest = latestJobFor(jobs, mod.kind);
     const isRunning = latest?.status === "running" || latest?.status === "queued";
@@ -88,22 +106,36 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
               </div>
             }
           >
-            <VesselViewport3D onSelectModule={onSelectModule} />
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm vessel-panel-close"
-              onClick={() => setShowVessel(false)}
-            >
-              Hide 3D View
-            </button>
+            <VesselViewport3D spec={vesselSpec} onSelectModule={onSelectModule} onClose={() => setShowVessel(false)} />
           </Suspense>
         ) : (
-          <button type="button" className="vessel-panel-placeholder" onClick={() => setShowVessel(true)}>
-            <IconDrafting size={22} />
-            <span>View Interactive 3D Digital Twin</span>
-            <span className="vessel-panel-placeholder-hint">
-              Hover a part to identify it, click to open its module
-            </span>
+          <button type="button" className="vessel-teaser" onClick={() => setShowVessel(true)}>
+            <div className="vessel-teaser-text">
+              <span className="vessel-teaser-eyebrow">
+                <IconDrafting size={14} />
+                Interactive 3D
+              </span>
+              <span className="vessel-teaser-title">Digital twin of your heat exchanger</span>
+              <span className="vessel-teaser-source">
+                {vesselSpec.jobId
+                  ? `Built to scale from ${vesselSpec.jobId} · Shell Ø${vesselSpec.shellId} mm · ${vesselSpec.tubeQty} tubes · ${vesselSpec.baffleQty} baffles`
+                  : "Typical proportions until you complete a Heat Exchanger Fab run"}
+              </span>
+              <span className="vessel-teaser-modules">
+                {MODULE_OPTIONS.map((m) => (
+                  <span key={m.kind}>
+                    <span className="vessel-tip-swatch" style={{ background: MODULE_COLORS[m.kind] }} />
+                    {MODULE_SHORT_NAMES[m.kind]}
+                  </span>
+                ))}
+              </span>
+              <span className="vessel-teaser-cta">
+                Open 3D view <IconArrowRight size={14} />
+              </span>
+            </div>
+            <div className="vessel-teaser-art" aria-hidden="true">
+              <CadHeatExchangerPreview size={150} />
+            </div>
           </button>
         )}
       </div>
