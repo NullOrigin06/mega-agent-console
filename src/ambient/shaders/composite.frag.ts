@@ -57,7 +57,7 @@ c=capL(base+c,${f1(RESOLVE.softclipCeiling)})-base;
 float r=length((p-CAM.xy-CAM.zw*.5)/(CAM.zw*.5))*.7071;
 c*=q*top*(1.-${f1(V.amount)}*smoothstep(${f1(V.inner)},${f1(V.outer)},r));
 c=mix(c,vec3(dot(c,W3)),${f1(-HAZE.apiDownSaturation)}*FX2.z);
-vec3 res=mix(QBASE,base,q)+c+(ign(fc)-.5)/255.*q;
+vec3 res=base+c+(ign(fc)-.5)/255.*q;
 if((fl&4)!=0)res=heat(lum(res));
 o=vec4(res,1.);}
 `;

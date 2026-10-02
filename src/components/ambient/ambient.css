@@ -59,27 +59,9 @@
    every card (a scrim that overhangs a neighbouring card never darkens it)
    but above the ambient root. A feathered rect rather than a radial, so the
    corners of wide, left-aligned headers stay covered. */
-html[data-ambient="live"] [data-ambient-quiet],
-html[data-ambient="still"] [data-ambient-quiet] {
-  position: relative;
-}
+/* Text on the background is protected by the shader's quiet mask; no CSS scrim
+   (a scrim the size of the header block showed as a visible dark box). */
 
-html[data-ambient="live"] [data-ambient-quiet]::before,
-html[data-ambient="still"] [data-ambient-quiet]::before {
-  content: "";
-  position: absolute;
-  inset: -32px;
-  z-index: -1;
-  pointer-events: none;
-  background: rgba(5, 7, 13, 0.85);
-  --ambient-feather: rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.16) 8px, rgba(0, 0, 0, 0.5) 16px, rgba(0, 0, 0, 0.84) 24px, #000 32px,
-    #000 calc(100% - 32px), rgba(0, 0, 0, 0.84) calc(100% - 24px), rgba(0, 0, 0, 0.5) calc(100% - 16px),
-    rgba(0, 0, 0, 0.16) calc(100% - 8px), rgba(0, 0, 0, 0) 100%;
-  -webkit-mask-image: linear-gradient(to right, var(--ambient-feather)), linear-gradient(to bottom, var(--ambient-feather));
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, var(--ambient-feather)), linear-gradient(to bottom, var(--ambient-feather));
-  mask-composite: intersect;
-}
 
 /* Glass overlays that can sit over the live canvas would re-composite their
    backdrop blur every frame - give them solid surfaces while it runs. */
@@ -107,10 +89,5 @@ html[data-ambient="live"] .workstation-dropdown-content {
 @media (prefers-contrast: more) {
   .ambient-root {
     opacity: 0.5;
-  }
-  html[data-ambient="live"] [data-ambient-quiet]::before,
-  html[data-ambient="still"] [data-ambient-quiet]::before {
-    inset: -48px;
-    background: rgba(5, 7, 13, 0.95);
   }
 }

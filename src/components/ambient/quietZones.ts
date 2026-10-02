@@ -152,7 +152,8 @@ export function measureAmbientLayout(root: HTMLElement): MeasuredLayout {
     });
     const next = rectOf(header.nextElementSibling);
     const left = Math.max(textRight + 40, column.x + 0.5 * column.w);
-    const right = Math.min(canvas.w - 12, controlLeft - 16);
+    // Keep the twin inside the content column so its ends never clip at the viewport edge.
+    const right = Math.min(column.x + column.w - 24, controlLeft - 16);
     const bottom = next ? toCanvas(next).y - 12 : toCanvas(rectOf(header) ?? column).y + 160;
     if (right - left > 0 && bottom > 0) stage = { x: left, y: 0, w: right - left, h: bottom };
   }
