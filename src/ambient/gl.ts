@@ -21,9 +21,10 @@ export const CONTEXT_ATTRS: WebGLContextAttributes = {
 /** KHR_parallel_shader_compile's COMPLETION_STATUS_KHR. */
 const COMPLETION_STATUS = 0x91b1;
 
-export function createContext(canvas: HTMLCanvasElement): WebGL2RenderingContext | null {
+export function createContext(canvas: HTMLCanvasElement, allowCaveat = false): WebGL2RenderingContext | null {
   try {
-    return canvas.getContext("webgl2", CONTEXT_ATTRS) as WebGL2RenderingContext | null;
+    const attrs = allowCaveat ? { ...CONTEXT_ATTRS, failIfMajorPerformanceCaveat: false } : CONTEXT_ATTRS;
+    return canvas.getContext("webgl2", attrs) as WebGL2RenderingContext | null;
   } catch {
     return null;
   }

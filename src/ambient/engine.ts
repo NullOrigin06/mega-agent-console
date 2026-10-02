@@ -174,7 +174,15 @@ function probeReason(): "caveat" | "no-webgl2" {
 
 function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): AmbientEngine | null {
   const dbg = opts.debug ?? {};
-  const created = createContext(canvas);
+  // A "major performance caveat" (hardware acceleration off, blocklisted GPU,
+  // some privacy browsers) no longer means no motion: take the context anyway,
+  // cap at T1 and let the frame governor drop to the still if it's really slow.
+  let caveat = false;
+  let created = createContext(canvas);
+  if (!created) {
+    created = createContext(canvas, true);
+    caveat = created !== null;
+  }
   if (!created) {
     opts.onFallback?.(probeReason());
     return null;
@@ -1181,6 +1189,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     if (!layout) return;
     tierKnown = true;
     detected = startTier(readTierEnv(layout.canvas.w, layout.coarsePointer, false));
+    if (caveat) detected = Math.min(detected, 1) as Tier;
     governor = createGovernor(Math.max(1, detected) as Tier, performance.now());
     if (detected === 0) batteryCap = 0;
     tier = computeTier();
