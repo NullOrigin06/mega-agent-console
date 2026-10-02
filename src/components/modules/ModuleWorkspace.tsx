@@ -119,8 +119,8 @@ export function ModuleWorkspace({
   }
 
   return (
-    <div className="module-workspace">
-      <div className="module-workspace-subnav">
+    <div className="module-workspace" data-ambient-column>
+      <div className="module-workspace-subnav" data-ambient-quiet>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onBackToModules}>
           <IconArrowLeft size={16} />
           <span>Back to Modules</span>
@@ -130,7 +130,7 @@ export function ModuleWorkspace({
         </button>
       </div>
 
-      <div className="module-workspace-header">
+      <div className="module-workspace-header" data-ambient-header data-ambient-quiet>
         <div className="module-workspace-icon">
           <ModuleIcon size={28} />
         </div>

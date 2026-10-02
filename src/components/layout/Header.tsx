@@ -1,6 +1,7 @@
 import { IconRefresh, IconUser, IconLogOut, IconKey, IconList } from "../common/Icon";
 import { API_MODE } from "../../api";
 import type { AuthSession } from "../../utils/authSession";
+import { AmbientMotionToggle } from "../ambient/AmbientMotionToggle";
 
 interface HeaderProps {
   onRefresh: () => void;
@@ -53,6 +54,8 @@ export function Header({
             <span className="hide-mobile">Rotate Key</span>
           </button>
         )}
+
+        <AmbientMotionToggle />
 
         <button
           type="button"

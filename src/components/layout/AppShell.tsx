@@ -8,6 +8,8 @@ import { Header } from "./Header";
 import { PipelineStatusRail } from "./PipelineStatusRail";
 import { CommandPalette } from "../common/CommandPalette";
 import { RotateKeyModal } from "../auth/RotateKeyModal";
+import { AmbientBackground } from "../ambient/AmbientBackground";
+import { useAmbientSuspend } from "../ambient/useAmbientBus";
 
 type Page = "modules" | "jobs";
 
@@ -51,6 +53,12 @@ export function AppShell({
   const [showRotateKey, setShowRotateKey] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
+  // The palette and modals blur what's behind them - hold the ambient
+  // background on a static frame while they're open instead of re-blurring
+  // a moving one every frame.
+  useAmbientSuspend("palette", paletteOpen);
+  useAmbientSuspend("modal", showRotateKey && Boolean(session));
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -75,6 +83,13 @@ export function AppShell({
   return (
     <Tooltip.Provider delayDuration={300}>
       <div className="app-shell">
+        <AmbientBackground
+          page={page}
+          workspaceModule={workspaceModule}
+          jobs={jobs}
+          agents={agents}
+          apiOk={apiOk}
+        />
         <Sidebar
           page={page}
           workspaceModule={workspaceModule}

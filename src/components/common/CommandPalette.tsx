@@ -1,9 +1,18 @@
 import { Command } from "cmdk";
 import type { JobSummary, ModuleKind } from "../../types/engineering";
 import { MODULE_OPTIONS } from "../../constants/modules";
-import { IconGrid, IconList, IconKey, IconRefresh, IconLogOut } from "../common/Icon";
+import { IconGrid, IconList, IconKey, IconRefresh, IconLogOut, IconPause, IconPlay } from "../common/Icon";
+import type { AmbientMotionPref } from "../../ambient/types";
+import { ambientBus } from "../ambient/ambientBus";
+import { useAmbientBus } from "../ambient/useAmbientBus";
 
 type Page = "modules" | "jobs";
+
+const MOTION_COMMANDS: Array<{ pref: AmbientMotionPref; label: string }> = [
+  { pref: "auto", label: "Ambient motion: Auto" },
+  { pref: "on", label: "Ambient motion: On" },
+  { pref: "off", label: "Ambient motion: Off" },
+];
 
 interface CommandPaletteProps {
   open: boolean;
@@ -29,6 +38,7 @@ export function CommandPalette({
   onLogout,
   jobs,
 }: CommandPaletteProps) {
+  const { motionPref } = useAmbientBus();
   const run = (action: () => void) => {
     action();
     onOpenChange(false);
@@ -81,6 +91,13 @@ export function CommandPalette({
               <span>Sign Out</span>
             </Command.Item>
           )}
+          {MOTION_COMMANDS.map(({ pref, label }) => (
+            <Command.Item key={pref} onSelect={() => run(() => ambientBus.setMotionPref(pref))}>
+              {pref === "off" ? <IconPause size={15} /> : <IconPlay size={15} />}
+              <span>{label}</span>
+              {motionPref === pref && <span className="command-palette-item-meta">Current</span>}
+            </Command.Item>
+          ))}
         </Command.Group>
 
         {jobs.length > 0 && (

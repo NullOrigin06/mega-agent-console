@@ -48,6 +48,11 @@ export function App() {
     queryFn: listJobs,
     enabled: Boolean(session),
     meta: { errorMessage: "Failed to load jobs" },
+    // Poll fast only while something is in flight, so status changes (and the
+    // ambient background's job events) arrive promptly; never while hidden.
+    refetchInterval: (q) =>
+      q.state.data?.some((j) => j.status === "queued" || j.status === "running") ? 5000 : 60000,
+    refetchIntervalInBackground: false,
   });
 
   // Shared with the pipeline status rail and the sidebar's agent summary —
@@ -119,7 +124,7 @@ export function App() {
   let content: React.ReactNode;
   if (isLoading) {
     content = (
-      <div className="job-detail-loading">
+      <div className="job-detail-loading" data-ambient-quiet>
         <IconLoader size={36} className="text-accent" />
         <p className="loading-text">Connecting to engineering agent console...</p>
       </div>
