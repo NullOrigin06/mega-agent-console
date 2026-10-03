@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ModuleKind, JobSummary, ProjectInfo, NozzleItem } from "../../types/engineering";
 import { submitJob } from "../../api";
 import { MODULE_OPTIONS, isTankModule } from "../../constants/modules";
-import { getDefaultNozzleSchedule } from "../../constants/nozzleDefaults";
+import { getDefaultNozzleSchedule, getDefaultGaNozzleSchedule, NOZZLE_SIZES_GA } from "../../constants/nozzleDefaults";
 import {
   buildWorkspaceRequest,
   DEFAULT_WORKSPACE_FIELDS,
@@ -28,6 +28,7 @@ const DRAWING_TITLES: Partial<Record<ModuleKind, string>> = {
   TubeSheet: "TUBE SHEET",
   BonnetFlange: "BONNET FLANGE",
   HeatExchangerFab: "HEAT EXCHANGER",
+  GeneralArrangement: "GENERAL ARRANGEMENT DRG FOR",
 };
 
 /** Title-block defaults: the desktop Form3 project/drawing numbers and sign-offs, tank-style customer/title. */
@@ -36,7 +37,7 @@ function defaultProjectInfo(module: ModuleKind): ProjectInfo {
     customerName: "MEGA CLIENT",
     drawingTitle: DRAWING_TITLES[module] ?? "",
     projectNo: "25-005",
-    drawingNo: "25-005-FLG-EX-1405",
+    drawingNo: module === "GeneralArrangement" ? "25-005-GAD-EX-1405" : "25-005-FLG-EX-1405",
     revision: "0",
     preparedBy: "NSS",
     checkedBy: "ASK",
@@ -80,9 +81,9 @@ function ExchangerWorkspace({
   onDeleteJob,
 }: ModuleWorkspaceProps) {
   const [job, setJob] = useState<JobSummary | null>(null);
-  const [fields, setFields] = useState<WorkspaceFieldValues>(DEFAULT_WORKSPACE_FIELDS);
+  const [fields, setFields] = useState<WorkspaceFieldValues>(() => (module === "GeneralArrangement" ? { ...DEFAULT_WORKSPACE_FIELDS, hta: "140", tubeThk: "1.2" } : DEFAULT_WORKSPACE_FIELDS));
   const [projectInfo, setProjectInfo] = useState<ProjectInfo>(() => defaultProjectInfo(module));
-  const [nozzles, setNozzles] = useState<NozzleItem[]>(getDefaultNozzleSchedule());
+  const [nozzles, setNozzles] = useState<NozzleItem[]>(() => (module === "GeneralArrangement" ? getDefaultGaNozzleSchedule() : getDefaultNozzleSchedule()));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -250,7 +251,19 @@ function ExchangerWorkspace({
         {/* Nozzle Input/Schedule — mirrors Form3's nozzle grid */}
         <div className="workspace-panel">
           <h3 className="workspace-panel-title">Nozzle Input / Schedule</h3>
-          <NozzleScheduleEditor nozzles={nozzles} onChange={setNozzles} disabled={isSubmitting} />
+          <NozzleScheduleEditor
+            nozzles={nozzles}
+            onChange={setNozzles}
+            disabled={isSubmitting}
+            showPosition={module === "GeneralArrangement"}
+            sizes={module === "GeneralArrangement" ? NOZZLE_SIZES_GA : undefined}
+          />
+          {module === "GeneralArrangement" && (
+            <p className="section-subtitle" style={{ marginTop: 10 }}>
+              Projection is measured from the shell centre to the flange face. GA Position is the nozzle axis distance from the left tube-sheet face
+              (blank = reference position for N1-N7, automatic spacing otherwise). Nozzles at 0°/180° are not drawn on the GA. The schedule table of the drawing is filled from this list.
+            </p>
+          )}
         </div>
 
         <div className="module-workspace-form-footer">

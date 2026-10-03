@@ -676,6 +676,7 @@ const WORKSPACE_POSE: Record<ModuleKind, PoseName> = {
   TubeSheet: "face",
   BonnetFlange: "bonnet",
   HeatExchangerFab: "section",
+  GeneralArrangement: "section",
   // Storage tanks have no part on the exchanger twin: the overview pose.
   ShopTank: "overview",
   SiteTank: "overview",

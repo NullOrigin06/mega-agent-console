@@ -18,6 +18,9 @@ export const MODULE_COLORS: Record<ModuleKind, string> = {
   TubeSheet: "#3987e5",
   BonnetFlange: "#d95926",
   HeatExchangerFab: "#199e70",
+  // Same vessel family as the heat exchanger: shares its colour (a fourth hue fails the CVD checks above);
+  // tooltips and the table view still name the exact module.
+  GeneralArrangement: "#199e70",
   // Past three categories no ordering of the palette stays distinguishable
   // all-pairs (validated: 5 hues fail CVD + normal-vision floors), so the two
   // storage tanks fold into one neutral "Storage tanks" colour; tooltips and
@@ -30,6 +33,7 @@ export const MODULE_SHORT_NAMES: Record<ModuleKind, string> = {
   TubeSheet: "Tube Sheet",
   BonnetFlange: "Bonnet Flange",
   HeatExchangerFab: "HX Fab",
+  GeneralArrangement: "GA Drawing",
   ShopTank: "Shop Tank",
   SiteTank: "Site Tank",
 };

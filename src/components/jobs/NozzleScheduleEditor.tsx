@@ -13,6 +13,10 @@ interface NozzleScheduleEditorProps {
   nozzles: NozzleItem[];
   onChange: (nozzles: NozzleItem[]) => void;
   disabled?: boolean;
+  /** General Arrangement: show the "GA Position" column (distance from the left tube-sheet face). */
+  showPosition?: boolean;
+  /** Size choices; defaults to the desktop form's list. */
+  sizes?: string[];
 }
 
 /**
@@ -24,6 +28,8 @@ export function NozzleScheduleEditor({
   nozzles,
   onChange,
   disabled = false,
+  showPosition = false,
+  sizes = NOZZLE_SIZES,
 }: NozzleScheduleEditorProps) {
   const updateRow = (index: number, patch: Partial<NozzleItem>) => {
     const next = nozzles.map((n, i) => (i === index ? { ...n, ...patch } : n));
@@ -54,6 +60,7 @@ export function NozzleScheduleEditor({
               <th>Proj. From Center</th>
               <th>Service</th>
               <th>Orientation</th>
+              {showPosition && <th title="Distance of the nozzle axis from the left tube-sheet face. Blank = reference / automatic placement.">GA Position (mm)</th>}
               <th>Remark</th>
               <th></th>
             </tr>
@@ -76,7 +83,7 @@ export function NozzleScheduleEditor({
                     onChange={(e) => updateRow(i, { size: e.target.value })}
                     disabled={disabled}
                   >
-                    {NOZZLE_SIZES.map((s) => (
+                    {(sizes.includes(n.size) ? sizes : [n.size, ...sizes]).map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
@@ -153,6 +160,18 @@ export function NozzleScheduleEditor({
                     disabled={disabled}
                   />
                 </td>
+                {showPosition && (
+                  <td>
+                    <input
+                      className="nozzle-cell-input text-mono"
+                      inputMode="decimal"
+                      placeholder="auto"
+                      value={n.position ?? ""}
+                      onChange={(e) => updateRow(i, { position: e.target.value })}
+                      disabled={disabled}
+                    />
+                  </td>
+                )}
                 <td>
                   <input
                     className="nozzle-cell-input"
@@ -176,7 +195,7 @@ export function NozzleScheduleEditor({
             ))}
             {nozzles.length === 0 && (
               <tr>
-                <td colSpan={11} className="nozzle-editor-empty">
+                <td colSpan={showPosition ? 12 : 11} className="nozzle-editor-empty">
                   No nozzles — click "Add Nozzle" below.
                 </td>
               </tr>

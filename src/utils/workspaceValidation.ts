@@ -52,6 +52,16 @@ export function buildWorkspaceRequest(
     };
   }
 
+  if (module === "GeneralArrangement") {
+    const bad = nozzles.find((n) => {
+      const p = (n.position ?? "").trim();
+      return p.length > 0 && !Number.isFinite(Number(p));
+    });
+    if (bad) {
+      return { error: `Nozzle ${bad.nozzleNo || "?"}: GA Position must be a number (mm from the left tube-sheet face) or blank.` };
+    }
+  }
+
   const cleanProjectInfo = Object.fromEntries(
     Object.entries(projectInfo).filter(([, v]) => typeof v === "string" && v.trim().length > 0)
   ) as ProjectInfo;

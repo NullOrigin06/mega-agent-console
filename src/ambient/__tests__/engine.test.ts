@@ -17,7 +17,7 @@ describe("ambient engine in jsdom (no WebGL)", () => {
 
   it("the Canvas2D still is a no-op without a 2D context", () => {
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
-    const signals = { apiOk: true, running: 0, queued: 0, runningByModule: { TubeSheet: 0, BonnetFlange: 0, HeatExchangerFab: 0, ShopTank: 0, SiteTank: 0 }, activity: 0, ledger: [], agents: [], localAgentBusy: false };
+    const signals = { apiOk: true, running: 0, queued: 0, runningByModule: { TubeSheet: 0, BonnetFlange: 0, HeatExchangerFab: 0, GeneralArrangement: 0, ShopTank: 0, SiteTank: 0 }, activity: 0, ledger: [], agents: [], localAgentBusy: false };
     expect(() =>
       renderAmbientStill2D(document.createElement("canvas"), {
         state: { page: "modules", workspaceModule: null, highlight: null, signals },

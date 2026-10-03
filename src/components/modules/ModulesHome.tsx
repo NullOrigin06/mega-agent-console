@@ -15,6 +15,7 @@ import bonnetFlangeArt from "../../assets/module-art/bonnet-flange.webp";
 import shopTankArt from "../../assets/module-art/shop-tank.webp";
 import siteTankArt from "../../assets/module-art/site-tank.webp";
 import heatExchangerArt from "../../assets/module-art/heat-exchanger.webp";
+import generalArrangementArt from "../../assets/module-art/general-arrangement.webp";
 
 // Faded renders of each module's part, generated from the same geometry as
 // the 3D twin so they stay consistent with it and with each other.
@@ -23,6 +24,7 @@ const MODULE_ART: Partial<Record<ModuleKind, string>> = {
   TubeSheet: tubeSheetArt,
   BonnetFlange: bonnetFlangeArt,
   HeatExchangerFab: heatExchangerArt,
+  GeneralArrangement: generalArrangementArt,
   ShopTank: shopTankArt,
   SiteTank: siteTankArt,
 };

@@ -28,7 +28,7 @@
  *    we choose to display it here," not as an existing backend contract.
  */
 
-export type ModuleKind = "TubeSheet" | "BonnetFlange" | "HeatExchangerFab" | "ShopTank" | "SiteTank";
+export type ModuleKind = "TubeSheet" | "BonnetFlange" | "HeatExchangerFab" | "GeneralArrangement" | "ShopTank" | "SiteTank";
 
 /** Storage-tank modules: own inputs, results and BOM (see docs/TANK_MODULES_CONTRACT.md). */
 export type TankModuleKind = Extract<ModuleKind, "ShopTank" | "SiteTank">;
@@ -247,6 +247,11 @@ export interface NozzleItem {
   service: string;
   orientation: string;
   remark: string;
+  /**
+   * General Arrangement only: nozzle axis distance (mm) from the left tube-sheet face.
+   * Blank / absent = reference or automatic placement (see GadParameters.ResolvePlacements).
+   */
+  position?: string;
 }
 
 /**

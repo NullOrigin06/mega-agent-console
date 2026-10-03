@@ -3,9 +3,11 @@ import { IconInfo } from "../common/Icon";
 
 interface SpecsAndNozzlesViewProps {
   data: EngineeringDataModel;
+  /** General Arrangement jobs also show where each nozzle sits along the shell. */
+  showPosition?: boolean;
 }
 
-export function SpecsAndNozzlesView({ data }: SpecsAndNozzlesViewProps) {
+export function SpecsAndNozzlesView({ data, showPosition = false }: SpecsAndNozzlesViewProps) {
   const specs = [
     { label: "Shell Inner Diameter", value: `${data.shellID} mm`, desc: "Nominal cylindrical shell ID" },
     { label: "Heat Transfer Area (HTA)", value: `${data.hta} m²`, desc: "Total effective surface area" },
@@ -76,6 +78,7 @@ export function SpecsAndNozzlesView({ data }: SpecsAndNozzlesViewProps) {
                   <th>Rating</th>
                   <th>Projection</th>
                   <th>Orientation</th>
+                  {showPosition && <th>GA Position</th>}
                   <th>Remark</th>
                 </tr>
               </thead>
@@ -102,6 +105,11 @@ export function SpecsAndNozzlesView({ data }: SpecsAndNozzlesViewProps) {
                     <td>
                       <span className="orientation-tag">{nozzle.orientation}</span>
                     </td>
+                    {showPosition && (
+                      <td className="text-mono">
+                        {nozzle.position && nozzle.position.trim() ? `${nozzle.position} mm` : <span className="text-dim">auto</span>}
+                      </td>
+                    )}
                     <td className="text-dim text-sm">{nozzle.remark || "—"}</td>
                   </tr>
                 ))}

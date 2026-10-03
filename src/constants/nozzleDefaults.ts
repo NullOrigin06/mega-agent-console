@@ -13,6 +13,9 @@ export const NOZZLE_SIZES = [
   "15", "20", "25", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300",
 ];
 
+/** General Arrangement drawings also carry the large vapour nozzles (flange table of the generator goes to 500 NB). */
+export const NOZZLE_SIZES_GA = [...NOZZLE_SIZES, "350", "400", "450", "500"];
+
 export const NOZZLE_UNITS = ["NB", "OD", "mm"];
 
 export const NOZZLE_SCHEDULES = ["Sch 10S", "Sch 40S", "Sch 40", "Sch 80S", "Sch 80"];
@@ -36,6 +39,26 @@ export function getDefaultNozzleSchedule(): NozzleItem[] {
   ];
 }
 
+/**
+ * Starting schedule for a General Arrangement: the reference condenser (25-005-GAD-EX-1405), so a first run
+ * reproduces the reference drawing. Position is left blank - N1-N7 then use the reference positions.
+ * Projection is the distance from the shell CENTRE to the flange face (as in the nozzle schedule header).
+ */
+export function getDefaultGaNozzleSchedule(): NozzleItem[] {
+  const n = (nozzleNo: string, size: string, schedule: string, projection: string, service: string, orientation: string): NozzleItem => ({
+    nozzleNo, size, unit: "NB", schedule, type: "LJFF", rating: "150#", projection, service, orientation, remark: "-", position: "",
+  });
+  return [
+    n("N1", "250", "Sch 10S", "615", "Cooling Water In", "BOTTOM"),
+    n("N2", "250", "Sch 10S", "615", "Cooling Water Out", "TOP"),
+    n("N3", "500", "Sch 10S", "635", "Vapour Inlet", "TOP"),
+    n("N4", "150", "Sch 10S", "615", "Vapour Out To Cond. II", "TOP"),
+    n("N5", "65", "Sch 10S", "615", "Condensate Outlet", "BOTTOM"),
+    n("N6", "15", "Sch 40S", "150", "Tube Side Vent", "TOP"),
+    n("N7", "15", "Sch 40S", "150", "Tube Side Drain", "BOTTOM"),
+  ];
+}
+
 export function createBlankNozzle(nextNozzleNo: string): NozzleItem {
   return {
     nozzleNo: nextNozzleNo,
@@ -48,5 +71,6 @@ export function createBlankNozzle(nextNozzleNo: string): NozzleItem {
     service: "",
     orientation: "0°",
     remark: "-",
+    position: "",
   };
 }

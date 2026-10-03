@@ -101,7 +101,7 @@ const smooth = (a: number, b: number, x: number) => {
   const t = sat((x - a) / (b - a));
   return t * t * (3 - 2 * t);
 };
-const REGION: Record<ModuleKind, number> = { TubeSheet: REGION_TUBESHEET, BonnetFlange: REGION_BONNET, HeatExchangerFab: REGION_SHELL, ShopTank: REGION_NEUTRAL, SiteTank: REGION_NEUTRAL };
+const REGION: Record<ModuleKind, number> = { TubeSheet: REGION_TUBESHEET, BonnetFlange: REGION_BONNET, HeatExchangerFab: REGION_SHELL, GeneralArrangement: REGION_SHELL, ShopTank: REGION_NEUTRAL, SiteTank: REGION_NEUTRAL };
 const MODULES: readonly ModuleKind[] = ["TubeSheet", "BonnetFlange", "HeatExchangerFab"];
 
 /** A solved camera, reduced to what the frame loop needs (lerpable). */
@@ -711,11 +711,14 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     ease.queued = snap ? q : ease.queued + Math.sign(q - ease.queued) * Math.min(Math.abs(q - ease.queued), dt / (NETWORK.queuedBoltFadeMs / 1000));
     for (let r = 1; r < 4; r++) {
       const m = MODULES[r - 1];
-      const hv = state.highlight === m ? 1 : 0;
+      // the GA drawing shares the heat-exchanger region of the twin
+      const hv = state.highlight === m || (m === "HeatExchangerFab" && state.highlight === "GeneralArrangement") ? 1 : 0;
       const step = dt / ((hv > ease.hover[r] ? WIRE.hoverInMs : WIRE.hoverOutMs) / 1000);
       ease.hover[r] = snap ? hv : ease.hover[r] + Math.sign(hv - ease.hover[r]) * Math.min(Math.abs(hv - ease.hover[r]), step);
-      ease.run[r] += ((sig.runningByModule[m] > 0 ? 1 : 0) - ease.run[r]) * lk(dt, 0.4, snap);
-      ease.detail[r] += ((state.page === "jobs" && state.detailModule === m ? 1 : 0) - ease.detail[r]) * lk(dt, 0.4, snap);
+      const runCount = sig.runningByModule[m] + (m === "HeatExchangerFab" ? sig.runningByModule.GeneralArrangement : 0);
+      ease.run[r] += ((runCount > 0 ? 1 : 0) - ease.run[r]) * lk(dt, 0.4, snap);
+      const inDetail = state.page === "jobs" && (state.detailModule === m || (m === "HeatExchangerFab" && state.detailModule === "GeneralArrangement"));
+      ease.detail[r] += ((inDetail ? 1 : 0) - ease.detail[r]) * lk(dt, 0.4, snap);
     }
     const ws = state.workspaceModule;
     ease.tint += ((ws && ws in HAZE.workspaceTint ? HAZE.workspaceTint[ws as keyof typeof HAZE.workspaceTint] : 0) - ease.tint) * lk(dt, 0.3, snap);

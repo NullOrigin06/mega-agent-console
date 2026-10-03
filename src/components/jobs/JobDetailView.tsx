@@ -30,6 +30,7 @@ interface JobDetailViewProps {
 
 const RUN_TITLES: Record<JobDetail["module"], string> = {
   HeatExchangerFab: "Heat Exchanger Complete Fabrication Run",
+  GeneralArrangement: "General Arrangement Drawing Run",
   TubeSheet: "Tube Sheet Drilling & Geometry Run",
   BonnetFlange: "Bonnet Flange & Shell Synthesis Run",
   ShopTank: "Shop Tank Sizing & GA Run",
@@ -445,7 +446,7 @@ export function JobDetailView({
 
           <Tabs.Content value="specs" className="tab-panel-content">
             {job.engineeringData && (
-              <SpecsAndNozzlesView data={job.engineeringData} />
+              <SpecsAndNozzlesView data={job.engineeringData} showPosition={job.module === "GeneralArrangement"} />
             )}
             {tank && <TankSummaryView data={tank} />}
           </Tabs.Content>

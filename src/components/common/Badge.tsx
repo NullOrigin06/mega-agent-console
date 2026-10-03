@@ -7,6 +7,7 @@ import {
   IconDisc,
   IconCylinder,
   IconLayers,
+  IconDrafting,
 } from "./Icon";
 
 export function StatusBadge({ status }: { status: JobStatus }) {
@@ -65,6 +66,13 @@ export function ModuleBadge({ module }: { module: ModuleKind }) {
         <span className="badge badge-module badge-heatexchangerfab">
           <IconLayers size={14} />
           <span>Heat Exchanger Fab</span>
+        </span>
+      );
+    case "GeneralArrangement":
+      return (
+        <span className="badge badge-module badge-generalarrangement">
+          <IconDrafting size={14} />
+          <span>General Arrangement</span>
         </span>
       );
     case "ShopTank":

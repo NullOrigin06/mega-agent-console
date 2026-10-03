@@ -3,10 +3,12 @@ import {
   IconDisc,
   IconCylinder,
   IconLayers,
+  IconDrafting,
 } from "../components/common/Icon";
 import { CadTubeSheetPreview } from "../components/cad/CadTubeSheetPreview";
 import { CadFlangePreview } from "../components/cad/CadFlangePreview";
 import { CadHeatExchangerPreview } from "../components/cad/CadHeatExchangerPreview";
+import { CadGeneralArrangementPreview } from "../components/cad/CadGeneralArrangementPreview";
 import { CadShopTankPreview } from "../components/cad/CadShopTankPreview";
 import { CadSiteTankPreview } from "../components/cad/CadSiteTankPreview";
 
@@ -57,6 +59,16 @@ export const MODULE_OPTIONS: ModuleOption[] = [
       "Full heat exchanger fabrication package: Shell, Tube Bundle, Baffles, Nozzles, CAD Drawing & BOM generation.",
     icon: IconLayers,
     preview: CadHeatExchangerPreview,
+  },
+  {
+    kind: "GeneralArrangement",
+    family: "exchanger",
+    title: "General Arrangement",
+    badge: "GA-DRG",
+    description:
+      "General arrangement drawing of the condenser / exchanger: elevation and both end views, saddles, nozzles with tags and dimensions, nozzle schedule from the same nozzle data.",
+    icon: IconDrafting,
+    preview: CadGeneralArrangementPreview,
   },
   {
     kind: "ShopTank",
