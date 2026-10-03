@@ -45,7 +45,7 @@ export function deriveAmbientSignals(
   localAgentId: string | null,
   nowMs: number,
 ): AmbientSignals {
-  const runningByModule: Record<ModuleKind, number> = { TubeSheet: 0, BonnetFlange: 0, HeatExchangerFab: 0 };
+  const runningByModule: Record<ModuleKind, number> = { TubeSheet: 0, BonnetFlange: 0, HeatExchangerFab: 0, ShopTank: 0, SiteTank: 0 };
   let running = 0;
   let queued = 0;
   let completed24h = 0;

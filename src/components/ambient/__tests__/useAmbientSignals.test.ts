@@ -122,7 +122,7 @@ describe("deriveAmbientSignals", () => {
     const s = deriveAmbientSignals(jobs, [agent("me", true), agent("other", false)], true, "me", NOW);
     expect(s.running).toBe(2);
     expect(s.queued).toBe(1);
-    expect(s.runningByModule).toEqual({ TubeSheet: 1, BonnetFlange: 1, HeatExchangerFab: 0 });
+    expect(s.runningByModule).toEqual({ TubeSheet: 1, BonnetFlange: 1, HeatExchangerFab: 0, ShopTank: 0, SiteTank: 0 });
     expect(s.activity).toBeCloseTo(1 / 12);
     expect(s.ledger.map((e) => e.key)).toEqual(["f1", "c1", "c2"]);
     expect(s.agents).toEqual([

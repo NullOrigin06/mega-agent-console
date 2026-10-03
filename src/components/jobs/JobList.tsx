@@ -1,4 +1,6 @@
 import { useState, useMemo, Fragment } from "react";
+import { MODULE_OPTIONS } from "../../constants/modules";
+import { MODULE_SHORT_NAMES } from "../../constants/moduleColors";
 import { AnimatePresence, motion } from "framer-motion";
 import type { JobSummary, ModuleKind, JobStatus } from "../../types/engineering";
 import { StatusBadge, ModuleBadge } from "../common/Badge";
@@ -157,27 +159,14 @@ export function JobList({
         <div className="filter-group">
           <span className="control-label">Module:</span>
           <div className="segmented-control">
-            {(
-              [
-                "All",
-                "HeatExchangerFab",
-                "TubeSheet",
-                "BonnetFlange",
-              ] as const
-            ).map((mod) => (
+            {(["All", ...MODULE_OPTIONS.map((m) => m.kind)] as const).map((mod) => (
               <button
                 key={mod}
                 type="button"
                 className={`segment-btn ${selectedModule === mod ? "segment-btn-active" : ""}`}
                 onClick={() => setSelectedModule(mod)}
               >
-                {mod === "All"
-                  ? "All Modules"
-                  : mod === "HeatExchangerFab"
-                    ? "HX Fab"
-                    : mod === "TubeSheet"
-                      ? "Tube Sheet"
-                      : "Bonnet Flange"}
+                {mod === "All" ? "All Modules" : MODULE_SHORT_NAMES[mod]}
               </button>
             ))}
           </div>

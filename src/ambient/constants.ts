@@ -603,6 +603,8 @@ export const PAGE_WEIGHTS = {
   modules: { twin: 1.0, flows: 1.0, lattice: 1.0, streaks: 1.0, network: 0.8, haze: 1.0 },
   jobs: { twin: 0.5, flows: 0.5, lattice: 0.6, streaks: 0.6, network: 1.5, haze: 0.7 },
   workspace: { twin: 0.85, flows: 0.55, lattice: 0.7, streaks: 0.7, network: 0.45, haze: 0.85 },
+  // Storage-tank workspaces: the exchanger twin isn't their object, so only the plate, haze and network show.
+  tankWorkspace: { twin: 0, flows: 0, lattice: 0.8, streaks: 0, network: 0.45, haze: 0.9 },
 } as const;
 
 export const TRANSITIONS = {

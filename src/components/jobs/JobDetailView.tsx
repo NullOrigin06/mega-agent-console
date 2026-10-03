@@ -19,6 +19,7 @@ import { EngineeringDataView } from "./EngineeringDataView";
 import { SpecsAndNozzlesView } from "./SpecsAndNozzlesView";
 import { BomView } from "./BomView";
 import { DrawingView } from "./DrawingView";
+import { TankParametersView, TankSummaryView } from "./TankDataViews";
 
 interface JobDetailViewProps {
   jobId: string;
@@ -26,6 +27,14 @@ interface JobDetailViewProps {
   onRefreshList: () => void;
   onDeleteJob: (jobId: string) => Promise<void>;
 }
+
+const RUN_TITLES: Record<JobDetail["module"], string> = {
+  HeatExchangerFab: "Heat Exchanger Complete Fabrication Run",
+  TubeSheet: "Tube Sheet Drilling & Geometry Run",
+  BonnetFlange: "Bonnet Flange & Shell Synthesis Run",
+  ShopTank: "Shop Tank Sizing & GA Run",
+  SiteTank: "Site Tank Sizing & GA Run",
+};
 
 type TabType = "values" | "specs" | "bom" | "drawing";
 
@@ -228,7 +237,8 @@ export function JobDetailView({
   }
 
   const duration = calculateDuration(job.createdAt, job.completedAt);
-  const hasEngData = Boolean(job.engineeringData);
+  const hasEngData = Boolean(job.engineeringData || job.tankData);
+  const tank = job.tankData;
 
   return (
     <div className="job-detail-container" data-ambient-column>
@@ -281,17 +291,13 @@ export function JobDetailView({
               <ModuleBadge module={job.module} />
             </div>
             <h2 className="overview-heading">
-              {job.module === "HeatExchangerFab"
-                ? "Heat Exchanger Complete Fabrication Run"
-                : job.module === "TubeSheet"
-                  ? "Tube Sheet Drilling & Geometry Run"
-                  : "Bonnet Flange & Shell Synthesis Run"}
+              {RUN_TITLES[job.module]}
             </h2>
           </div>
 
           <div className="overview-stats-cluster">
             <div className="stat-box">
-              <span className="stat-label">Nominal Shell ID</span>
+              <span className="stat-label">{job.module === "SiteTank" ? "Shell I.D. (calculated)" : job.module === "ShopTank" ? "Shell I.D." : "Nominal Shell ID"}</span>
               <span className="stat-value text-mono">
                 {job.shellId} <span className="stat-unit">mm</span>
               </span>
@@ -356,8 +362,9 @@ export function JobDetailView({
                 Engineering Calculation & CAD Synthesis In Progress
               </div>
               <p className="status-banner-text">
-                The headless engineering engine is processing geometric formulas,
-                solving tube pitch patterns, and synthesizing 3D geometry for Shell ID{" "}
+                {job.module === "ShopTank" || job.module === "SiteTank"
+                  ? "The engineering engine is sizing the tank from the thickness chart and building its parameters and BOM for Shell I.D. "
+                  : "The headless engineering engine is processing geometric formulas, solving tube pitch patterns, and synthesizing 3D geometry for Shell ID "}
                 <strong>{job.shellId} mm</strong>.
               </p>
               <div className="progress-bar-track">
@@ -396,15 +403,15 @@ export function JobDetailView({
           <Tabs.List className="detail-tabs-nav" aria-label="Job Detail Sections">
             <Tabs.Trigger value="values" className="detail-tab-btn">
               <IconLayers size={16} />
-              <span>Calculated Values</span>
+              <span>{tank ? "Engineering Parameters" : "Calculated Values"}</span>
               <span className="tab-pill">Actual vs. Estimated</span>
             </Tabs.Trigger>
 
             <Tabs.Trigger value="specs" className="detail-tab-btn">
               <IconFileText size={16} />
-              <span>Specifications & Nozzles</span>
+              <span>{tank ? "Summary & Inputs" : "Specifications & Nozzles"}</span>
               <span className="tab-pill">
-                {job.engineeringData?.nozzles.length || 0} Nozzles
+                {tank ? `${tank.summary.length} Figures` : `${job.engineeringData?.nozzles.length || 0} Nozzles`}
               </span>
             </Tabs.Trigger>
 
@@ -433,12 +440,14 @@ export function JobDetailView({
             {job.engineeringData && (
               <EngineeringDataView initialData={job.engineeringData} />
             )}
+            {tank && <TankParametersView data={tank} />}
           </Tabs.Content>
 
           <Tabs.Content value="specs" className="tab-panel-content">
             {job.engineeringData && (
               <SpecsAndNozzlesView data={job.engineeringData} />
             )}
+            {tank && <TankSummaryView data={tank} />}
           </Tabs.Content>
 
           <Tabs.Content value="bom" className="tab-panel-content">

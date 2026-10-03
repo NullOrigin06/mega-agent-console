@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ModuleKind, JobSummary, ProjectInfo, NozzleItem } from "../../types/engineering";
 import { submitJob } from "../../api";
-import { MODULE_OPTIONS } from "../../constants/modules";
+import { MODULE_OPTIONS, isTankModule } from "../../constants/modules";
 import { getDefaultNozzleSchedule } from "../../constants/nozzleDefaults";
 import {
   buildWorkspaceRequest,
@@ -11,6 +11,7 @@ import {
 import { NozzleScheduleEditor } from "../jobs/NozzleScheduleEditor";
 import { JobDetailView } from "../jobs/JobDetailView";
 import { IconArrowLeft, IconLoader } from "../common/Icon";
+import { TankWorkspace } from "./TankWorkspace";
 
 interface ModuleWorkspaceProps {
   module: ModuleKind;
@@ -41,7 +42,14 @@ const DEFAULT_PROJECT_INFO: ProjectInfo = {
  * these inputs. Submitting switches this same page to show the full result
  * (JobDetailView) inline.
  */
-export function ModuleWorkspace({
+export function ModuleWorkspace(props: ModuleWorkspaceProps) {
+  const { module } = props;
+  // Keyed by module: switching modules must start a fresh form (no carried-over values or results).
+  return isTankModule(module) ? <TankWorkspace key={module} {...props} module={module} /> : <ExchangerWorkspace key={module} {...props} />;
+}
+
+/** Heat-exchanger family workspace (Tube Sheet, Bonnet Flange, HX Fab) - Form3. */
+function ExchangerWorkspace({
   module,
   onBackToModules,
   onGoToAllJobs,

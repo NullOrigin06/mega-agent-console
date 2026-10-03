@@ -44,6 +44,8 @@ const REGION_OF: Record<ModuleKind, TwinRegion> = {
   TubeSheet: REGION_TUBESHEET,
   BonnetFlange: REGION_BONNET,
   HeatExchangerFab: REGION_SHELL,
+  ShopTank: REGION_NEUTRAL,
+  SiteTank: REGION_NEUTRAL,
 };
 
 /** Twin region a module's completion lands on (VesselViewport3D ownership). */
@@ -55,7 +57,7 @@ export function regionForModule(module: ModuleKind | undefined | null): TwinRegi
 export function eventDuration(ev: AmbientEvent): number {
   const d =
     ev.type === "complete"
-      ? EVENTS.completePulseSec + (ev.module ? EVENTS.landingSec[ev.module] : EVENTS.landingSec.TubeSheet)
+      ? EVENTS.completePulseSec + (ev.module && ev.module in EVENTS.landingSec ? EVENTS.landingSec[ev.module as keyof typeof EVENTS.landingSec] : EVENTS.landingSec.TubeSheet)
       : EVENTS.durationSec[ev.type];
   return Math.max(EVENTS.minTransientSec, d);
 }

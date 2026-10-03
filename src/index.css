@@ -426,6 +426,12 @@ body {
   border-color: rgba(59, 130, 246, 0.25);
 }
 
+.badge-tank {
+  background: rgba(139, 151, 171, 0.14);
+  color: #c3cbd8;
+  border-color: rgba(139, 151, 171, 0.3);
+}
+
 .badge-neutral {
   background: var(--bg-surface);
   color: var(--text-secondary);
@@ -4243,3 +4249,214 @@ body {
   border-radius: var(--radius-md);
 }
 
+
+/* ==========================================================================
+   Storage tank modules (Command Center row + tank workspace)
+   ========================================================================== */
+.modules-family {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modules-family-title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.modules-family-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .modules-family-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Line-art fallback for modules without a photoreal render. */
+.module-home-card-art-svg {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #8fb8ff;
+  aspect-ratio: 1;
+}
+
+.module-home-card-art-svg svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tank-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tank-field select.form-input {
+  padding-right: 9rem;
+}
+
+.shell-input-wrapper.has-error .form-input {
+  border-color: var(--accent-rose);
+}
+
+.tank-field-error {
+  font-size: var(--text-xs);
+  color: #fca5a5;
+}
+
+.tank-derived {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tank-derived-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-input);
+}
+
+.tank-derived-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.tank-derived-value {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+/* Tank results */
+.tank-params {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tank-params-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.tank-params-table th,
+.tank-params-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.tank-params-table thead th {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tank-params-table tbody th {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.tank-params-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.tank-params-unit {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.tank-overridden {
+  color: #fbbf24 !important;
+}
+
+.tank-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tank-summary-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.tank-inputs-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.tank-inputs-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 6px 0;
+}
+
+.tank-inputs-item dt {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.tank-inputs-item dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.tank-warnings {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+.tank-warnings ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.tank-params-table {
+  table-layout: fixed;
+}
+
+/* Keep the label clear of the native select arrow. */
+.tank-field select + .input-suffix {
+  right: 34px;
+}
+
+.tank-field select.form-input {
+  appearance: auto;
+}
+
+.tank-project-input {
+  padding-right: 9.5rem;
+  text-overflow: ellipsis;
+}

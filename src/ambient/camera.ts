@@ -676,6 +676,9 @@ const WORKSPACE_POSE: Record<ModuleKind, PoseName> = {
   TubeSheet: "face",
   BonnetFlange: "bonnet",
   HeatExchangerFab: "section",
+  // Storage tanks have no part on the exchanger twin: the overview pose.
+  ShopTank: "overview",
+  SiteTank: "overview",
 };
 
 /** Page -> pose: porthole on narrow canvases, wide when the right gutter is >= 200 px on modules. */

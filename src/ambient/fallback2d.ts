@@ -23,7 +23,8 @@ export const renderAmbientStill2D: RenderAmbientStill2D = (canvas, { state, layo
   const cv = layout.canvas;
   // prefers-contrast: more - lattice and haze only (the CSS halves the root's alpha).
   const hc = state.contrastMore === true;
-  const w = hc ? { ...PAGE_WEIGHTS[state.page], twin: 0, network: 0 } : PAGE_WEIGHTS[state.page];
+  const base = state.page === "workspace" && (state.workspaceModule === "ShopTank" || state.workspaceModule === "SiteTank") ? PAGE_WEIGHTS.tankWorkspace : PAGE_WEIGHTS[state.page];
+  const w = hc ? { ...base, twin: 0, network: 0 } : base;
   ctx.setTransform(s, 0, 0, s, 0, 0);
   ctx.globalAlpha = 1;
   ctx.fillStyle = COLORS.base;

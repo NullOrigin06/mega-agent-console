@@ -13,7 +13,8 @@ import heatExchangerArt from "../../assets/module-art/heat-exchanger.webp";
 
 // Faded renders of each module's part, generated from the same geometry as
 // the 3D twin so they stay consistent with it and with each other.
-const MODULE_ART: Record<ModuleKind, string> = {
+// Tanks have no photoreal render yet: their tiles fall back to large faded line art.
+const MODULE_ART: Partial<Record<ModuleKind, string>> = {
   TubeSheet: tubeSheetArt,
   BonnetFlange: bonnetFlangeArt,
   HeatExchangerFab: heatExchangerArt,
@@ -63,11 +64,13 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
   // Two WebGL scenes shouldn't share the GPU - the ambient background holds
   // its last frame while the interactive twin is open.
   useAmbientSuspend("twin3d", showVessel);
-  const withActivity = MODULE_OPTIONS.map((mod) => {
+  const withActivityAll = MODULE_OPTIONS.map((mod) => {
     const latest = latestJobFor(jobs, mod.kind);
     const isRunning = latest?.status === "running" || latest?.status === "queued";
     return { mod, latest, isRunning };
   });
+  const withActivity = withActivityAll.filter((m) => m.mod.family === "exchanger");
+  const tanks = withActivityAll.filter((m) => m.mod.family === "tank");
 
   const heroIndex = (() => {
     const runningIdx = withActivity.findIndex((m) => m.isRunning);
@@ -158,6 +161,17 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
         </div>
       </div>
 
+      {tanks.length > 0 && (
+        <section className="modules-family" aria-labelledby="modules-family-tanks">
+          <h2 id="modules-family-tanks" className="modules-family-title" data-ambient-quiet>Storage Tanks</h2>
+          <div className="modules-family-grid">
+            {tanks.map((entry) => (
+              <ModuleTile key={entry.mod.kind} entry={entry} onSelect={() => onSelectModule(entry.mod.kind)} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <DurationTrendChart jobs={jobs} />
     </div>
   );
@@ -183,14 +197,20 @@ function ModuleTile({
       onClick={onSelect}
       {...highlight}
     >
-      <img
-        className={`module-home-card-art module-home-card-art-${mod.kind}`}
-        src={MODULE_ART[mod.kind]}
-        alt=""
-        aria-hidden="true"
-        decoding="async"
-        draggable={false}
-      />
+      {MODULE_ART[mod.kind] ? (
+        <img
+          className={`module-home-card-art module-home-card-art-${mod.kind}`}
+          src={MODULE_ART[mod.kind]}
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          draggable={false}
+        />
+      ) : (
+        <span className="module-home-card-art module-home-card-art-svg" aria-hidden="true">
+          <Preview size={260} />
+        </span>
+      )}
       <div className="module-home-card-glow" aria-hidden="true" />
       <div className="module-home-card-top">
         <div className={`module-home-card-icon ${isRunning ? "module-home-card-icon-active" : ""}`}>

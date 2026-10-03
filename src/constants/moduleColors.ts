@@ -11,14 +11,25 @@ import type { ModuleKind } from "../types/engineering";
  * 20.9. The app's own accent blue/purple fail that check (ΔE 1.3 for
  * deuteranopia) - don't swap them in.
  */
+/** Shared chart colour for both storage-tank modules (neutral slate, >= 3:1 on #131c30). */
+export const TANK_COLOR = "#8b97ab";
+
 export const MODULE_COLORS: Record<ModuleKind, string> = {
   TubeSheet: "#3987e5",
   BonnetFlange: "#d95926",
   HeatExchangerFab: "#199e70",
+  // Past three categories no ordering of the palette stays distinguishable
+  // all-pairs (validated: 5 hues fail CVD + normal-vision floors), so the two
+  // storage tanks fold into one neutral "Storage tanks" colour; tooltips and
+  // the table view still name the exact module.
+  ShopTank: TANK_COLOR,
+  SiteTank: TANK_COLOR,
 };
 
 export const MODULE_SHORT_NAMES: Record<ModuleKind, string> = {
   TubeSheet: "Tube Sheet",
   BonnetFlange: "Bonnet Flange",
   HeatExchangerFab: "HX Fab",
+  ShopTank: "Shop Tank",
+  SiteTank: "Site Tank",
 };

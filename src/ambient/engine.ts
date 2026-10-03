@@ -78,7 +78,7 @@ import { INSTANCED_FRAG } from "./shaders/instanced.frag";
 import { INSTANCED_VERT } from "./shaders/instanced.vert";
 import { createGovernor, effectiveDpr, isSoftwareRenderer, readBattery, readTierEnv, startTier, tierDef, type Tier } from "./tiers";
 import { buildTwinGeometry, classAlphaTable, segmentBudget, tubeFieldRadius, vesselLayout, type TwinGeometry, type VesselLayout } from "./twinGeometry";
-import { REGION_BONNET, REGION_SHELL, REGION_TUBESHEET } from "./types";
+import { REGION_BONNET, REGION_NEUTRAL, REGION_SHELL, REGION_TUBESHEET } from "./types";
 import type {
   AmbientActivityHints,
   AmbientEngine,
@@ -101,7 +101,7 @@ const smooth = (a: number, b: number, x: number) => {
   const t = sat((x - a) / (b - a));
   return t * t * (3 - 2 * t);
 };
-const REGION: Record<ModuleKind, number> = { TubeSheet: REGION_TUBESHEET, BonnetFlange: REGION_BONNET, HeatExchangerFab: REGION_SHELL };
+const REGION: Record<ModuleKind, number> = { TubeSheet: REGION_TUBESHEET, BonnetFlange: REGION_BONNET, HeatExchangerFab: REGION_SHELL, ShopTank: REGION_NEUTRAL, SiteTank: REGION_NEUTRAL };
 const MODULES: readonly ModuleKind[] = ["TubeSheet", "BonnetFlange", "HeatExchangerFab"];
 
 /** A solved camera, reduced to what the frame loop needs (lerpable). */
@@ -688,7 +688,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     if (!layout || !state || !model || !geo || !paths || !lay) return;
     const sig = state.signals;
     const def = tierDef(tier);
-    const page = PAGE_WEIGHTS[state.page];
+    const page = state.page === "workspace" && (state.workspaceModule === "ShopTank" || state.workspaceModule === "SiteTank") ? PAGE_WEIGHTS.tankWorkspace : PAGE_WEIGHTS[state.page];
     const pw = PW;
     // The first frame and a one-off frame while frozen by blur / idle must show the target
     // state (easing would leave every weight at its start value: twin weight 0 = an empty
@@ -718,7 +718,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
       ease.detail[r] += ((state.page === "jobs" && state.detailModule === m ? 1 : 0) - ease.detail[r]) * lk(dt, 0.4, snap);
     }
     const ws = state.workspaceModule;
-    ease.tint += ((ws ? HAZE.workspaceTint[ws] : 0) - ease.tint) * lk(dt, 0.3, snap);
+    ease.tint += ((ws && ws in HAZE.workspaceTint ? HAZE.workspaceTint[ws as keyof typeof HAZE.workspaceTint] : 0) - ease.tint) * lk(dt, 0.3, snap);
     const camX = layout.canvas.x - elemLeft;
     ease.camX += (camX - ease.camX) * lk(dt, TRANSITIONS.sidebarGlideMs / 3000, snap);
     const st = stage;
@@ -1240,7 +1240,7 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
       const prev = state;
       state = next;
       activityAt = performance.now();
-      if (next.workspaceModule) tint = hexToRgb(MODULE_TINT[next.workspaceModule]);
+      if (next.workspaceModule && next.workspaceModule in MODULE_TINT) tint = hexToRgb(MODULE_TINT[next.workspaceModule as keyof typeof MODULE_TINT]);
       if (!isLive() || tier <= 1) hazeDirty = true;
       if (!prev || prev.page !== next.page || prev.workspaceModule !== next.workspaceModule) reframe(false);
       else {
