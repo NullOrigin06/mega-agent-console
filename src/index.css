@@ -4460,3 +4460,11 @@ body {
   padding-right: 9.5rem;
   text-overflow: ellipsis;
 }
+
+/* Site tank render is wide like the exchanger: size it by width. */
+.module-home-card-art-SiteTank {
+  height: auto;
+  width: 52%;
+  right: -4%;
+  top: 54%;
+}

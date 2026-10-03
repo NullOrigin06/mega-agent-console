@@ -9,15 +9,19 @@ import { useAmbientHighlight, useAmbientSuspend } from "../ambient/useAmbientBus
 import { DurationTrendChart } from "./DurationTrendChart";
 import tubeSheetArt from "../../assets/module-art/tube-sheet.webp";
 import bonnetFlangeArt from "../../assets/module-art/bonnet-flange.webp";
+import shopTankArt from "../../assets/module-art/shop-tank.webp";
+import siteTankArt from "../../assets/module-art/site-tank.webp";
 import heatExchangerArt from "../../assets/module-art/heat-exchanger.webp";
 
 // Faded renders of each module's part, generated from the same geometry as
 // the 3D twin so they stay consistent with it and with each other.
-// Tanks have no photoreal render yet: their tiles fall back to large faded line art.
+// Any module without a render falls back to large faded line art.
 const MODULE_ART: Partial<Record<ModuleKind, string>> = {
   TubeSheet: tubeSheetArt,
   BonnetFlange: bonnetFlangeArt,
   HeatExchangerFab: heatExchangerArt,
+  ShopTank: shopTankArt,
+  SiteTank: siteTankArt,
 };
 
 // The 3D viewport pulls in three.js + react-three-fiber (a genuinely heavy
