@@ -4484,8 +4484,8 @@ body {
   position: fixed;
   top: 0;
   right: 2%;
-  width: min(44%, 520px);
-  height: 200px;
+  width: min(48%, 620px);
+  height: 250px; /* refined at runtime to the measured header band */
   pointer-events: none;
   z-index: 0;
 }

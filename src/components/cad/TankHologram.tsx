@@ -13,6 +13,55 @@ interface TankHologramProps {
 }
 
 const EVENT_SEC = { dispatch: 1.2, complete: 2.4, fail: 1.4 } as const;
+const PITCH = -0.38;
+/** Long camera: little perspective distortion (a site tank must not read as a cone). */
+const CAM_D = 14;
+const BAND_TOP_PX = 20;
+const BAND_TUCK_PX = 12;
+
+interface Fit {
+  cy: number;
+  ext: number;
+  maxR: number;
+  modelMinY: number;
+  modelMaxY: number;
+  /** Projected outline at unit scale, union over a full turn. */
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+function measureFit(lines: Polyline[]): Fit {
+  let modelMinY = Infinity;
+  let modelMaxY = -Infinity;
+  let maxR = 0;
+  for (const l of lines) for (const [x, y, z] of l.pts) {
+    modelMinY = Math.min(modelMinY, y);
+    modelMaxY = Math.max(modelMaxY, y);
+    maxR = Math.max(maxR, Math.hypot(x, z));
+  }
+  const cy = (modelMinY + modelMaxY) / 2;
+  const ext = Math.max((modelMaxY - modelMinY) / 2, maxR) || 1;
+  const cosP = Math.cos(PITCH);
+  const sinP = Math.sin(PITCH);
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (let i = 0; i < 12; i++) {
+    const yw = (i / 12) * Math.PI * 2;
+    const c = Math.cos(yw), sn = Math.sin(yw);
+    for (const l of lines) for (const [x, y, z] of l.pts) {
+      const xs = x / ext, ys = (y - cy) / ext, zs = z / ext;
+      const x1 = xs * c - zs * sn;
+      const z1 = xs * sn + zs * c;
+      const y2 = ys * cosP - z1 * sinP;
+      const z2 = ys * sinP + z1 * cosP;
+      const k = 1 / (CAM_D - z2);
+      minX = Math.min(minX, x1 * k); maxX = Math.max(maxX, x1 * k);
+      minY = Math.min(minY, y2 * k); maxY = Math.max(maxY, y2 * k);
+    }
+  }
+  return { cy, ext, maxR, modelMinY, modelMaxY, minX, maxX, minY, maxY };
+}
 const SCROLL_FADE_PX = 280;
 
 /**
@@ -54,6 +103,8 @@ export function TankHologram({ wire, running = false, event = null, className = 
     let boost = runningRef.current ? 1 : 0;
     let dt = 0;
     const live = motion === "live";
+    let fitFor: Polyline[] | null = null;
+    let fit = measureFit(wireRef.current);
     const particles = Array.from({ length: 40 }, (_, i) => ({ a: (i * 2.399) % (Math.PI * 2), r: 0.15 + ((i * 37) % 70) / 100, y: ((i * 53) % 100) / 100, v: 0.04 + ((i * 17) % 10) / 200 }));
 
     // Pinned like the ambient exchanger: fixed at the spot it occupies at scroll 0
@@ -62,7 +113,11 @@ export function TankHologram({ wire, running = false, event = null, className = 
       const host = canvas.parentElement;
       if (!host) return;
       const r = host.getBoundingClientRect();
-      canvas.style.top = `${r.top + window.scrollY}px`;
+      // Band = from just above the workspace to a little past the header (the first card tucks over it).
+      const header = host.querySelector(".module-workspace-header");
+      const bandH = header ? header.getBoundingClientRect().bottom - r.top + BAND_TUCK_PX + BAND_TOP_PX : 250;
+      canvas.style.top = `${r.top + window.scrollY - BAND_TOP_PX}px`;
+      canvas.style.height = `${Math.round(Math.max(200, bandH))}px`;
       canvas.style.right = `${Math.max(0, window.innerWidth - r.right + r.width * 0.02)}px`;
       fade();
     };
@@ -83,23 +138,18 @@ export function TankHologram({ wire, running = false, event = null, className = 
     const draw = () => {
       const lines = wireRef.current;
       ctx.clearRect(0, 0, w, h);
-      // Fit: bounds of the model in Y and radius in XZ.
-      let minY = Infinity;
-      let maxY = -Infinity;
-      let maxR = 0;
-      for (const l of lines) for (const [x, y, z] of l.pts) {
-        minY = Math.min(minY, y);
-        maxY = Math.max(maxY, y);
-        maxR = Math.max(maxR, Math.hypot(x, z));
+      // Fit to the real projected outline, measured over a full turn (cached per
+      // geometry) so the model fills the band without pulsing as it rotates.
+      if (fitFor !== lines) {
+        fitFor = lines;
+        fit = measureFit(lines);
       }
-      const cy = (minY + maxY) / 2;
-      const ext = Math.max((maxY - minY) / 2, maxR) || 1;
-      
-      const pitch = -0.42;
-      const cosP = Math.cos(pitch);
-      const sinP = Math.sin(pitch);
-      const camD = 4.2;
-      const scale = Math.min(w * 0.9, h) * 0.5 * (camD - 1.4);
+      const { cy, ext, minX, maxX, minY: pMinY, maxY: pMaxY, modelMinY: minY, modelMaxY: maxY, maxR } = fit;
+      const cosP = Math.cos(PITCH);
+      const sinP = Math.sin(PITCH);
+      const scale = Math.min((0.92 * h) / (pMaxY - pMinY), (0.92 * w) / (maxX - minX));
+      const ox = w / 2 - ((minX + maxX) / 2) * scale;
+      const oy = h / 2 + ((pMinY + pMaxY) / 2) * scale;
       const project = (x: number, y: number, z: number): [number, number, number] => {
         const xs = x / ext;
         const ys = (y - cy) / ext;
@@ -108,8 +158,8 @@ export function TankHologram({ wire, running = false, event = null, className = 
         const z1 = xs * sinY + zs * cosY;
         const y2 = ys * cosP - z1 * sinP;
         const z2 = ys * sinP + z1 * cosP;
-        const k = scale / (camD - z2);
-        return [w / 2 + x1 * k, h / 2 - y2 * k, z2];
+        const k = scale / (CAM_D - z2);
+        return [ox + x1 * k, oy - y2 * k, z2];
       };
       boost += ((runningRef.current ? 1 : 0) - boost) * Math.min(1, dt * 1.5);
       yaw += dt * (0.18 + 0.32 * boost);
