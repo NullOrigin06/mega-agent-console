@@ -1,6 +1,6 @@
 {
-  "version": "1.1.1",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.1.1/MegaLocalAgent.zip",
-  "sha256": "7FF284AF6E368E4A6431F7804AB181A994E4A463F373EA2F2395A900B4F2A4B7",
-  "notes": "Fixes Connect rejecting a filled-in email and password; saved email pre-fills again."
+  "version": "1.2.0",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.0/MegaLocalAgent.zip",
+  "sha256": "B2BC7D2B8BA4D8DCB38016EE01CA40DE48E3D9528519E1E777125F036359A357",
+  "notes": "Shop Tank and Site Tank drawing generation"
 }
