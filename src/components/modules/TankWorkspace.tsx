@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { JobSummary, ProjectInfo, TankModuleKind } from "../../types/engineering";
 import { submitJob } from "../../api";
 import { ApiFieldError } from "../../api/errors";
 import { MODULE_OPTIONS } from "../../constants/modules";
 import { TANK_FIELDS, buildTankInputs, defaultTankProjectInfo, defaultTankValues, tankDerived } from "../../constants/tankFields";
 import { JobDetailView } from "../jobs/JobDetailView";
+import { TankHologram } from "../cad/TankHologram";
+import { tankWireFromValues } from "../cad/tankHologramGeometry";
 import { IconArrowLeft, IconLoader } from "../common/Icon";
 
 interface TankWorkspaceProps {
@@ -47,6 +49,8 @@ export function TankWorkspace({ module, onBackToModules, onGoToAllJobs, onJobSub
   const ModuleIcon = moduleInfo.icon;
   const fields = TANK_FIELDS[module];
   const derived = tankDerived(module, values);
+  const wire = useMemo(() => tankWireFromValues(module, values), [module, values]);
+  const hologram = <TankHologram wire={wire} className={`tank-hologram-${module}`} />;
 
   const setValue = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -86,7 +90,8 @@ export function TankWorkspace({ module, onBackToModules, onGoToAllJobs, onJobSub
 
   if (job) {
     return (
-      <div className="module-workspace">
+      <div className="module-workspace tank-workspace">
+        {hologram}
         <div className="module-workspace-subnav">
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => setJob(null)}>
             <IconArrowLeft size={16} />
@@ -110,7 +115,8 @@ export function TankWorkspace({ module, onBackToModules, onGoToAllJobs, onJobSub
   }
 
   return (
-    <div className="module-workspace" data-ambient-column>
+    <div className="module-workspace tank-workspace" data-ambient-column>
+      {hologram}
       <div className="module-workspace-subnav" data-ambient-quiet>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onBackToModules}>
           <IconArrowLeft size={16} />
