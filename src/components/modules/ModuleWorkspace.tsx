@@ -24,16 +24,36 @@ interface ModuleWorkspaceProps {
   onDeleteJob: (jobId: string) => Promise<void>;
 }
 
-const DEFAULT_PROJECT_INFO: ProjectInfo = {
-  customerName: "",
-  drawingTitle: "",
-  projectNo: "",
-  drawingNo: "",
-  revision: "0",
-  preparedBy: "",
-  checkedBy: "",
-  approvedBy: "",
+const DRAWING_TITLES: Partial<Record<ModuleKind, string>> = {
+  TubeSheet: "TUBE SHEET",
+  BonnetFlange: "BONNET FLANGE",
+  HeatExchangerFab: "HEAT EXCHANGER",
 };
+
+/** Title-block defaults: the desktop Form3 project/drawing numbers and sign-offs, tank-style customer/title. */
+function defaultProjectInfo(module: ModuleKind): ProjectInfo {
+  return {
+    customerName: "MEGA CLIENT",
+    drawingTitle: DRAWING_TITLES[module] ?? "",
+    projectNo: "25-005",
+    drawingNo: "25-005-FLG-EX-1405",
+    revision: "0",
+    preparedBy: "NSS",
+    checkedBy: "ASK",
+    approvedBy: "ASK",
+  };
+}
+
+const PROJECT_FIELDS: Array<[keyof ProjectInfo, string]> = [
+  ["customerName", "Customer Name"],
+  ["drawingTitle", "Drawing Title"],
+  ["projectNo", "Project No"],
+  ["drawingNo", "Drawing No"],
+  ["revision", "Revision"],
+  ["preparedBy", "Prepared By"],
+  ["checkedBy", "Checked By"],
+  ["approvedBy", "Approved By"],
+];
 
 /**
  * Per-module workspace page, mirroring the desktop suite's Form3 in full:
@@ -61,7 +81,7 @@ function ExchangerWorkspace({
 }: ModuleWorkspaceProps) {
   const [job, setJob] = useState<JobSummary | null>(null);
   const [fields, setFields] = useState<WorkspaceFieldValues>(DEFAULT_WORKSPACE_FIELDS);
-  const [projectInfo, setProjectInfo] = useState<ProjectInfo>(DEFAULT_PROJECT_INFO);
+  const [projectInfo, setProjectInfo] = useState<ProjectInfo>(() => defaultProjectInfo(module));
   const [nozzles, setNozzles] = useState<NozzleItem[]>(getDefaultNozzleSchedule());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -217,22 +237,13 @@ function ExchangerWorkspace({
         <div className="workspace-panel">
           <h3 className="workspace-panel-title">Project Information</h3>
           <div className="workspace-fields-grid workspace-fields-grid-text">
-            <input className="form-input" placeholder="Customer Name" disabled={isSubmitting}
-              value={projectInfo.customerName} onChange={(e) => setProjectField("customerName", e.target.value)} />
-            <input className="form-input" placeholder="Drawing Title" disabled={isSubmitting}
-              value={projectInfo.drawingTitle} onChange={(e) => setProjectField("drawingTitle", e.target.value)} />
-            <input className="form-input" placeholder="Project No" disabled={isSubmitting}
-              value={projectInfo.projectNo} onChange={(e) => setProjectField("projectNo", e.target.value)} />
-            <input className="form-input" placeholder="Drawing No" disabled={isSubmitting}
-              value={projectInfo.drawingNo} onChange={(e) => setProjectField("drawingNo", e.target.value)} />
-            <input className="form-input" placeholder="Revision" disabled={isSubmitting}
-              value={projectInfo.revision} onChange={(e) => setProjectField("revision", e.target.value)} />
-            <input className="form-input" placeholder="Prepared By" disabled={isSubmitting}
-              value={projectInfo.preparedBy} onChange={(e) => setProjectField("preparedBy", e.target.value)} />
-            <input className="form-input" placeholder="Checked By" disabled={isSubmitting}
-              value={projectInfo.checkedBy} onChange={(e) => setProjectField("checkedBy", e.target.value)} />
-            <input className="form-input" placeholder="Approved By" disabled={isSubmitting}
-              value={projectInfo.approvedBy} onChange={(e) => setProjectField("approvedBy", e.target.value)} />
+            {PROJECT_FIELDS.map(([key, label]) => (
+              <div key={key} className="shell-input-wrapper">
+                <input className="form-input tank-project-input" placeholder={label} aria-label={label} disabled={isSubmitting}
+                  value={projectInfo[key] ?? ""} onChange={(e) => setProjectField(key, e.target.value)} />
+                <span className="input-suffix">{label}</span>
+              </div>
+            ))}
           </div>
         </div>
 

@@ -9,13 +9,14 @@ export interface WorkspaceFieldValues {
   baffleQty: string;
 }
 
+/** Starting values for a new run (a ready-to-calculate example, like the tank forms). */
 export const DEFAULT_WORKSPACE_FIELDS: WorkspaceFieldValues = {
-  hta: "",
-  tubeOD: "",
-  tubeLength: "",
-  tubeThk: "",
-  noOfPass: "",
-  baffleQty: "",
+  hta: "100",
+  tubeOD: "25.4",
+  tubeLength: "3000",
+  tubeThk: "1.6",
+  noOfPass: "4",
+  baffleQty: "5",
 };
 
 /**
