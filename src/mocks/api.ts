@@ -149,6 +149,13 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
     jobExtras[newJob.id] = tank ? { tankData: tank.tankData, bom: tank.bom } : {
       engineeringData: {
         ...sampleEngineeringData,
+        // General Arrangement jobs carry the submitted tube length and nozzle list (the 3D view models them).
+        ...(request.module === "GeneralArrangement"
+          ? {
+              tubeLength: request.tubeLength ?? sampleEngineeringData.tubeLength,
+              nozzles: request.nozzles?.length ? request.nozzles : sampleEngineeringData.nozzles,
+            }
+          : {}),
         shellID: shellId,
         actual: { ...sampleEngineeringData.actual, shellID: shellId },
         estimated: { ...sampleEngineeringData.estimated, shellID: shellId },

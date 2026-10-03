@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import type { JobDetail } from "../../types/engineering";
 import { getJob, generateDrawing } from "../../api";
@@ -14,12 +14,19 @@ import {
   IconLayers,
   IconDrafting,
   IconTrash,
+  IconCylinder,
 } from "../common/Icon";
 import { EngineeringDataView } from "./EngineeringDataView";
 import { SpecsAndNozzlesView } from "./SpecsAndNozzlesView";
 import { BomView } from "./BomView";
 import { DrawingView } from "./DrawingView";
 import { TankParametersView, TankSummaryView } from "./TankDataViews";
+import { gaSpecFromJob } from "../cad/gaSpec";
+
+// three.js + react-three-fiber are heavy; only fetched once the 3D tab is opened.
+const GeneralArrangementViewport3D = lazy(() =>
+  import("../cad/GeneralArrangementViewport3D").then((m) => ({ default: m.GeneralArrangementViewport3D }))
+);
 
 interface JobDetailViewProps {
   jobId: string;
@@ -37,7 +44,7 @@ const RUN_TITLES: Record<JobDetail["module"], string> = {
   SiteTank: "Site Tank Sizing & GA Run",
 };
 
-type TabType = "values" | "specs" | "bom" | "drawing";
+type TabType = "values" | "specs" | "bom" | "drawing" | "3d";
 
 export function JobDetailView({
   jobId,
@@ -434,6 +441,13 @@ export function JobDetailView({
                 <span className="tab-pill">Generating</span>
               )}
             </Tabs.Trigger>
+            {job.module === "GeneralArrangement" && job.engineeringData && (
+              <Tabs.Trigger value="3d" className="detail-tab-btn">
+                <IconCylinder size={16} />
+                <span>3D View</span>
+                <span className="tab-pill">Interactive</span>
+              </Tabs.Trigger>
+            )}
           </Tabs.List>
 
           {/* Active Tab Panel */}
@@ -466,6 +480,24 @@ export function JobDetailView({
               isTriggering={isTriggeringGeneration}
             />
           </Tabs.Content>
+
+          {job.module === "GeneralArrangement" && job.engineeringData && (
+            <Tabs.Content value="3d" className="tab-panel-content">
+              <Suspense
+                fallback={
+                  <div className="vessel-panel-loading">
+                    <IconLoader size={24} className="animate-spin text-accent" />
+                    <span>Loading 3D viewport...</span>
+                  </div>
+                }
+              >
+                {(() => {
+                  const gaSpec = gaSpecFromJob(job);
+                  return gaSpec ? <GeneralArrangementViewport3D spec={gaSpec} /> : null;
+                })()}
+              </Suspense>
+            </Tabs.Content>
+          )}
         </Tabs.Root>
       ) : (
         /* When job does not have engineeringData attached yet (e.g. newly queued or running) */

@@ -415,7 +415,7 @@ export function VesselViewport3D({ spec, onSelectModule, onClose }: VesselViewpo
           </span>
         </div>
         <div className="vessel-legend" aria-label="Open a module">
-          {MODULE_OPTIONS.filter((m) => m.family === "exchanger").map((m) => (
+          {MODULE_OPTIONS.filter((m) => m.family === "exchanger" && m.kind !== "GeneralArrangement").map((m) => (
             <button key={m.kind} type="button" onClick={() => onSelectModule?.(m.kind)}>
               <span className="vessel-tip-swatch" style={{ background: MODULE_COLORS[m.kind] }} />
               {MODULE_SHORT_NAMES[m.kind]}
