@@ -4503,3 +4503,8 @@ body {
     display: none;
   }
 }
+
+.tank-twin-panel {
+  max-width: none;
+  margin: 0 0 4px;
+}

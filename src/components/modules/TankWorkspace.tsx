@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import type { JobSummary, ProjectInfo, TankModuleKind } from "../../types/engineering";
 import { submitJob } from "../../api";
 import { ApiFieldError } from "../../api/errors";
@@ -8,7 +8,13 @@ import { JobDetailView } from "../jobs/JobDetailView";
 import { TankHologram } from "../cad/TankHologram";
 import { tankWireFromValues } from "../cad/tankHologramGeometry";
 import { useTankActivity } from "./useTankActivity";
-import { IconArrowLeft, IconLoader } from "../common/Icon";
+import { tankTwinSpecFromValues } from "../cad/tankTwinSpec";
+import { useAmbientSuspend } from "../ambient/useAmbientBus";
+import { IconDrafting } from "../common/Icon";
+
+// three.js + react-three-fiber: only fetched when someone opens the twin.
+const TankViewport3D = lazy(() => import("../cad/TankViewport3D").then((m) => ({ default: m.TankViewport3D })));
+import { IconArrowLeft, IconArrowRight, IconLoader } from "../common/Icon";
 
 interface TankWorkspaceProps {
   module: TankModuleKind;
@@ -52,8 +58,11 @@ export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJob
   const fields = TANK_FIELDS[module];
   const derived = tankDerived(module, values);
   const wire = useMemo(() => tankWireFromValues(module, values), [module, values]);
+  const [showTwin, setShowTwin] = useState(false);
+  useAmbientSuspend("twin3d", showTwin);
+  const twinSpec = useMemo(() => tankTwinSpecFromValues(module, values), [module, values]);
   const activity = useTankActivity(module, jobs);
-  const hologram = <TankHologram wire={wire} running={activity.running} event={activity.event} className={`tank-hologram-${module}`} />;
+  const hologram = showTwin ? null : <TankHologram wire={wire} running={activity.running} event={activity.event} className={`tank-hologram-${module}`} />;
 
   const setValue = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -139,6 +148,40 @@ export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJob
           <h1 className="module-workspace-title">{moduleInfo.title}</h1>
           <p className="module-workspace-desc">{moduleInfo.description}</p>
         </div>
+      </div>
+
+      <div className="vessel-panel tank-twin-panel">
+        {showTwin ? (
+          <Suspense
+            fallback={
+              <div className="vessel-panel-loading">
+                <IconLoader size={24} className="animate-spin text-accent" />
+                <span>Loading 3D viewport...</span>
+              </div>
+            }
+          >
+            <TankViewport3D spec={twinSpec} onClose={() => setShowTwin(false)} />
+          </Suspense>
+        ) : (
+          <button type="button" className="vessel-teaser" onClick={() => setShowTwin(true)}>
+            <div className="vessel-teaser-text">
+              <span className="vessel-teaser-eyebrow">
+                <IconDrafting size={14} />
+                Interactive 3D
+              </span>
+              <span className="vessel-teaser-title">Digital twin of your {moduleInfo.title.toLowerCase()}</span>
+              <span className="vessel-teaser-source">
+                Built from your inputs · Shell Ø{Math.round(twinSpec.shellId)} mm · H {Math.round(twinSpec.height)} mm
+              </span>
+              <span className="vessel-teaser-cta">
+                Open 3D view <IconArrowRight size={14} />
+              </span>
+            </div>
+            <div className="vessel-teaser-art" aria-hidden="true">
+              <moduleInfo.preview size={130} />
+            </div>
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="module-workspace-form" noValidate>

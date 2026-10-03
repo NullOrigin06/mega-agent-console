@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { ContactShadows, Html, OrbitControls } from "@react-three/drei";
+import { ContactShadows, Environment, Html, Lightformer, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import type { ModuleKind } from "../../types/engineering";
 import { MODULE_COLORS, MODULE_SHORT_NAMES } from "../../constants/moduleColors";
@@ -168,8 +168,11 @@ function Vessel({
   hovered,
   setHovered,
   onSelectModule,
+  xray,
 }: {
   spec: VesselSpec;
+  /** true = see-through shell and bonnets (internals visible); false = solid steel. */
+  xray: boolean;
   hovered: string | null;
   setHovered: (id: string | null) => void;
   onSelectModule?: (module: ModuleKind) => void;
@@ -218,7 +221,10 @@ function Vessel({
 
   const active = (id: string) => hovered === id;
   const glass = (module: ModuleKind, id: string, opacity: number) =>
-    metal(module, active(id), { transparent: true, opacity: active(id) ? opacity + 0.15 : opacity, depthWrite: false, side: THREE.DoubleSide });
+    xray
+      ? metal(module, active(id), { transparent: true, opacity: active(id) ? opacity + 0.15 : opacity, depthWrite: false, side: THREE.DoubleSide })
+      : // Explicit values: R3F keeps a material prop's last value when it stops being passed.
+        metal(module, active(id), { transparent: false, opacity: 1, depthWrite: true, side: THREE.DoubleSide });
 
   const partProps = { hovered, setHovered, onSelect: onSelectModule };
 
@@ -354,6 +360,8 @@ interface VesselViewport3DProps {
 export function VesselViewport3D({ spec, onSelectModule, onClose }: VesselViewport3DProps) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [autoRotate, setAutoRotate] = useState(true);
+  // Opens in X-ray (the bundle and baffles are the interesting part); Solid shows the real exterior.
+  const [xray, setXray] = useState(true);
   const controls = useRef<React.ComponentRef<typeof OrbitControls>>(null);
 
   const overall =
@@ -372,13 +380,19 @@ export function VesselViewport3D({ spec, onSelectModule, onClose }: VesselViewpo
     <div className="vessel-viewport">
       <Canvas camera={{ position: [4.3, 2.1, 4.8], fov: 38 }} dpr={[1, 2]} gl={{ antialias: true }}>
         <color attach="background" args={["#0b1220"]} />
-        <hemisphereLight args={["#cfe0ff", "#0b1220", 0.55]} />
-        <directionalLight position={[6, 8, 5]} intensity={1.6} />
-        <directionalLight position={[-6, 3, -4]} intensity={0.5} color="#9cc0ff" />
+        <hemisphereLight args={["#cfe0ff", "#0b1220", 0.35]} />
+        <directionalLight position={[6, 8, 5]} intensity={1.3} />
+        <directionalLight position={[-6, 3, -4]} intensity={0.4} color="#9cc0ff" />
+        {/* Studio reflections (local light cards, no network fetch) so the steel reads as metal. */}
+        <Environment resolution={256} frames={1}>
+          <Lightformer form="rect" intensity={2.4} position={[0, 6, 2]} scale={[14, 3, 1]} rotation-x={Math.PI / 2} />
+          <Lightformer form="rect" intensity={1.4} position={[7, 1, 3]} scale={[3, 7, 1]} rotation-y={-Math.PI / 2.5} />
+          <Lightformer form="rect" intensity={1.8} position={[-7, 1, -3]} scale={[4, 7, 1]} rotation-y={Math.PI / 2.5} color="#bcd4ff" />
+        </Environment>
         <group scale={scale}>
-          <Vessel spec={spec} hovered={hovered} setHovered={setHovered} onSelectModule={onSelectModule} />
+          <Vessel spec={spec} xray={xray} hovered={hovered} setHovered={setHovered} onSelectModule={onSelectModule} />
         </group>
-        <ContactShadows position={[0, floorY, 0]} opacity={0.55} scale={SCENE_LENGTH * 1.6} blur={2.4} far={3} />
+        <ContactShadows position={[0, floorY, 0]} opacity={0.6} scale={SCENE_LENGTH * 2} blur={2.6} far={3.5} />
         <gridHelper args={[SCENE_LENGTH * 2, 24, "#1d2a44", "#141f33"]} position={[0, floorY - 0.001, 0]} />
         <OrbitControls
           ref={controls}
@@ -401,7 +415,7 @@ export function VesselViewport3D({ spec, onSelectModule, onClose }: VesselViewpo
           </span>
         </div>
         <div className="vessel-legend" aria-label="Open a module">
-          {MODULE_OPTIONS.map((m) => (
+          {MODULE_OPTIONS.filter((m) => m.family === "exchanger").map((m) => (
             <button key={m.kind} type="button" onClick={() => onSelectModule?.(m.kind)}>
               <span className="vessel-tip-swatch" style={{ background: MODULE_COLORS[m.kind] }} />
               {MODULE_SHORT_NAMES[m.kind]}
@@ -413,6 +427,9 @@ export function VesselViewport3D({ spec, onSelectModule, onClose }: VesselViewpo
       <div className="vessel-overlay vessel-overlay-bottom">
         <span className="vessel-hint">Drag to orbit · scroll to zoom · hover a part · click to open its module</span>
         <div className="vessel-actions">
+          <button type="button" onClick={() => setXray((v) => !v)} aria-pressed={xray}>
+            {xray ? "Solid view" : "X-ray view"}
+          </button>
           <button type="button" onClick={() => setAutoRotate((v) => !v)} aria-pressed={autoRotate}>
             {autoRotate ? "Pause rotation" : "Auto-rotate"}
           </button>
