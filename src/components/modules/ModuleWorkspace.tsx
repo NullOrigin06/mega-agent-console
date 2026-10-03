@@ -15,6 +15,8 @@ import { TankWorkspace } from "./TankWorkspace";
 
 interface ModuleWorkspaceProps {
   module: ModuleKind;
+  /** Live job list (the tank hologram reacts to this module's running/finished jobs). */
+  jobs?: JobSummary[];
   onBackToModules: () => void;
   onGoToAllJobs: () => void;
   onJobSubmitted: (job: JobSummary) => void;

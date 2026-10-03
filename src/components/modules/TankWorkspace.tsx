@@ -7,10 +7,12 @@ import { TANK_FIELDS, buildTankInputs, defaultTankProjectInfo, defaultTankValues
 import { JobDetailView } from "../jobs/JobDetailView";
 import { TankHologram } from "../cad/TankHologram";
 import { tankWireFromValues } from "../cad/tankHologramGeometry";
+import { useTankActivity } from "./useTankActivity";
 import { IconArrowLeft, IconLoader } from "../common/Icon";
 
 interface TankWorkspaceProps {
   module: TankModuleKind;
+  jobs?: JobSummary[];
   onBackToModules: () => void;
   onGoToAllJobs: () => void;
   onJobSubmitted: (job: JobSummary) => void;
@@ -37,7 +39,7 @@ const PROJECT_FIELDS: Array<[keyof ProjectInfo, string]> = [
  * I.D. and height, Site Tank from required volume and H/D - and there is no
  * nozzle schedule.
  */
-export function TankWorkspace({ module, onBackToModules, onGoToAllJobs, onJobSubmitted, onRefreshList, onDeleteJob }: TankWorkspaceProps) {
+export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJobs, onJobSubmitted, onRefreshList, onDeleteJob }: TankWorkspaceProps) {
   const [job, setJob] = useState<JobSummary | null>(null);
   const [values, setValues] = useState<Record<string, string>>(() => defaultTankValues(module));
   const [projectInfo, setProjectInfo] = useState<ProjectInfo>(() => defaultTankProjectInfo(module));
@@ -50,7 +52,8 @@ export function TankWorkspace({ module, onBackToModules, onGoToAllJobs, onJobSub
   const fields = TANK_FIELDS[module];
   const derived = tankDerived(module, values);
   const wire = useMemo(() => tankWireFromValues(module, values), [module, values]);
-  const hologram = <TankHologram wire={wire} className={`tank-hologram-${module}`} />;
+  const activity = useTankActivity(module, jobs);
+  const hologram = <TankHologram wire={wire} running={activity.running} event={activity.event} className={`tank-hologram-${module}`} />;
 
   const setValue = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));

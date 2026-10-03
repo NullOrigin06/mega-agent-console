@@ -138,6 +138,7 @@ export function App() {
     content = (
       <ModuleWorkspace
         module={workspaceModule}
+        jobs={jobs}
         onBackToModules={handleGoToModules}
         onGoToAllJobs={handleGoToAllJobs}
         onJobSubmitted={handleJobSubmitted}

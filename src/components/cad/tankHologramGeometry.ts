@@ -64,7 +64,7 @@ function nozzle(at: Vec3, dir: Vec3, r: number, len: number): Polyline[] {
 export function shopTankWire(shellId: number, shellHeight: number, courseHeight: number): Polyline[] {
   const R = 0.5;
   const H = Math.min(4, Math.max(0.6, shellHeight / shellId));
-  const head = R * 0.5;
+  const head = R * 0.55;
   const out: Polyline[] = [];
   const headProfile = (sign: 1 | -1) =>
     Array.from({ length: 13 }, (_, i) => {
@@ -74,7 +74,12 @@ export function shopTankWire(shellId: number, shellHeight: number, courseHeight:
   out.push(ring(R, H / 2, 72, 1), ring(R, -H / 2, 72, 1));
   out.push(...meridians([[R, -H / 2], [R, H / 2]], 16));
   out.push(...meridians(headProfile(1), 16), ...meridians(headProfile(-1), 16));
-  for (const f of [0.35, 0.7]) out.push(ring(R * Math.cos(Math.asin(f)), H / 2 + head * f, 48, 2), ring(R * Math.cos(Math.asin(f)), -H / 2 - head * f, 48, 2));
+  // Dished heads: latitude rings on the ellipsoid (r = R*sqrt(1 - f^2) at height head*f),
+  // a brighter knuckle line just above the tangent line, and a crown ring - so the domes read.
+  for (const sgn of [1, -1] as const) {
+    for (const f of [0.22, 0.45, 0.65, 0.82, 0.93]) out.push(ring(R * Math.sqrt(1 - f * f), sgn * (H / 2 + head * f), 56, f === 0.22 ? 1 : 0));
+    out.push(ring(R * 0.18, sgn * (H / 2 + head * Math.sqrt(1 - 0.18 * 0.18)), 32, 1));
+  }
   const courses = Math.max(1, Math.ceil(shellHeight / Math.max(1, courseHeight)));
   for (let i = 1; i < courses; i++) out.push(ring(R, -H / 2 + (H * i) / courses, 72, 2));
   const legs = shellId >= 1100 ? 4 : 3;

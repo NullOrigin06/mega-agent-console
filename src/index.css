@@ -4480,7 +4480,8 @@ body {
 }
 
 .tank-hologram {
-  position: absolute;
+  /* top/right are set by TankHologram (pinned at its scroll-0 spot, like the ambient twin). */
+  position: fixed;
   top: 0;
   right: 2%;
   width: min(44%, 520px);
