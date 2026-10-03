@@ -1,6 +1,6 @@
 {
-  "version": "1.2.0",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.0/MegaLocalAgent.zip",
-  "sha256": "B2BC7D2B8BA4D8DCB38016EE01CA40DE48E3D9528519E1E777125F036359A357",
-  "notes": "Shop Tank and Site Tank drawing generation"
+  "version": "1.2.1",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.1/MegaLocalAgent.zip",
+  "sha256": "61FB811DDB6AAAD06E02A0EE3C8C56B6522BE701F7FA7EDFC44AF0AF44A190D8",
+  "notes": "Tube Sheet: tube hole = OD + 0.3 mm, pitch to 2 dp, actual tube thickness, M.O.C. SA 240 Gr.304; Detail A Shell ID - 2 dimension filled; Baffle OD = Shell ID - 5"
 }
