@@ -358,7 +358,7 @@ export function TankViewport3D({ spec, onClose }: { spec: TankTwinSpec; onClose?
   const title = spec.module === "ShopTank" ? "Shop tank digital twin" : "Site tank digital twin";
   const source = spec.jobId
     ? `Built from ${spec.jobId} · Shell Ø${spec.shellId} mm · H ${spec.height} mm`
-    : `From your inputs · Shell Ø${Math.round(spec.shellId)} mm · H ${Math.round(spec.height)} mm`;
+    : `Default proportions · Shell Ø${Math.round(spec.shellId)} mm · H ${Math.round(spec.height)} mm · run a ${spec.module === "ShopTank" ? "Shop Tank" : "Site Tank"} job to model your own`;
 
   return (
     <div className="vessel-viewport">

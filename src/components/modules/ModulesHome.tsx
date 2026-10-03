@@ -4,6 +4,9 @@ import { MODULE_OPTIONS, type ModuleOption } from "../../constants/modules";
 import { MODULE_COLORS, MODULE_SHORT_NAMES } from "../../constants/moduleColors";
 import { IconArrowRight, IconDrafting, IconLoader } from "../common/Icon";
 import { CadHeatExchangerPreview } from "../cad/CadHeatExchangerPreview";
+import { CadShopTankPreview } from "../cad/CadShopTankPreview";
+import { CadSiteTankPreview } from "../cad/CadSiteTankPreview";
+import { useTankTwinSpec } from "../cad/useTankTwinSpec";
 import { useTwinVesselSpec } from "../cad/useTwinVesselSpec";
 import { useAmbientHighlight, useAmbientSuspend } from "../ambient/useAmbientBus";
 import { DurationTrendChart } from "./DurationTrendChart";
@@ -30,6 +33,14 @@ const MODULE_ART: Partial<Record<ModuleKind, string>> = {
 const VesselViewport3D = lazy(() =>
   import("../cad/VesselViewport3D").then((m) => ({ default: m.VesselViewport3D }))
 );
+const TankViewport3D = lazy(() => import("../cad/TankViewport3D").then((m) => ({ default: m.TankViewport3D })));
+
+type TwinKind = "HeatExchangerFab" | "ShopTank" | "SiteTank";
+const TWINS: Array<{ kind: TwinKind; label: string }> = [
+  { kind: "HeatExchangerFab", label: "Heat Exchanger" },
+  { kind: "ShopTank", label: "Shop Tank" },
+  { kind: "SiteTank", label: "Site Tank" },
+];
 
 interface ModulesHomeProps {
   onSelectModule: (module: ModuleKind) => void;
@@ -64,7 +75,10 @@ function latestJobFor(jobs: JobSummary[], kind: ModuleKind): JobSummary | undefi
  */
 export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
   const [showVessel, setShowVessel] = useState(false);
+  const [twin, setTwin] = useState<TwinKind>("HeatExchangerFab");
   const vesselSpec = useTwinVesselSpec(jobs);
+  const shopSpec = useTankTwinSpec(jobs, "ShopTank", showVessel);
+  const siteSpec = useTankTwinSpec(jobs, "SiteTank", showVessel);
   // Two WebGL scenes shouldn't share the GPU - the ambient background holds
   // its last frame while the interactive twin is open.
   useAmbientSuspend("twin3d", showVessel);
@@ -114,7 +128,19 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
               </div>
             }
           >
-            <VesselViewport3D spec={vesselSpec} onSelectModule={onSelectModule} onClose={() => setShowVessel(false)} />
+            <div className="twin-switcher" role="tablist" aria-label="Digital twin">
+              {TWINS.map((t) => (
+                <button key={t.kind} type="button" role="tab" aria-selected={twin === t.kind}
+                  className={twin === t.kind ? "active" : ""} onClick={() => setTwin(t.kind)}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            {twin === "HeatExchangerFab" ? (
+              <VesselViewport3D spec={vesselSpec} onSelectModule={onSelectModule} onClose={() => setShowVessel(false)} />
+            ) : (
+              <TankViewport3D key={twin} spec={twin === "ShopTank" ? shopSpec : siteSpec} onClose={() => setShowVessel(false)} />
+            )}
           </Suspense>
         ) : (
           <button type="button" className="vessel-teaser" onClick={() => setShowVessel(true)}>
@@ -123,26 +149,30 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
                 <IconDrafting size={14} />
                 Interactive 3D
               </span>
-              <span className="vessel-teaser-title">Digital twin of your heat exchanger</span>
+              <span className="vessel-teaser-title">Digital twins of your equipment</span>
               <span className="vessel-teaser-source">
-                {vesselSpec.jobId
-                  ? `Built to scale from ${vesselSpec.jobId} · Shell Ø${vesselSpec.shellId} mm · ${vesselSpec.tubeQty} tubes · ${vesselSpec.baffleQty} baffles`
-                  : "Typical proportions until you complete a Heat Exchanger Fab run"}
+                Heat exchanger, shop tank and site tank in one 3D viewer - built to scale from your latest runs
               </span>
               <span className="vessel-teaser-modules">
-                {MODULE_OPTIONS.map((m) => (
+                {MODULE_OPTIONS.filter((m) => m.family === "exchanger").map((m) => (
                   <span key={m.kind}>
                     <span className="vessel-tip-swatch" style={{ background: MODULE_COLORS[m.kind] }} />
                     {MODULE_SHORT_NAMES[m.kind]}
                   </span>
                 ))}
+                <span>
+                  <span className="vessel-tip-swatch" style={{ background: MODULE_COLORS.ShopTank }} />
+                  Storage tanks
+                </span>
               </span>
               <span className="vessel-teaser-cta">
                 Open 3D view <IconArrowRight size={14} />
               </span>
             </div>
-            <div className="vessel-teaser-art" aria-hidden="true">
-              <CadHeatExchangerPreview size={150} />
+            <div className="vessel-teaser-art twin-teaser-art" aria-hidden="true">
+              <CadHeatExchangerPreview size={130} />
+              <CadShopTankPreview size={100} />
+              <CadSiteTankPreview size={110} />
             </div>
           </button>
         )}
