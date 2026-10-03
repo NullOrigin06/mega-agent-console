@@ -44,7 +44,7 @@ const REGION_OF: Record<ModuleKind, TwinRegion> = {
   TubeSheet: REGION_TUBESHEET,
   BonnetFlange: REGION_BONNET,
   HeatExchangerFab: REGION_SHELL,
-  GeneralArrangement: REGION_SHELL,
+  GeneralArrangement: REGION_NEUTRAL,
   ShopTank: REGION_NEUTRAL,
   SiteTank: REGION_NEUTRAL,
 };

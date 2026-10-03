@@ -676,7 +676,8 @@ const WORKSPACE_POSE: Record<ModuleKind, PoseName> = {
   TubeSheet: "face",
   BonnetFlange: "bonnet",
   HeatExchangerFab: "section",
-  GeneralArrangement: "section",
+  // GA gets its own backdrop: the whole vessel from an angle (saddles, nozzles, both heads), not the side-on tube-bundle section of the heat exchanger.
+  GeneralArrangement: "overview",
   // Storage tanks have no part on the exchanger twin: the overview pose.
   ShopTank: "overview",
   SiteTank: "overview",

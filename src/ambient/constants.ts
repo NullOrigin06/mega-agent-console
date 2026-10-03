@@ -115,7 +115,7 @@ export const HAZE = {
   t1BakeScale: 0.25,
   resolutionScale: 0.5,
   noiseSize: 128,
-  workspaceTint: { TubeSheet: 0.25, HeatExchangerFab: 0.25, BonnetFlange: 0.15 },
+  workspaceTint: { TubeSheet: 0.25, HeatExchangerFab: 0.25, BonnetFlange: 0.15, GeneralArrangement: 0.55 },
   apiDownSaturation: -0.85,
   apiDownSec: 1.2,
   pageIntensity: { modules: 1.0, jobs: 0.7, workspace: 0.85 },
