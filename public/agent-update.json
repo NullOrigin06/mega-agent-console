@@ -1,6 +1,6 @@
 {
-  "version": "1.2.2",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.2/MegaLocalAgent.zip",
-  "sha256": "48B364E4B63F6BDAAF30487973EF531576BFCC9DEE8001C9C833D86BB59596A2",
-  "notes": "Tube Sheet BOM: baffle plate size (OD x 75% cut height x THK) and weight (WHT2)"
+  "version": "1.2.3",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.3/MegaLocalAgent.zip",
+  "sha256": "864B069078ECD73CBEC19547F8F45CFB61C071C432D962FA44007BFDD07BB435",
+  "notes": "Tube Sheet drawing: underlined continuous note leaders, bolt-hole notches in side section, pitch dimension removed, updated template; baffle labels below plates and baffle notes restyled"
 }
