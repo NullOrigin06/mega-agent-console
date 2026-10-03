@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { ModuleKind } from "../../types/engineering";
+import { moduleGroup } from "../../utils/moduleGroup";
 import { MODULE_OPTIONS } from "../../constants/modules";
 import { IconGrid, IconList, IconCpu, IconArrowLeft, IconArrowRight } from "../common/Icon";
 import { ambientBus } from "../ambient/ambientBus";
@@ -89,7 +90,7 @@ export function Sidebar({
             <NavItem key={mod.kind} collapsed={collapsed} label={mod.title}>
               <button
                 type="button"
-                className={`sidebar-link sidebar-link-sub ${workspaceModule === mod.kind ? "sidebar-link-active" : ""}`}
+                className={`sidebar-link sidebar-link-sub ${workspaceModule && moduleGroup(workspaceModule) === mod.kind ? "sidebar-link-active" : ""}`}
                 onClick={() => onSelectModule(mod.kind)}
                 onPointerEnter={() => ambientBus.highlight(mod.kind)}
                 onPointerLeave={() => ambientBus.highlight(null)}

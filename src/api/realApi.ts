@@ -1,3 +1,4 @@
+import type { DrawingKind } from "../utils/drawingSelection";
 import type {
   JobDetail,
   JobRequest,
@@ -320,21 +321,12 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
       ),
       tankData: normalizeTankData(raw.tankData),
       bom: normalizeBomRows(raw.bom as unknown[] | undefined),
-      drawingUrl: (() => {
-        if (!raw.drawingUrl) return undefined;
-        const urlStr = String(raw.drawingUrl);
-        if (urlStr.startsWith("http://") || urlStr.startsWith("https://")) {
-          return urlStr;
-        }
-        try {
-          const origin = new URL(REAL_API_BASE_URL).origin;
-          return `${origin}${urlStr.startsWith("/") ? "" : "/"}${urlStr}`;
-        } catch {
-          return urlStr;
-        }
-      })(),
+      drawingUrl: absoluteDrawingUrl(raw.drawingUrl),
       drawingStatus: (raw.drawingStatus as JobDetail["drawingStatus"]) ?? "not_generated",
       drawingError: raw.drawingError ? String(raw.drawingError) : undefined,
+      gaDrawingUrl: absoluteDrawingUrl(raw.gaDrawingUrl),
+      gaDrawingStatus: (raw.gaDrawingStatus as JobDetail["drawingStatus"]) ?? "not_generated",
+      gaDrawingError: raw.gaDrawingError ? String(raw.gaDrawingError) : undefined,
     };
 
     return detail;
@@ -421,12 +413,65 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
   }
 }
 
-export async function generateDrawing(jobId: string, agentId?: string): Promise<void> {
+function absoluteDrawingUrl(value: unknown): string | undefined {
+  if (!value) return undefined;
+  const urlStr = String(value);
+  if (urlStr.startsWith("http://") || urlStr.startsWith("https://")) {
+    return urlStr;
+  }
+  try {
+    const origin = new URL(REAL_API_BASE_URL).origin;
+    return `${origin}${urlStr.startsWith("/") ? "" : "/"}${urlStr}`;
+  } catch {
+    return urlStr;
+  }
+}
+
+/**
+ * Body of POST /api/jobs/{id}/generate-drawing. `drawings` is only sent when
+ * non-empty (omitted/empty means ["fab"] on the server, for backwards
+ * compatibility); duplicates are removed.
+ */
+export function buildGenerateDrawingBody(agentId?: string, drawings?: readonly DrawingKind[]): { agentId: string | null; drawings?: DrawingKind[] } {
+  const unique = drawings ? [...new Set(drawings)] : [];
+  return { agentId: agentId ?? null, ...(unique.length > 0 ? { drawings: unique } : {}) };
+}
+
+/** GET /api/jobs/{id}/drawing?kind=fab|ga - the download endpoint of one drawing. */
+export function drawingDownloadUrl(jobId: string, kind: DrawingKind = "fab"): string {
+  return `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}/drawing?kind=${kind}`;
+}
+
+/** Downloads one drawing through the authenticated API and hands it to the browser as a file. */
+export async function downloadDrawing(jobId: string, kind: DrawingKind = "fab"): Promise<void> {
+  const res = await apiFetch(drawingDownloadUrl(jobId, kind));
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => "");
+    throw new Error(`Failed to download drawing (${res.status}): ${errorText || res.statusText}`);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+  saveBlob(blob, match ? decodeURIComponent(match[1]) : `${jobId}-${kind}.dwg`);
+}
+
+export function saveBlob(blob: Blob, filename: string): void {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+export async function generateDrawing(jobId: string, agentId?: string, drawings?: readonly DrawingKind[]): Promise<void> {
   const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}/generate-drawing`;
   const res = await apiFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agentId: agentId ?? null }),
+    body: JSON.stringify(buildGenerateDrawingBody(agentId, drawings)),
   });
 
   if (!res.ok) {

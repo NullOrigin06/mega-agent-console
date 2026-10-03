@@ -61,6 +61,9 @@ export interface ProjectInfo {
   preparedBy?: string;
   checkedBy?: string;
   approvedBy?: string;
+  /** Heat Exchanger: title-block values of the General Arrangement drawing (blank = server default). */
+  gaDrawingNo?: string;
+  gaDrawingTitle?: string;
 }
 
 /**
@@ -146,7 +149,10 @@ export interface JobSummary {
   createdAt: string; // ISO 8601
   completedAt?: string; // ISO 8601
   errorMessage?: string;
+  /** Fabrication drawing for HeatExchangerFab jobs; the (only) GA drawing for legacy GeneralArrangement jobs. */
   drawingStatus: DrawingStatus;
+  /** HeatExchangerFab only: the General Arrangement drawing (default "not_generated"). */
+  gaDrawingStatus?: DrawingStatus;
 }
 
 /** Full detail for one job, including the engineering data and BOM once available. */
@@ -157,6 +163,8 @@ export interface JobDetail extends JobSummary {
   bom?: BomRow[];
   drawingUrl?: string; // present once drawingStatus === "generated" — this is a single-machine setup, so this is informational, not a browser download target
   drawingError?: string;
+  gaDrawingUrl?: string;
+  gaDrawingError?: string;
 }
 
 /**

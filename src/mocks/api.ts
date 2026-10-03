@@ -9,7 +9,10 @@ import type {
   EngineeringDataModel,
   BomRow,
   TankData,
+  DrawingStatus,
 } from "../types/engineering";
+import type { DrawingKind } from "../utils/drawingSelection";
+import { saveBlob } from "../api/realApi";
 import { mockTankResult } from "./tankMock";
 import { sampleJobs, sampleJobDetails, sampleAgents, sampleEngineeringData, sampleBom } from "./fixtures";
 import { validateEmail, validatePassword } from "../utils/accountValidation";
@@ -121,6 +124,7 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
     status: "queued",
     createdAt: new Date().toISOString(),
     drawingStatus: "not_generated",
+    ...(request.module === "HeatExchangerFab" ? { gaDrawingStatus: "not_generated" as const } : {}),
   };
   jobs = [newJob, ...jobs];
 
@@ -149,8 +153,8 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
     jobExtras[newJob.id] = tank ? { tankData: tank.tankData, bom: tank.bom } : {
       engineeringData: {
         ...sampleEngineeringData,
-        // General Arrangement jobs carry the submitted tube length and nozzle list (the 3D view models them).
-        ...(request.module === "GeneralArrangement"
+        // General Arrangement drawings (legacy GA jobs and the combined module) carry the submitted tube length and nozzle list.
+        ...(request.module === "GeneralArrangement" || request.module === "HeatExchangerFab"
           ? {
               tubeLength: request.tubeLength ?? sampleEngineeringData.tubeLength,
               nozzles: request.nozzles?.length ? request.nozzles : sampleEngineeringData.nozzles,
@@ -179,16 +183,33 @@ export async function listShellIds(): Promise<number[]> {
  * agentId is accepted for signature parity with the real client but has no
  * effect in mock mode — there's no real agent to route to.
  */
-export async function generateDrawing(jobId: string, _agentId?: string): Promise<void> {
+export async function generateDrawing(jobId: string, _agentId?: string, drawings?: readonly DrawingKind[]): Promise<void> {
+  const requested = drawings && drawings.length > 0 ? drawings : (["fab"] as DrawingKind[]);
+  const unknown = requested.find((k) => k !== "fab" && k !== "ga");
+  if (unknown) throw new Error(`Failed to start drawing generation (400): unknown drawing kind '${String(unknown)}'.`);
+
   const job = jobs.find((j) => j.id === jobId);
-  if (job) {
-    job.drawingStatus = "generating";
+  // Only the combined module has a second drawing; legacy GA jobs use the primary fields.
+  const kinds = [...new Set(job?.module === "HeatExchangerFab" ? requested : (["fab"] as DrawingKind[]))];
+  if (job && (job.drawingStatus === "generating" || job.gaDrawingStatus === "generating")) {
+    throw new Error("Failed to start drawing generation (409): a drawing is already being generated for this job.");
   }
+  const setStatus = (kind: DrawingKind, status: DrawingStatus) => {
+    if (!job) return;
+    if (kind === "ga") job.gaDrawingStatus = status;
+    else job.drawingStatus = status;
+  };
+  kinds.forEach((k) => setStatus(k, "generating"));
   await delay(undefined);
   await new Promise((resolve) => setTimeout(resolve, 1500));
-  if (job) {
-    job.drawingStatus = "generated";
-  }
+  kinds.forEach((k) => setStatus(k, "generated"));
+}
+
+/** Mock of GET /api/jobs/{id}/drawing?kind=... - there is no real drawing file, so a small placeholder is saved. */
+export async function downloadDrawing(jobId: string, kind: DrawingKind = "fab"): Promise<void> {
+  await delay(undefined);
+  saveBlob(new Blob([`Mock ${kind === "ga" ? "general arrangement" : "fabrication"} drawing for ${jobId}
+`], { type: "text/plain" }), `${jobId}-${kind}-mock.txt`);
 }
 
 /**

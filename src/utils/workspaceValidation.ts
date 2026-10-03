@@ -52,7 +52,7 @@ export function buildWorkspaceRequest(
     };
   }
 
-  if (module === "GeneralArrangement") {
+  if (module === "HeatExchangerFab" || module === "GeneralArrangement") {
     const bad = nozzles.find((n) => {
       const p = (n.position ?? "").trim();
       return p.length > 0 && !Number.isFinite(Number(p));

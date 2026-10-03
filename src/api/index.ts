@@ -7,6 +7,7 @@ import type {
   AuthResponse,
   PairedAgentInfo,
 } from "../types/engineering";
+import type { DrawingKind } from "../utils/drawingSelection";
 import * as mockApi from "../mocks/api";
 import * as realApi from "./realApi";
 
@@ -76,10 +77,19 @@ export async function listShellIds(): Promise<number[]> {
  * machine hosts the backend. Callers should poll getJob(jobId) afterward to
  * observe drawingStatus change.
  */
-export async function generateDrawing(jobId: string, agentId?: string): Promise<void> {
+export async function generateDrawing(jobId: string, agentId?: string, drawings?: DrawingKind[]): Promise<void> {
   return getApiMode() === "real"
-    ? realApi.generateDrawing(jobId, agentId)
-    : mockApi.generateDrawing(jobId, agentId);
+    ? realApi.generateDrawing(jobId, agentId, drawings)
+    : mockApi.generateDrawing(jobId, agentId, drawings);
+}
+
+/**
+ * Downloads one drawing of a job (GET /api/jobs/{id}/drawing?kind=fab|ga).
+ */
+export async function downloadDrawing(jobId: string, kind: DrawingKind = "fab"): Promise<void> {
+  return getApiMode() === "real"
+    ? realApi.downloadDrawing(jobId, kind)
+    : mockApi.downloadDrawing(jobId, kind);
 }
 
 /**
@@ -173,6 +183,8 @@ export async function pairAgent(pairingCode: string): Promise<PairedAgentInfo> {
     : mockApi.pairAgent(pairingCode);
 }
 
+export { drawingDownloadUrl, buildGenerateDrawingBody } from "./realApi";
+export type { DrawingKind };
 export type { LoginRequest, SignupRequest, AuthResponse, PairedAgentInfo };
 
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react"
 import * as Tabs from "@radix-ui/react-tabs";
 import type { JobDetail } from "../../types/engineering";
 import { getJob, generateDrawing } from "../../api";
+import { DRAWING_LABELS, type DrawingKind } from "../../utils/drawingSelection";
 import { StatusBadge, ModuleBadge } from "../common/Badge";
 import {
   IconArrowLeft,
@@ -36,8 +37,9 @@ interface JobDetailViewProps {
 }
 
 const RUN_TITLES: Record<JobDetail["module"], string> = {
-  HeatExchangerFab: "Heat Exchanger Complete Fabrication Run",
-  GeneralArrangement: "General Arrangement Drawing Run",
+  HeatExchangerFab: "Heat Exchanger Fabrication & General Arrangement Run",
+  // Legacy jobs (module kept for old runs); they belong to the Heat Exchanger group.
+  GeneralArrangement: "Heat Exchanger General Arrangement Drawing Run",
   TubeSheet: "Tube Sheet Drilling & Geometry Run",
   BonnetFlange: "Bonnet Flange & Shell Synthesis Run",
   ShopTank: "Shop Tank Sizing & GA Run",
@@ -115,15 +117,16 @@ export function JobDetailView({
   // minute), or while the job itself is still queued/running (BOM/engineering
   // calc is normally fast - a couple seconds - but has no other push signal)
   // - stop as soon as either settles.
+  const anyDrawingGenerating = job?.drawingStatus === "generating" || job?.gaDrawingStatus === "generating";
   const isPolling =
-    job?.drawingStatus === "generating" ||
+    anyDrawingGenerating ||
     job?.status === "queued" ||
     job?.status === "running";
 
   useEffect(() => {
     if (isPolling) {
       if (!pollIntervalRef.current) {
-        const intervalMs = job?.drawingStatus === "generating" ? 3000 : 1000;
+        const intervalMs = anyDrawingGenerating ? 3000 : 1000;
         pollIntervalRef.current = setInterval(refreshSilently, intervalMs);
       }
     } else if (pollIntervalRef.current) {
@@ -136,13 +139,13 @@ export function JobDetailView({
         pollIntervalRef.current = null;
       }
     };
-  }, [isPolling, job?.drawingStatus, refreshSilently]);
+  }, [isPolling, anyDrawingGenerating, refreshSilently]);
 
-  const handleGenerateDrawing = async (agentId?: string) => {
+  const handleGenerateDrawing = async (agentId?: string, drawings?: DrawingKind[]) => {
     if (!job) return;
     setIsTriggeringGeneration(true);
     try {
-      await generateDrawing(job.id, agentId);
+      await generateDrawing(job.id, agentId, drawings);
       await refreshSilently();
     } catch (err) {
       console.warn("[JobDetailView] generateDrawing failed to start:", err);
@@ -434,10 +437,10 @@ export function JobDetailView({
             <Tabs.Trigger value="drawing" className="detail-tab-btn">
               <IconDrafting size={16} />
               <span>CAD Drawing & Output</span>
-              {job.drawingStatus === "generated" && (
+              {(job.drawingStatus === "generated" || job.gaDrawingStatus === "generated") && !anyDrawingGenerating && (
                 <span className="tab-pill-ready">Ready</span>
               )}
-              {job.drawingStatus === "generating" && (
+              {anyDrawingGenerating && (
                 <span className="tab-pill">Generating</span>
               )}
             </Tabs.Trigger>
@@ -478,6 +481,14 @@ export function JobDetailView({
               shellId={job.shellId}
               onGenerate={handleGenerateDrawing}
               isTriggering={isTriggeringGeneration}
+              cards={
+                job.module === "HeatExchangerFab"
+                  ? [
+                      { kind: "fab", label: DRAWING_LABELS.fab, status: job.drawingStatus, error: job.drawingError },
+                      { kind: "ga", label: DRAWING_LABELS.ga, status: job.gaDrawingStatus ?? "not_generated", error: job.gaDrawingError },
+                    ]
+                  : undefined
+              }
             />
           </Tabs.Content>
 

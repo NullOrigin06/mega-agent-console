@@ -136,11 +136,13 @@ export const sampleBom: BomRow[] = [
 ];
 
 export const sampleJobs: JobSummary[] = [
-  { id: "job-1001", module: "HeatExchangerFab", shellId: 914, status: "completed", createdAt: "2026-09-19T10:12:00Z", completedAt: "2026-09-19T10:14:32Z", drawingStatus: "generated" },
+  { id: "job-1001", module: "HeatExchangerFab", shellId: 914, status: "completed", createdAt: "2026-09-19T10:12:00Z", completedAt: "2026-09-19T10:14:32Z", drawingStatus: "generated", gaDrawingStatus: "not_generated" },
   { id: "job-1002", module: "TubeSheet", shellId: 762, status: "running", createdAt: "2026-09-20T08:01:00Z", drawingStatus: "not_generated" },
   { id: "job-1003", module: "BonnetFlange", shellId: 1100, status: "failed", createdAt: "2026-09-19T16:40:00Z", completedAt: "2026-09-19T16:41:05Z", errorMessage: "GEN-001: Ensure CAD is running properly.", drawingStatus: "not_generated" },
-  { id: "job-1004", module: "HeatExchangerFab", shellId: 600, status: "queued", createdAt: "2026-09-20T09:00:00Z", drawingStatus: "not_generated" },
-  { id: "job-1005", module: "HeatExchangerFab", shellId: 800, status: "completed", createdAt: "2026-09-20T09:05:00Z", completedAt: "2026-09-20T09:05:03Z", drawingStatus: "not_generated" },
+  { id: "job-1004", module: "HeatExchangerFab", shellId: 600, status: "queued", createdAt: "2026-09-20T09:00:00Z", drawingStatus: "not_generated", gaDrawingStatus: "not_generated" },
+  { id: "job-1005", module: "HeatExchangerFab", shellId: 800, status: "completed", createdAt: "2026-09-20T09:05:00Z", completedAt: "2026-09-20T09:05:03Z", drawingStatus: "not_generated", gaDrawingStatus: "not_generated" },
+  // Legacy General Arrangement job (module kind kept for old jobs): groups under Heat Exchanger, single-drawing UI.
+  { id: "job-1006", module: "GeneralArrangement", shellId: 700, status: "completed", createdAt: "2026-09-20T09:30:00Z", completedAt: "2026-09-20T09:30:03Z", drawingStatus: "generated" },
 ];
 
 export const sampleJobDetails: Record<string, JobDetail> = {
@@ -152,6 +154,11 @@ export const sampleJobDetails: Record<string, JobDetail> = {
   },
   "job-1005": {
     ...sampleJobs[4],
+    engineeringData: sampleEngineeringData,
+    bom: sampleBom,
+  },
+  "job-1006": {
+    ...sampleJobs[5],
     engineeringData: sampleEngineeringData,
     bom: sampleBom,
   },

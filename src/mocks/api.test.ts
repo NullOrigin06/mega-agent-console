@@ -145,3 +145,48 @@ describe("mock api: deleteJob", () => {
     expect(await getJob(job.id)).toBeUndefined();
   });
 });
+
+describe("mock api: two-drawing lifecycle (Heat Exchanger)", () => {
+  it("new Heat Exchanger jobs start with both drawings not generated", async () => {
+    const jobs = await listJobs();
+    const hx = jobs.find((j) => j.id === "job-1005");
+    expect(hx?.gaDrawingStatus).toBe("not_generated");
+  });
+
+  it("generating only 'ga' leaves the fabrication drawing untouched, and fab can follow later", async () => {
+    const before = await getJob("job-1005");
+    const fabBefore = before?.drawingStatus;
+    const p = generateDrawing("job-1005", undefined, ["ga"]);
+    const mid = await getJob("job-1005");
+    expect(mid?.gaDrawingStatus).toBe("generating");
+    expect(mid?.drawingStatus).toBe(fabBefore);
+    await p;
+    const after = await getJob("job-1005");
+    expect(after?.gaDrawingStatus).toBe("generated");
+    expect(after?.drawingStatus).toBe(fabBefore);
+
+    await generateDrawing("job-1005", undefined, ["fab"]);
+    const both = await getJob("job-1005");
+    expect(both?.drawingStatus).toBe("generated");
+    expect(both?.gaDrawingStatus).toBe("generated");
+  }, 15000);
+
+  it("generates both at once, rejects unknown kinds and a concurrent request", async () => {
+    const p = generateDrawing("job-1001", undefined, ["fab", "ga"]);
+    const mid = await getJob("job-1001");
+    expect(mid?.drawingStatus).toBe("generating");
+    expect(mid?.gaDrawingStatus).toBe("generating");
+    await expect(generateDrawing("job-1001", undefined, ["ga"])).rejects.toThrow(/409/);
+    await p;
+    await expect(generateDrawing("job-1001", undefined, ["bogus" as never])).rejects.toThrow(/400/);
+  }, 15000);
+
+  it("legacy GeneralArrangement jobs keep using only the primary drawing fields", async () => {
+    const p = generateDrawing("job-1006");
+    const mid = await getJob("job-1006");
+    expect(mid?.module).toBe("GeneralArrangement");
+    expect(mid?.drawingStatus).toBe("generating");
+    expect(mid?.gaDrawingStatus).toBeUndefined();
+    await p;
+  }, 10000);
+});

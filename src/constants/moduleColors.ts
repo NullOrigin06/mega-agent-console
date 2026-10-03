@@ -32,8 +32,9 @@ export const MODULE_COLORS: Record<ModuleKind, string> = {
 export const MODULE_SHORT_NAMES: Record<ModuleKind, string> = {
   TubeSheet: "Tube Sheet",
   BonnetFlange: "Bonnet Flange",
-  HeatExchangerFab: "HX Fab",
-  GeneralArrangement: "GA Drawing",
+  HeatExchangerFab: "Heat Exchanger",
+  // Legacy GA jobs are grouped under Heat Exchanger (see utils/moduleGroup.ts).
+  GeneralArrangement: "Heat Exchanger",
   ShopTank: "Shop Tank",
   SiteTank: "Site Tank",
 };

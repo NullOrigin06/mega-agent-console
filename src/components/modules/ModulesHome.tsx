@@ -1,6 +1,7 @@
 import { Suspense, lazy, useState } from "react";
 import type { JobSummary, ModuleKind } from "../../types/engineering";
 import { MODULE_OPTIONS, type ModuleOption } from "../../constants/modules";
+import { sameModuleGroup } from "../../utils/moduleGroup";
 import { MODULE_COLORS, MODULE_SHORT_NAMES } from "../../constants/moduleColors";
 import { IconArrowRight, IconDrafting, IconLoader } from "../common/Icon";
 import { CadHeatExchangerPreview } from "../cad/CadHeatExchangerPreview";
@@ -67,7 +68,7 @@ function timeAgo(iso?: string): string {
 
 function latestJobFor(jobs: JobSummary[], kind: ModuleKind): JobSummary | undefined {
   return jobs
-    .filter((j) => j.module === kind)
+    .filter((j) => sameModuleGroup(j.module, kind))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 }
 

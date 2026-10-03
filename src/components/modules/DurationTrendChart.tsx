@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import type { JobSummary, ModuleKind } from "../../types/engineering";
 import { MODULE_COLORS, MODULE_SHORT_NAMES } from "../../constants/moduleColors";
+import { moduleGroup } from "../../utils/moduleGroup";
 import { MODULE_OPTIONS } from "../../constants/modules";
 
 const MAX_RUNS = 20;
@@ -123,7 +124,7 @@ export function DurationTrendChart({ jobs }: { jobs: JobSummary[] }) {
   const fastest = runs.reduce((a, b) => (b.seconds < a.seconds ? b : a));
   const slowest = runs.reduce((a, b) => (b.seconds > a.seconds ? b : a));
   // One legend entry per colour: the two storage tanks share TANK_COLOR, so they read as "Storage tanks".
-  const legend = MODULE_OPTIONS.filter((m) => runs.some((r) => r.module === m.kind)).reduce<Array<{ color: string; label: string }>>((acc, m) => {
+  const legend = MODULE_OPTIONS.filter((m) => runs.some((r) => moduleGroup(r.module) === m.kind)).reduce<Array<{ color: string; label: string }>>((acc, m) => {
     const color = MODULE_COLORS[m.kind];
     if (!acc.some((x) => x.color === color)) acc.push({ color, label: m.family === "tank" ? "Storage tanks" : MODULE_SHORT_NAMES[m.kind] });
     return acc;

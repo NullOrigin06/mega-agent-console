@@ -1,5 +1,6 @@
 import { useState, useMemo, Fragment } from "react";
 import { MODULE_OPTIONS } from "../../constants/modules";
+import { moduleGroup } from "../../utils/moduleGroup";
 import { MODULE_SHORT_NAMES } from "../../constants/moduleColors";
 import { AnimatePresence, motion } from "framer-motion";
 import type { JobSummary, ModuleKind, JobStatus } from "../../types/engineering";
@@ -77,7 +78,7 @@ export function JobList({
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
-      if (selectedModule !== "All" && job.module !== selectedModule) {
+      if (selectedModule !== "All" && moduleGroup(job.module) !== selectedModule) {
         return false;
       }
       if (selectedStatus !== "All" && job.status !== selectedStatus) {
