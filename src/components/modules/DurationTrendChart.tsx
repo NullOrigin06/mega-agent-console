@@ -122,7 +122,12 @@ export function DurationTrendChart({ jobs }: { jobs: JobSummary[] }) {
   const med = median(seconds);
   const fastest = runs.reduce((a, b) => (b.seconds < a.seconds ? b : a));
   const slowest = runs.reduce((a, b) => (b.seconds > a.seconds ? b : a));
-  const modulesPresent = MODULE_OPTIONS.map((m) => m.kind).filter((k) => runs.some((r) => r.module === k));
+  // One legend entry per colour: the two storage tanks share TANK_COLOR, so they read as "Storage tanks".
+  const legend = MODULE_OPTIONS.filter((m) => runs.some((r) => r.module === m.kind)).reduce<Array<{ color: string; label: string }>>((acc, m) => {
+    const color = MODULE_COLORS[m.kind];
+    if (!acc.some((x) => x.color === color)) acc.push({ color, label: m.family === "tank" ? "Storage tanks" : MODULE_SHORT_NAMES[m.kind] });
+    return acc;
+  }, []);
   const showChart = runs.length >= 2;
   const axis = axisTicks(Math.max(...seconds));
 
@@ -162,10 +167,10 @@ export function DurationTrendChart({ jobs }: { jobs: JobSummary[] }) {
       {showChart && view === "chart" && (
         <>
           <ul className="run-chart-legend" aria-label="Modules">
-            {modulesPresent.map((k) => (
-              <li key={k}>
-                <span className="run-chart-swatch" style={{ background: MODULE_COLORS[k] }} />
-                {MODULE_SHORT_NAMES[k]}
+            {legend.map((l) => (
+              <li key={l.color}>
+                <span className="run-chart-swatch" style={{ background: l.color }} />
+                {l.label}
               </li>
             ))}
           </ul>

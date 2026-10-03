@@ -9,7 +9,9 @@ import type {
   SignupRequest,
   AuthResponse,
   PairedAgentInfo,
+  TankData,
 } from "../types/engineering";
+import { ApiFieldError } from "./errors";
 import { getAuthSession, clearAuthSession } from "../utils/authSession";
 
 // `let`, not `const`: public/runtime-config.json can replace the build-time
@@ -147,6 +149,21 @@ function normalizeEngineeringValues(
     bonnetShellRSLength: 500,
     bonnetShellTHK: 5,
     dishendTHK: 5,
+  };
+}
+
+/** Tank results arrive pre-formatted (contract §2); only guard the shape. */
+function normalizeTankData(raw: unknown): TankData | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Partial<TankData>;
+  if (r.module !== "ShopTank" && r.module !== "SiteTank") return undefined;
+  return {
+    module: r.module,
+    inputs: (r.inputs ?? {}) as TankData["inputs"],
+    overrides: r.overrides ?? {},
+    parameters: Array.isArray(r.parameters) ? r.parameters.map((p) => ({ ...p, actual: String(p.actual ?? ""), estimated: String(p.estimated ?? p.actual ?? "") })) : [],
+    summary: Array.isArray(r.summary) ? r.summary.map((x) => ({ ...x, value: String(x.value ?? "") })) : [],
+    warnings: Array.isArray(r.warnings) ? r.warnings.map(String) : [],
   };
 }
 
@@ -298,9 +315,10 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
       createdAt: String(raw.createdAt),
       completedAt: raw.completedAt ? String(raw.completedAt) : undefined,
       errorMessage: raw.errorMessage ? String(raw.errorMessage) : undefined,
-      engineeringData: normalizeEngineeringData(
+      engineeringData: raw.tankData ? undefined : normalizeEngineeringData(
         raw.engineeringData as Record<string, unknown> | undefined
       ),
+      tankData: normalizeTankData(raw.tankData),
       bom: normalizeBomRows(raw.bom as unknown[] | undefined),
       drawingUrl: (() => {
         if (!raw.drawingUrl) return undefined;
@@ -348,6 +366,19 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
 
     if (!res.ok) {
       const errorText = await res.text();
+      if (res.status === 400 && (request.module === "ShopTank" || request.module === "SiteTank")) {
+        // Tank validation: surface the field messages on the form instead of a failed job.
+        let body: { error?: string; fieldErrors?: Record<string, string> } = {};
+        try {
+          body = JSON.parse(errorText);
+        } catch {
+          /* plain-text 400 */
+        }
+        const fieldErrors = Object.fromEntries(
+          Object.entries(body.fieldErrors ?? {}).map(([k, v]) => [k.replace(/^(shopTank|siteTank)\./, ""), v]),
+        );
+        throw new ApiFieldError(body.error || errorText || "Please correct highlighted input fields.", fieldErrors);
+      }
       const failedJob: JobDetail = {
         id: `job-${Math.floor(1000 + Math.random() * 9000)}`,
         module: request.module,

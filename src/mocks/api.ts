@@ -8,7 +8,9 @@ import type {
   PairedAgentInfo,
   EngineeringDataModel,
   BomRow,
+  TankData,
 } from "../types/engineering";
+import { mockTankResult } from "./tankMock";
 import { sampleJobs, sampleJobDetails, sampleAgents, sampleEngineeringData, sampleBom } from "./fixtures";
 import { validateEmail, validatePassword } from "../utils/accountValidation";
 
@@ -37,7 +39,7 @@ let jobs: JobSummary[] = [...sampleJobs];
 // entry directly (drawingStatus/drawingUrl). A one-time snapshot taken at
 // completion would freeze drawingStatus forever and silently break
 // "Generate Drawing" for any job submitted through the UI.
-const jobExtras: Record<string, { engineeringData: EngineeringDataModel; bom: BomRow[] }> = {};
+const jobExtras: Record<string, { engineeringData?: EngineeringDataModel; tankData?: TankData; bom: BomRow[] }> = {};
 
 export async function listJobs(): Promise<JobSummary[]> {
   return delay([...jobs]);
@@ -94,6 +96,7 @@ function calculateShellIdFromThermalInputs(
 }
 
 export async function submitJob(request: JobRequest): Promise<JobSummary> {
+  const tank = request.module === "ShopTank" || request.module === "SiteTank" ? mockTankResult(request) : null;
   const usedThermalSizing =
     request.hta != null &&
     request.tubeOD != null &&
@@ -107,7 +110,9 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
         request.tubeLength!,
         request.noOfPass!
       )
-    : (request.shellId ?? 0);
+    : tank
+      ? tank.shellId
+      : (request.shellId ?? 0);
 
   const newJob: JobSummary = {
     id: `job-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -141,7 +146,7 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
     // (job-1001/job-1005) had it, so every other job would sit at
     // "Data Extraction Pending" forever with no Drawing tab and no way to
     // ever generate a drawing.
-    jobExtras[newJob.id] = {
+    jobExtras[newJob.id] = tank ? { tankData: tank.tankData, bom: tank.bom } : {
       engineeringData: {
         ...sampleEngineeringData,
         shellID: shellId,

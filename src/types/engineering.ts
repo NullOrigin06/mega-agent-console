@@ -28,7 +28,10 @@
  *    we choose to display it here," not as an existing backend contract.
  */
 
-export type ModuleKind = "TubeSheet" | "BonnetFlange" | "HeatExchangerFab";
+export type ModuleKind = "TubeSheet" | "BonnetFlange" | "HeatExchangerFab" | "ShopTank" | "SiteTank";
+
+/** Storage-tank modules: own inputs, results and BOM (see docs/TANK_MODULES_CONTRACT.md). */
+export type TankModuleKind = Extract<ModuleKind, "ShopTank" | "SiteTank">;
 
 export type JobStatus = "queued" | "running" | "completed" | "failed";
 
@@ -53,6 +56,8 @@ export interface ProjectInfo {
   projectNo?: string;
   drawingNo?: string;
   revision?: string;
+  /** dd-MM-yyyy; tank modules only (the API defaults it to today). */
+  date?: string;
   preparedBy?: string;
   checkedBy?: string;
   approvedBy?: string;
@@ -76,6 +81,60 @@ export interface JobRequest {
   baffleQty?: number;
   nozzles?: NozzleItem[];
   projectInfo?: ProjectInfo;
+  /** Tank modules: exactly one of these, matching `module`. */
+  shopTank?: ShopTankInputs;
+  siteTank?: SiteTankInputs;
+  /** Estimated-column overrides keyed by parameter key (contract §3). */
+  overrides?: Record<string, string>;
+}
+
+/** Shop Tank inputs - mirrors ShopTankDesignForm "SHOP TANK INPUTS". */
+export interface ShopTankInputs {
+  shellId: number;
+  shellHeight: number;
+  designPressureType: "Atmospheric" | "Full Vacuum";
+  courseHeight: number;
+  supportType: "LEG SUPPORT" | "LUG SUPPORT" | "SADDLE SUPPORT" | "SKIRT SUPPORT";
+  noOfStiffeners: number;
+  straightFlangeSF: number;
+}
+
+/** Site Tank inputs - mirrors SiteTankForm "USER INPUTS". */
+export interface SiteTankInputs {
+  courseHeight: number;
+  requiredVolume: number;
+  hdRatio: number;
+  bottomSlopeRatio: number;
+  topConeAngle: number;
+  designCode: "API 650" | "API 620" | "IS 803" | "EN 14015";
+}
+
+/** One row of the desktop "ENGINEERING PARAMETERS" grid (display strings, desktop formatting). */
+export interface TankParameter {
+  key: string;
+  label: string;
+  unit?: string | null;
+  group: string;
+  actual: string;
+  estimated: string;
+  editable: boolean;
+}
+
+export interface TankSummaryItem {
+  key: string;
+  label: string;
+  value: string;
+  unit?: string | null;
+}
+
+/** Tank job results (JobDetail.tankData), contract §2. */
+export interface TankData {
+  module: TankModuleKind;
+  inputs: ShopTankInputs | SiteTankInputs;
+  overrides?: Record<string, string>;
+  parameters: TankParameter[];
+  summary: TankSummaryItem[];
+  warnings: string[];
 }
 
 /** Summary row for a job list / history view. */
@@ -93,6 +152,8 @@ export interface JobSummary {
 /** Full detail for one job, including the engineering data and BOM once available. */
 export interface JobDetail extends JobSummary {
   engineeringData?: EngineeringDataModel;
+  /** Tank modules only (engineeringData is absent for them). */
+  tankData?: TankData;
   bom?: BomRow[];
   drawingUrl?: string; // present once drawingStatus === "generated" — this is a single-machine setup, so this is informational, not a browser download target
   drawingError?: string;

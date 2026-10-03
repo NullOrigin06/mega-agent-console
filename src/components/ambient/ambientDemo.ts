@@ -44,7 +44,7 @@ export function startAmbientDemo(opts: {
       { type: step.type, module: step.module, jobId: `demo-${n}`, ...(online.length === 1 ? { agentId: online[0] } : {}) },
     ]);
     if (step.type === "dispatch") {
-      const runningByModule: AmbientSignals["runningByModule"] = { TubeSheet: 0, BonnetFlange: 0, HeatExchangerFab: 0 };
+      const runningByModule: AmbientSignals["runningByModule"] = { TubeSheet: 0, BonnetFlange: 0, HeatExchangerFab: 0, ShopTank: 0, SiteTank: 0 };
       runningByModule[step.module] = 1;
       opts.patch({ running: 1, runningByModule });
     } else {

@@ -67,6 +67,20 @@ export function ModuleBadge({ module }: { module: ModuleKind }) {
           <span>Heat Exchanger Fab</span>
         </span>
       );
+    case "ShopTank":
+      return (
+        <span className="badge badge-module badge-tank">
+          <IconCylinder size={14} />
+          <span>Shop Tank</span>
+        </span>
+      );
+    case "SiteTank":
+      return (
+        <span className="badge badge-module badge-tank">
+          <IconLayers size={14} />
+          <span>Site Tank</span>
+        </span>
+      );
     default:
       return <span className="badge">{module}</span>;
   }
