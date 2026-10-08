@@ -37,14 +37,18 @@ const MODULE_ART: Partial<Record<ModuleKind, string>> = {
 const VesselViewport3D = lazy(() =>
   import("../cad/VesselViewport3D").then((m) => ({ default: m.VesselViewport3D }))
 );
+const HeatExchangerGlbViewport3D = lazy(() =>
+  import("../cad/HeatExchangerGlbViewport3D").then((m) => ({ default: m.HeatExchangerGlbViewport3D }))
+);
 const TankViewport3D = lazy(() => import("../cad/TankViewport3D").then((m) => ({ default: m.TankViewport3D })));
 const GeneralArrangementViewport3D = lazy(() =>
   import("../cad/GeneralArrangementViewport3D").then((m) => ({ default: m.GeneralArrangementViewport3D }))
 );
 
-type TwinKind = "HeatExchangerFab" | "GeneralArrangement" | "ShopTank" | "SiteTank";
+type TwinKind = "HeatExchangerFab" | "HeatExchangerDetailed" | "GeneralArrangement" | "ShopTank" | "SiteTank";
 const TWINS: Array<{ kind: TwinKind; label: string }> = [
   { kind: "HeatExchangerFab", label: "Heat Exchanger" },
+  { kind: "HeatExchangerDetailed", label: "Heat Exchanger (detailed)" },
   { kind: "GeneralArrangement", label: "General Arrangement" },
   { kind: "ShopTank", label: "Shop Tank" },
   { kind: "SiteTank", label: "Site Tank" },
@@ -147,6 +151,8 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
             </div>
             {twin === "HeatExchangerFab" ? (
               <VesselViewport3D spec={vesselSpec} onSelectModule={onSelectModule} onClose={() => setShowVessel(false)} />
+            ) : twin === "HeatExchangerDetailed" ? (
+              <HeatExchangerGlbViewport3D key={twin} onClose={() => setShowVessel(false)} />
             ) : twin === "GeneralArrangement" ? (
               <GeneralArrangementViewport3D key={twin} spec={gaSpec} onClose={() => setShowVessel(false)} />
             ) : (
