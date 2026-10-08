@@ -9,6 +9,7 @@ import { ModulesHome } from "./components/modules/ModulesHome";
 import { ModuleWorkspace } from "./components/modules/ModuleWorkspace";
 import { IconLoader } from "./components/common/Icon";
 import { AuthScreen } from "./components/auth/AuthScreen";
+import { LANDING_PATH, shouldShowLanding } from "./utils/landing";
 import {
   getAuthSession,
   clearAuthSession,
@@ -27,6 +28,10 @@ const EMPTY_AGENTS: PairedAgentInfo[] = [];
 export function App() {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<AuthSession | null>(() => getAuthSession());
+  const showLanding = shouldShowLanding(Boolean(session));
+  useEffect(() => {
+    if (showLanding) window.location.replace(LANDING_PATH);
+  }, [showLanding]);
   const [page, setPage] = useState<Page>("modules");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [workspaceModule, setWorkspaceModule] = useState<ModuleKind | null>(null);
@@ -120,6 +125,7 @@ export function App() {
   // this browser already has a session (e.g. right after signup, which
   // auto-logs in - the verification email sent during that same signup
   // still needs to work when clicked).
+  if (showLanding) return null; // redirecting to the welcome page
   if (!session || readUrlToken()) {
     return <AuthScreen onLoginSuccess={setSession} />;
   }
