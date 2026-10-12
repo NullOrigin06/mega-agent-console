@@ -1,6 +1,6 @@
 {
-  "version": "1.2.3",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.3/MegaLocalAgent.zip",
-  "sha256": "864B069078ECD73CBEC19547F8F45CFB61C071C432D962FA44007BFDD07BB435",
-  "notes": "Tube Sheet drawing: underlined continuous note leaders, bolt-hole notches in side section, pitch dimension removed, updated template; baffle labels below plates and baffle notes restyled"
+  "version": "1.2.4",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.4/MegaLocalAgent.zip",
+  "sha256": "9803D41D786687C5192AD1788FC688956B911B86DA429947275358D3AC6E0491",
+  "notes": "Heat Exchanger jobs: Generate GA drawing now makes the General Arrangement drawing (fabrication and GA can be made separately or together); Site Tank module update"
 }
