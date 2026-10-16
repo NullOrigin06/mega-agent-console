@@ -1,6 +1,6 @@
 {
-  "version": "1.2.4",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.4/MegaLocalAgent.zip",
-  "sha256": "9803D41D786687C5192AD1788FC688956B911B86DA429947275358D3AC6E0491",
-  "notes": "Heat Exchanger jobs: Generate GA drawing now makes the General Arrangement drawing (fabrication and GA can be made separately or together); Site Tank module update"
+  "version": "1.2.5",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.5/MegaLocalAgent.zip",
+  "sha256": "AE90C31D793B30BDB911F18852188AA0E99CF69F2C1EF1390C33FEC83E117428",
+  "notes": "Works with AutoCAD / Plant 3D as well as GstarCAD; waits instead of failing while CAD is busy; Tube Sheet about 5x faster; clear input checks before drawing; GA nozzles placed by size on 2/4-pass exchangers"
 }
