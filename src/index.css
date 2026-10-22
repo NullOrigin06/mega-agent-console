@@ -3643,11 +3643,7 @@ body {
     border-color: transparent;
     padding: 8px 0;
   }
-  .module-workspace-header {
-    min-height: 210px;
-    align-items: center;
-  }
-  .module-workspace-header > div:not(.module-hero-art):not(.module-workspace-icon) {
+  .module-workspace-header > div:last-child {
     max-width: 520px;
   }
 }
@@ -4544,116 +4540,37 @@ body {
   top: 54%;
 }
 
-/* Module workspace header: the module's render at the right of the header band
-   (the same renders as the Command Center cards). Text stays on the left. */
-.module-workspace-header {
+/* Tank hologram: top-right of the tank workspace, behind the content. */
+.tank-workspace {
   position: relative;
 }
 
-.module-workspace-header > :not(.module-hero-art) {
+.tank-workspace > :not(.tank-hologram) {
   position: relative;
   z-index: 1;
 }
 
-.module-hero-art {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  width: min(44%, 560px);
-  height: 100%;
-  min-height: 190px;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.tank-hologram {
+  /* top/right are set by TankHologram (pinned at its scroll-0 spot, like the ambient twin). */
+  position: fixed;
+  top: 0;
+  right: 2%;
+  width: min(48%, 620px);
+  height: 250px; /* refined at runtime to the measured header band */
   pointer-events: none;
-  user-select: none;
   z-index: 0;
 }
 
-.module-hero-art img {
-  position: relative;
-  z-index: 1;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  opacity: 0.92;
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 22px rgba(59, 130, 246, 0.18));
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 22%);
-  mask-image: linear-gradient(to right, transparent 0%, #000 22%);
-  animation: moduleHeroFloat 9s ease-in-out infinite;
-  transition: opacity 0.4s ease, filter 0.4s ease;
-}
-
-/* Wide renders (exchanger, general arrangement) fill the width; compact parts stay centred. */
-.module-hero-art-HeatExchangerFab img,
-.module-hero-art-GeneralArrangement img {
-  width: 100%;
-}
-
-.module-hero-art-TubeSheet img,
-.module-hero-art-BonnetFlange img {
-  max-height: 92%;
-}
-
-.module-hero-art-glow {
-  position: absolute;
-  inset: 8% 4% 8% 18%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(59, 130, 246, 0.22), rgba(6, 182, 212, 0.08) 55%, transparent 75%);
-  filter: blur(14px);
-}
-
-.module-hero-art-ring {
-  position: absolute;
-  inset: 12% 10% 12% 24%;
-  border-radius: 50%;
-  border: 1px solid rgba(6, 182, 212, 0.0);
-  opacity: 0;
-}
-
-.module-hero-art[data-active="true"] img {
-  opacity: 1;
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 28px rgba(6, 182, 212, 0.4));
-}
-
-.module-hero-art[data-active="true"] .module-hero-art-ring {
-  border-color: rgba(6, 182, 212, 0.55);
-  animation: moduleHeroPulse 2.4s ease-out infinite;
-}
-
-@keyframes moduleHeroFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-@keyframes moduleHeroPulse {
-  0% { transform: scale(0.9); opacity: 0.7; }
-  100% { transform: scale(1.12); opacity: 0; }
-}
-
-/* Below 1024px the header is a card: the render sits faded behind the text, bottom-right. */
-@media (max-width: 1023px) {
-  .module-workspace-header {
-    overflow: hidden;
-  }
-  .module-hero-art {
-    width: 70%;
-    opacity: 0.2;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .module-hero-art img,
-  .module-hero-art[data-active="true"] .module-hero-art-ring {
-    animation: none;
+@media (max-width: 900px) {
+  .tank-hologram {
+    width: 60%;
+    height: 220px;
+    opacity: 0.6;
   }
 }
 
 @media (forced-colors: active), print {
-  .module-hero-art {
+  .tank-hologram {
     display: none;
   }
 }

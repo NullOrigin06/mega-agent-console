@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { JobSummary, ProjectInfo, TankModuleKind } from "../../types/engineering";
 import { submitJob } from "../../api";
 import { ApiFieldError } from "../../api/errors";
 import { MODULE_OPTIONS } from "../../constants/modules";
 import { TANK_FIELDS, buildTankInputs, defaultTankProjectInfo, defaultTankValues, tankDerived } from "../../constants/tankFields";
 import { JobDetailView } from "../jobs/JobDetailView";
+import { TankHologram } from "../cad/TankHologram";
+import { tankWireFromValues } from "../cad/tankHologramGeometry";
 import { useTankActivity } from "./useTankActivity";
-import { ModuleHeroArt } from "./ModuleHeroArt";
 
 import { IconArrowLeft, IconLoader } from "../common/Icon";
 
@@ -51,7 +52,9 @@ export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJob
   const ModuleIcon = moduleInfo.icon;
   const fields = TANK_FIELDS[module];
   const derived = tankDerived(module, values);
+  const wire = useMemo(() => tankWireFromValues(module, values), [module, values]);
   const activity = useTankActivity(module, jobs);
+  const hologram = <TankHologram wire={wire} running={activity.running} event={activity.event} className={`tank-hologram-${module}`} />;
 
   const setValue = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -92,6 +95,7 @@ export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJob
   if (job) {
     return (
       <div className="module-workspace tank-workspace">
+        {hologram}
         <div className="module-workspace-subnav">
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => setJob(null)}>
             <IconArrowLeft size={16} />
@@ -116,6 +120,7 @@ export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJob
 
   return (
     <div className="module-workspace tank-workspace" data-ambient-column>
+      {hologram}
       <div className="module-workspace-subnav" data-ambient-quiet>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onBackToModules}>
           <IconArrowLeft size={16} />
@@ -135,7 +140,6 @@ export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJob
           <h1 className="module-workspace-title">{moduleInfo.title}</h1>
           <p className="module-workspace-desc">{moduleInfo.description}</p>
         </div>
-        <ModuleHeroArt module={module} active={activity.running} />
       </div>
 
       <form onSubmit={handleSubmit} className="module-workspace-form" noValidate>

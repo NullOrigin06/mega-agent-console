@@ -12,7 +12,6 @@ import { NozzleScheduleEditor } from "../jobs/NozzleScheduleEditor";
 import { JobDetailView } from "../jobs/JobDetailView";
 import { IconArrowLeft, IconLoader } from "../common/Icon";
 import { TankWorkspace } from "./TankWorkspace";
-import { ModuleHeroArt } from "./ModuleHeroArt";
 
 interface ModuleWorkspaceProps {
   module: ModuleKind;
@@ -177,7 +176,6 @@ function ExchangerWorkspace({
           <h1 className="module-workspace-title">{moduleInfo.title}</h1>
           <p className="module-workspace-desc">{moduleInfo.description}</p>
         </div>
-        <ModuleHeroArt module={module} />
       </div>
 
       <form onSubmit={handleSubmit} className="module-workspace-form">
