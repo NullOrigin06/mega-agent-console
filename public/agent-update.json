@@ -1,6 +1,6 @@
 {
-  "version": "1.2.6",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.6/MegaLocalAgent.zip",
-  "sha256": "6BAB3E8E05D0770A7C7E738A9F5F2D4EB75CA2476D15701F8C2488C43218D5BB",
-  "notes": "GA drawings: bonnet length and nozzle position from the bonnet standard, 4-pass lifting lugs on top, no trunnions, N1/N2 always on the bonnet; nozzle BOM uses the company pipe/flange/bolt weight table; inch nozzle sizes; Site Tank nozzle schedule and BOM"
+  "version": "1.2.7",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.7/MegaLocalAgent.zip",
+  "sha256": "A03BCBDD7D5B4B03DDB5ABFCE41888BE66BFE84D5B5F52CE0661BD1D4286B590",
+  "notes": "Tube Sheet is drawn directly through COM: no LISP loading permission prompt, same behaviour as the other modules"
 }
