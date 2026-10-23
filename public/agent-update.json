@@ -1,6 +1,6 @@
 {
-  "version": "1.2.7",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.7/MegaLocalAgent.zip",
-  "sha256": "A03BCBDD7D5B4B03DDB5ABFCE41888BE66BFE84D5B5F52CE0661BD1D4286B590",
-  "notes": "Tube Sheet is drawn directly through COM: no LISP loading permission prompt, same behaviour as the other modules"
+  "version": "1.2.8",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.8/MegaLocalAgent.zip",
+  "sha256": "BB464AA9CB394686FDD8FFEA7B91127D981AD768E09C2B256265F9150BF8D774",
+  "notes": "Shop Tank: BOM calculation and nozzle elevation; Site Tank: roof plan and nozzle updates"
 }
