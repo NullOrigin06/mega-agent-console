@@ -10,17 +10,20 @@ export const NOZZLE_NUMBERS = [
 ];
 
 export const NOZZLE_SIZES = [
-  "15", "20", "25", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300",
+  "1/2", "15", "20", "25", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300",
 ];
 
 /** General Arrangement drawings also carry the large vapour nozzles (flange table of the generator goes to 500 NB). */
 export const NOZZLE_SIZES_GA = [...NOZZLE_SIZES, "350", "400", "450", "500"];
 
-export const NOZZLE_UNITS = ["NB", "OD", "mm"];
+/** "inch" is the pipe size in inches (1/2, 3/4, 1, 1 1/4 ...); the agent maps it to the nominal bore. */
+export const NOZZLE_UNITS = ["NB", "inch", "mm"];
 
 export const NOZZLE_SCHEDULES = ["Sch 10S", "Sch 40S", "Sch 40", "Sch 80S", "Sch 80"];
 
-export const NOZZLE_TYPES = ["WNRF", "SORF", "BLRF", "LJFF", "LJFF M", "LJFF B", "LJFF X"];
+export const NOZZLE_TYPES = [
+  "WNRF", "SORF", "SORF M", "SORF B", "SORF PP", "SORF P", "BLRF", "LJFF", "LJFF M", "LJFF B", "LJFF X", "LJFF PP", "LJFF P", "WELD", "SOCKET",
+];
 
 export const NOZZLE_RATINGS = ["150#", "300#", "600#"];
 
