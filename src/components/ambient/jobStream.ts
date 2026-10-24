@@ -43,10 +43,15 @@ const ZONE_Q = 0.32; // queued | running split, fraction of width
 const ZONE_R = 0.66; // running | done split
 const SPEED = { queued: 22, running: 58, done: 96 }; // px/s for throughput packets
 const FPS = 30;
+const FPS_IDLE = 15; // nothing running or queued: the stream keeps going, at half the frame rate
 const MAX_DPR = 1.5;
 const FILLER_BASE = 22;
 const FILLER_PER_RUNNING = 6;
 const FILLER_MAX = 46;
+const FILLER_IDLE = 12;
+/** The first fold gets a brighter stream: up to +60% at the top, back to normal by 45% of the height. */
+const TOP_BAND = 0.45;
+const TOP_BOOST = 0.6;
 
 interface Packet {
   lane: number;
@@ -100,7 +105,9 @@ export function createJobStream(canvas: HTMLCanvasElement): JobStream | null {
   let baselined = false;
 
   const running = () => input.jobs.filter((j) => j.status === "running").length;
-  const fillerTarget = () => Math.min(FILLER_MAX, FILLER_BASE + FILLER_PER_RUNNING * running());
+  const busy = () => input.jobs.some((j) => j.status === "running" || j.status === "queued");
+  const fillerTarget = () => (busy() ? Math.min(FILLER_MAX, FILLER_BASE + FILLER_PER_RUNNING * running()) : FILLER_IDLE);
+  const topBoost = (y: number) => 1 + TOP_BOOST * Math.max(0, 1 - y / (h * TOP_BAND));
 
   const newFiller = (x?: number): Packet => ({
     lane: Math.floor(rnd() * Math.max(1, lanes)),
@@ -240,15 +247,15 @@ export function createJobStream(canvas: HTMLCanvasElement): JobStream | null {
 
     // Lanes and zone dividers.
     g.lineWidth = 1;
-    g.strokeStyle = "rgba(59,130,246,0.085)";
     if (offline) g.setLineDash([3, 6]);
-    g.beginPath();
     for (let l = 0; l < lanes; l++) {
       const y = Math.round(laneY(l) + oy) + 0.5;
+      g.strokeStyle = `rgba(59,130,246,${(0.085 * topBoost(y)).toFixed(3)})`;
+      g.beginPath();
       g.moveTo(0, y);
       g.lineTo(w, y);
+      g.stroke();
     }
-    g.stroke();
     g.setLineDash([2, 6]);
     g.strokeStyle = "rgba(148,163,184,0.11)";
     g.beginPath();
@@ -283,7 +290,7 @@ export function createJobStream(canvas: HTMLCanvasElement): JobStream | null {
           : zoneColour(p.x);
       if (offline) c = STATUS.offline;
       const q = quietAt(x, y);
-      const base = (tracked ? 1 : 0.62) * q * p.life;
+      const base = Math.min(1, (tracked ? 1 : 0.62) * q * p.life * topBoost(y));
       if (base < 0.01) continue;
       const pulse = tracked && p.phase === "running" ? 0.75 + 0.25 * Math.sin(t / 260 + p.lane) : 1;
       const len = tracked ? p.len * 2.2 : p.len;
@@ -321,7 +328,7 @@ export function createJobStream(canvas: HTMLCanvasElement): JobStream | null {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     acc += dt;
-    if (acc < 1 / FPS - 0.002) return;
+    if (acc < 1 / (busy() ? FPS : FPS_IDLE) - 0.002) return;
     const stepDt = Math.min(0.1, acc);
     acc = 0;
     step(stepDt);
