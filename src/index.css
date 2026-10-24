@@ -12,14 +12,14 @@
   --bg-input: #0b1120;
 
   --border-subtle: #223047;
-  --border-medium: #35435c;
+  --border-medium: #5d697d; /* 3.1:1 on bg-card (WCAG 1.4.11 for control borders) */
   --border-focus: #3b82f6;
 
   /* Typography Colors */
   --text-primary: #f8fafc;
   --text-secondary: #9aa8bd;
-  --text-muted: #6b7a94;
-  --text-dim: #4b5870;
+  --text-muted: #8995a9; /* 5.6:1 on bg-card */
+  --text-dim: #7b8597; /* 4.6:1 on bg-card */
 
   /* Engineering Accents */
   --accent-blue: #3b82f6;
@@ -3866,125 +3866,121 @@ body {
 }
 
 /* ==========================================================================
-   Auth Screen (Login / Signup)
+   Auth Screen (Login / Signup / Reset / Verify)
+   Split layout: brand panel left, form right. The form (main) comes first in
+   the DOM so it is first in the tab order; grid areas put the brand panel on
+   the left, and above the form on narrow screens.
    ========================================================================== */
 .auth-screen-container {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background-color: var(--bg-primary);
-  background-image: 
-    radial-gradient(ellipse at 50% 10%, rgba(59, 130, 246, 0.12) 0%, transparent 60%),
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 32px 32px, 32px 32px;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+  grid-template-areas: "brand form";
+  background-color: var(--bg-app);
 }
 
 .auth-card {
-  width: 100%;
-  max-width: 440px;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
-  padding: 32px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  grid-area: form;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.auth-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 10px;
-}
-
-.auth-logo-badge {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(30, 64, 175, 0.2));
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 6px;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+  align-items: center;
+  gap: 18px;
+  padding: 56px 40px;
 }
 
-.auth-logo-img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+.auth-card > * {
+  width: 100%;
+  max-width: 380px;
 }
 
-.auth-title {
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  color: var(--text-primary);
+.auth-card > .auth-env-tag {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  width: auto;
+  max-width: none;
   margin: 0;
 }
 
-.auth-subtitle {
-  font-size: 13px;
-  color: var(--text-secondary);
+.auth-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.auth-heading {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .auth-tabs {
   display: flex;
-  background-color: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 4px;
-  gap: 4px;
+  gap: 24px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .auth-tab-btn {
-  flex: 1;
-  padding: 8px 14px;
-  font-size: 13px;
+  padding: 0 0 10px;
+  margin-bottom: -1px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
+  border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.auth-tab-btn:hover {
+  color: var(--text-primary);
 }
 
 .auth-tab-btn.active {
-  background-color: var(--bg-hover);
   color: var(--text-primary);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  border-bottom-color: var(--accent-blue);
+}
+
+.auth-tab-btn:focus-visible {
+  outline: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .auth-instructions {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   line-height: 1.5;
   margin: 0;
-  text-align: center;
 }
 
 .auth-mock-hint {
   font-size: 12px;
-  background-color: rgba(59, 130, 246, 0.08);
-  border: 1px dashed rgba(59, 130, 246, 0.3);
-  color: #93c5fd;
-  border-radius: var(--radius-md);
-  padding: 8px 12px;
-  line-height: 1.4;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.auth-mock-hint strong {
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
 .auth-mock-hint code {
   font-family: var(--font-mono);
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.06);
   padding: 1px 4px;
   border-radius: 4px;
 }
@@ -4026,7 +4022,6 @@ body {
 }
 
 .auth-footer {
-  text-align: center;
   border-top: 1px solid var(--border-subtle);
   padding-top: 14px;
 }
@@ -4034,7 +4029,160 @@ body {
 .auth-footer-text {
   font-size: 11px;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.5;
+}
+
+/* Brand panel */
+.auth-brand-panel {
+  --auth-lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='294.45' viewBox='0 0 34 294.45'%3E%3Cg fill='none' stroke='%233b82f6' stroke-opacity='.11'%3E%3Ccircle cx='0' cy='0' r='13.6'/%3E%3Ccircle cx='34' cy='0' r='13.6'/%3E%3Ccircle cx='17' cy='29.445' r='13.6'/%3E%3Ccircle cx='0' cy='58.89' r='13.6'/%3E%3Ccircle cx='34' cy='58.89' r='13.6'/%3E%3Ccircle cx='17' cy='88.335' r='13.6'/%3E%3Ccircle cx='0' cy='117.779' r='13.6'/%3E%3Ccircle cx='34' cy='117.779' r='13.6'/%3E%3Ccircle cx='17' cy='147.224' r='13.6'/%3E%3Ccircle cx='0' cy='176.669' r='13.6'/%3E%3Ccircle cx='34' cy='176.669' r='13.6'/%3E%3Ccircle cx='17' cy='206.114' r='13.6'/%3E%3Ccircle cx='0' cy='235.559' r='13.6'/%3E%3Ccircle cx='34' cy='235.559' r='13.6'/%3E%3Ccircle cx='0' cy='294.45' r='13.6'/%3E%3Ccircle cx='34' cy='294.45' r='13.6'/%3E%3C/g%3E%3C/svg%3E");
+  grid-area: brand;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 48px;
+  padding: 32px 48px 56px;
+  background-color: var(--bg-input);
+  background-image:
+    var(--auth-lattice),
+    radial-gradient(70% 55% at 85% 100%, rgba(59, 130, 246, 0.14), transparent 70%);
+  background-size: 34px 294.45px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.auth-brand-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The logo is a raster with its own white ground, so it always sits as a tile. */
+.auth-logo-badge {
+  width: 72px;
+  height: 34px;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+}
+
+.auth-logo-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.auth-brand-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: var(--text-secondary);
+}
+
+.auth-brand-body {
+  max-width: 460px;
+}
+
+.auth-brand-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.auth-brand-headline {
+  font-size: clamp(30px, 3.4vw, 44px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.auth-brand-headline span {
+  color: #93c5fd;
+}
+
+.auth-brand-copy {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 16px 0 0;
+  max-width: 420px;
+}
+
+.auth-brand-modules {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0 0;
+  padding: 0;
+}
+
+.auth-brand-modules li {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  background-color: rgba(19, 28, 48, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+}
+
+/* Tablet and phone: the brand panel becomes a banner above the form. */
+@media (max-width: 860px) {
+  .auth-screen-container {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "brand" "form";
+  }
+
+  .auth-brand-panel {
+    gap: 14px;
+    padding: 14px 20px 18px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .auth-brand-eyebrow,
+  .auth-brand-copy,
+  .auth-brand-modules {
+    display: none;
+  }
+
+  .auth-brand-headline {
+    font-size: 22px;
+  }
+
+  .auth-card {
+    justify-content: flex-start;
+    padding: 24px 20px 32px;
+  }
+
+  .auth-card > .auth-env-tag {
+    position: static;
+    align-self: flex-end;
+    margin: 0 0 -6px;
+  }
+}
+
+/* Phone: keep only the logo row so the form is the first thing on screen. */
+@media (max-width: 560px) {
+  .auth-brand-body {
+    display: none;
+  }
+
+  .auth-brand-panel {
+    padding: 12px 20px;
+  }
 }
 
 /* ==========================================================================

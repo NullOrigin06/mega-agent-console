@@ -172,26 +172,20 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
         ? "Choose a new password"
         : mode === "verify-email"
           ? "Verifying your email"
-          : "MEGA AGENT CONSOLE";
+          : mode === "signup"
+            ? "Create account"
+            : "Sign in";
+
+  // Sign in / Create account are named by their tabs, so the heading is only
+  // visible for the modes that have no tabs.
+  const hasTabs = mode === "login" || mode === "signup";
 
   return (
     <div className="auth-screen-container">
-      <div className="auth-card">
-        {/* Brand Header */}
-        <div className="auth-header">
-          <div className="auth-logo-badge">
-            <img src={megaLogo} alt="Mega EPC" className="auth-logo-img" />
-          </div>
-          <div className="auth-brand-info">
-            <h1 className="auth-title">{title}</h1>
-            {mode === "login" || mode === "signup" ? (
-              <p className="auth-subtitle">Pressure Vessel & CAD Automation Platform</p>
-            ) : null}
-          </div>
-          <span className={`brand-env-tag ${API_MODE === "real" ? "brand-env-real" : ""}`}>
-            {API_MODE === "real" ? "REAL API" : "MOCK API v1.0"}
-          </span>
-        </div>
+      <main className="auth-card">
+        <span className={`brand-env-tag auth-env-tag ${API_MODE === "real" ? "brand-env-real" : ""}`}>
+          {API_MODE === "real" ? "REAL API" : "MOCK API v1.0"}
+        </span>
 
         {(mode === "login" || mode === "signup") && (
           <div className="auth-tabs" role="tablist">
@@ -216,6 +210,8 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
           </div>
         )}
 
+        <h1 className={hasTabs ? "auth-sr-only" : "auth-heading"}>{title}</h1>
+
         {(mode === "login" || mode === "signup") && (
           <p className="auth-instructions">
             {mode === "login"
@@ -228,12 +224,6 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
           <p className="auth-instructions">
             Enter your account email and we'll send a link to reset your password.
           </p>
-        )}
-
-        {API_MODE === "mock" && (mode === "login" || mode === "signup") && (
-          <div className="auth-mock-hint">
-            <strong>Mock Mode Active:</strong> Any email and password (e.g. <code>engineer@megaepc.com</code> / <code>123456</code>) will sign you in.
-          </div>
         )}
 
         {error && (
@@ -315,6 +305,12 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
               )}
             </button>
           </form>
+        )}
+
+        {API_MODE === "mock" && (mode === "login" || mode === "signup") && (
+          <p className="auth-mock-hint">
+            <strong>Mock mode:</strong> any email and password signs you in (e.g. <code>engineer@megaepc.com</code> / <code>123456</code>).
+          </p>
         )}
 
         {/* Forgot password */}
@@ -418,7 +414,32 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
             Protected internal engineering console. Local Agents pair securely per account.
           </span>
         </div>
-      </div>
+      </main>
+
+      <aside className="auth-brand-panel">
+        <div className="auth-brand-top">
+          <div className="auth-logo-badge">
+            <img src={megaLogo} alt="Mega EPC" className="auth-logo-img" />
+          </div>
+          <span className="auth-brand-name">Agent Console</span>
+        </div>
+        <div className="auth-brand-body">
+          <p className="auth-brand-eyebrow">Pressure Vessel &amp; CAD Automation Platform</p>
+          <p className="auth-brand-headline">
+            From data to drawing in <span>minutes.</span>
+          </p>
+          <p className="auth-brand-copy">
+            Turn equipment data into fabrication-ready CAD drawings and bills of materials, generated on your own workstation.
+          </p>
+          <ul className="auth-brand-modules" aria-label="Modules">
+            <li>Tube Sheet</li>
+            <li>Bonnet Flange</li>
+            <li>Heat Exchanger</li>
+            <li>Shop Tank</li>
+            <li>Site Tank</li>
+          </ul>
+        </div>
+      </aside>
     </div>
   );
 }
