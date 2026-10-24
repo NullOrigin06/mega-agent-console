@@ -4084,6 +4084,30 @@ body {
   color: var(--text-secondary);
 }
 
+.auth-back-link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.auth-back-link:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.auth-back-link:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring);
+}
+
 .auth-brand-body {
   max-width: 460px;
 }

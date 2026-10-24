@@ -14,10 +14,12 @@ import {
   IconLoader,
   IconMail,
   IconLock,
+  IconArrowLeft,
   IconArrowRight,
   IconAlertTriangle,
   IconCheckCircle,
 } from "../common/Icon";
+import { LANDING_PATH } from "../../utils/landing";
 import megaLogo from "../../assets/mega-logo.png";
 
 interface AuthScreenProps {
@@ -422,6 +424,10 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
             <img src={megaLogo} alt="Mega EPC" className="auth-logo-img" />
           </div>
           <span className="auth-brand-name">Agent Console</span>
+          <a className="auth-back-link" href={LANDING_PATH}>
+            <IconArrowLeft size={14} />
+            <span>Back to home</span>
+          </a>
         </div>
         <div className="auth-brand-body">
           <p className="auth-brand-eyebrow">Pressure Vessel &amp; CAD Automation Platform</p>
