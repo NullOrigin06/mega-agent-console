@@ -41,14 +41,15 @@ type Rgb = readonly [number, number, number];
 const LANE_GAP = 54; // px between lanes
 const ZONE_Q = 0.32; // queued | running split, fraction of width
 const ZONE_R = 0.66; // running | done split
-const SPEED = { queued: 22, running: 58, done: 96 }; // px/s for throughput packets
+const SPEED = { queued: 36, running: 94, done: 155 }; // px/s for throughput packets
 const FPS = 30;
 const FPS_IDLE = 15; // nothing running or queued: the stream keeps going, at half the frame rate
 const MAX_DPR = 1.5;
-const FILLER_BASE = 22;
-const FILLER_PER_RUNNING = 6;
-const FILLER_MAX = 46;
-const FILLER_IDLE = 12;
+const FILLER_BASE = 38;
+const FILLER_PER_RUNNING = 9;
+const FILLER_MAX = 76;
+const FILLER_IDLE = 22;
+const SPAWN_RATE = 5; // filler spawn probability per second, per missing packet slot
 /** The first fold gets a brighter stream: up to +60% at the top, back to normal by 45% of the height. */
 const TOP_BAND = 0.45;
 const TOP_BOOST = 0.6;
@@ -233,7 +234,7 @@ export function createJobStream(canvas: HTMLCanvasElement): JobStream | null {
     }
     let fillers = 0;
     for (const p of packets) if (!p.jobId) fillers++;
-    if (input.apiOk && fillers < fillerTarget() && rnd() < dt * 3) packets.push(newFiller());
+    if (input.apiOk && fillers < fillerTarget() && rnd() < dt * SPAWN_RATE) packets.push(newFiller());
   };
 
   const draw = (t: number) => {
@@ -290,25 +291,25 @@ export function createJobStream(canvas: HTMLCanvasElement): JobStream | null {
           : zoneColour(p.x);
       if (offline) c = STATUS.offline;
       const q = quietAt(x, y);
-      const base = Math.min(1, (tracked ? 1 : 0.62) * q * p.life * topBoost(y));
+      const base = Math.min(1, (tracked ? 1 : 0.92) * q * p.life * topBoost(y));
       if (base < 0.01) continue;
       const pulse = tracked && p.phase === "running" ? 0.75 + 0.25 * Math.sin(t / 260 + p.lane) : 1;
       const len = tracked ? p.len * 2.2 : p.len;
       const grad = g.createLinearGradient(x - len * 2.2, y, x, y);
       grad.addColorStop(0, rgba(c, 0));
-      grad.addColorStop(1, rgba(c, base * 0.55 * pulse));
+      grad.addColorStop(1, rgba(c, base * 0.8 * pulse));
       g.strokeStyle = grad;
-      g.lineWidth = tracked ? 2.5 : 2;
+      g.lineWidth = tracked ? 3.5 : 3;
       g.beginPath();
       g.moveTo(x - len * 2.2, y);
       g.lineTo(x, y);
       g.stroke();
       g.fillStyle = rgba(c, base * pulse);
-      g.fillRect(x - (tracked ? 4 : 2.5), y - (tracked ? 2 : 1.25), tracked ? 8 : 5, tracked ? 4 : 2.5);
+      g.fillRect(x - (tracked ? 5.5 : 3.5), y - (tracked ? 2.75 : 1.75), tracked ? 11 : 7, tracked ? 5.5 : 3.5);
       if (tracked) {
-        g.fillStyle = rgba(c, base * 0.22 * pulse);
+        g.fillStyle = rgba(c, base * 0.3 * pulse);
         g.beginPath();
-        g.arc(x, y, 10, 0, Math.PI * 2);
+        g.arc(x, y, 13, 0, Math.PI * 2);
         g.fill();
       }
       if (p.ring > 0) {
