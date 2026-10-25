@@ -1,6 +1,10 @@
 {
-  "version": "1.2.8",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.8/MegaLocalAgent.zip",
-  "sha256": "BB464AA9CB394686FDD8FFEA7B91127D981AD768E09C2B256265F9150BF8D774",
-  "notes": "Shop Tank: BOM calculation and nozzle elevation; Site Tank: roof plan and nozzle updates"
+  "version": "1.2.9",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.9/MegaLocalAgent.zip",
+  "sha256": "0FDCD4384C4C3B05109E7703A1A4862DCA0B3CB9E12336FD1806AE03290EADC3",
+  "notes": "Agents now install only updates signed by Mega. Company templates are downloaded after sign-in instead of being bundled. Faster, safer update download.",
+  "size": 49071540,
+  "signature": "yGhqA0g+U/i/J+9z7Zurd1PXlKLB7tq2gQ5xZA243i96cZDtNG9aXNtkcRwr/40+7jbzSODELFC26AY2VrbRGg==",
+  "signedAt": "2026-10-25T04:33:09Z",
+  "keyId": "9634299695640E27"
 }
