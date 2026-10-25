@@ -6,11 +6,18 @@ import { AmbientMotionToggle } from "../ambient/AmbientMotionToggle";
 import { ambientBus } from "../ambient/ambientBus";
 import { useAmbientBus } from "../ambient/useAmbientBus";
 import type { AmbientMotionPref } from "../../ambient/types";
+import { soundKit } from "../ambient/soundKit";
+import { useSoundEnabled } from "../ambient/useSoundCues";
 
 const MOTION_PREFS: Array<{ value: AmbientMotionPref; label: string }> = [
   { value: "auto", label: "Auto" },
   { value: "on", label: "On" },
   { value: "off", label: "Off" },
+];
+
+const SOUND_PREFS: Array<{ value: "off" | "on"; label: string }> = [
+  { value: "off", label: "Off" },
+  { value: "on", label: "On (paused with motion)" },
 ];
 
 interface HeaderProps {
@@ -37,6 +44,7 @@ export function Header({
   onOpenAdmin,
 }: HeaderProps) {
   const { motionPref } = useAmbientBus();
+  const soundOn = useSoundEnabled();
   return (
     <header className="console-header">
       <button
@@ -75,6 +83,22 @@ export function Header({
                   aria-label="Ambient motion"
                 >
                   {MOTION_PREFS.map((p) => (
+                    <DropdownMenu.RadioItem key={p.value} value={p.value} className="workstation-dropdown-item">
+                      <span className="header-menu-check" aria-hidden="true">
+                        <DropdownMenu.ItemIndicator>✓</DropdownMenu.ItemIndicator>
+                      </span>
+                      {p.label}
+                    </DropdownMenu.RadioItem>
+                  ))}
+                </DropdownMenu.RadioGroup>
+                <DropdownMenu.Separator className="header-menu-separator" />
+                <DropdownMenu.Label className="header-menu-label">Sound</DropdownMenu.Label>
+                <DropdownMenu.RadioGroup
+                  value={soundOn ? "on" : "off"}
+                  onValueChange={(v) => soundKit.setEnabled(v === "on")}
+                  aria-label="Sound"
+                >
+                  {SOUND_PREFS.map((p) => (
                     <DropdownMenu.RadioItem key={p.value} value={p.value} className="workstation-dropdown-item">
                       <span className="header-menu-check" aria-hidden="true">
                         <DropdownMenu.ItemIndicator>✓</DropdownMenu.ItemIndicator>

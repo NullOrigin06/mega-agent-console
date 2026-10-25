@@ -12,6 +12,7 @@ import { AdminRequestsModal } from "../admin/AdminRequestsModal";
 import { AmbientBackground } from "../ambient/AmbientBackground";
 import { JobStreamBackground } from "../ambient/JobStreamBackground";
 import { useAmbientSuspend } from "../ambient/useAmbientBus";
+import { useSoundCues } from "../ambient/useSoundCues";
 
 type Page = "modules" | "jobs";
 
@@ -72,6 +73,9 @@ export function AppShell({
   // a moving one every frame.
   useAmbientSuspend("palette", paletteOpen);
   useAmbientSuspend("modal", (showRotateKey || showAdmin) && Boolean(session));
+
+  // Optional UI sounds (off by default; silent while ambient motion is paused).
+  useSoundCues({ pageKey: `${page}|${jobsDashboard}|${workspaceModule ?? ""}|${detailModule ?? ""}`, jobs });
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

@@ -16,7 +16,7 @@ export function AmbientMotionToggle() {
   const { motion, reducedMotion, contrastMore, motionAvailable } = useAmbientBus();
   const playing = motionAvailable && motion === "live";
   const reason = typeof document !== "undefined" ? document.documentElement.dataset.ambientFallback : undefined;
-  const label = !motionAvailable ? `Ambient motion unavailable${reason ? ` (${reason})` : ""}` : playing ? "Pause ambient motion" : "Resume ambient motion";
+  const label = !motionAvailable ? `Ambient motion unavailable${reason ? ` (${reason})` : ""}` : playing ? "Pause ambient motion and sound" : "Resume ambient motion and sound";
 
   const toggle = () => {
     const want = playing ? "still" : "live";
