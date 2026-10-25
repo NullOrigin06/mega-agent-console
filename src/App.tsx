@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JobSummary, ModuleKind } from "./types/engineering";
-import { listJobs, deleteJob, listAgents, type PairedAgentInfo } from "./api";
+import { listJobs, deleteJob, listAgents, getMe, type PairedAgentInfo } from "./api";
 import { AppShell } from "./components/layout/AppShell";
 import { JobList } from "./components/jobs/JobList";
 import { JobDetailView } from "./components/jobs/JobDetailView";
@@ -73,6 +73,17 @@ export function App() {
     refetchInterval: 15000,
   });
 
+
+  // Who am I: shows the Requests button to administrators, with how many sign-ups are waiting.
+  // A failure (an older API without /api/me) simply means "not an admin".
+  const { data: me } = useQuery({
+    queryKey: ["me", session?.userId],
+    queryFn: getMe,
+    enabled: Boolean(session),
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
+    retry: false,
+  });
 
   const handleJobSubmitted = (newJob: JobSummary) => {
     // Prepend new job to cached state so header metrics / All Jobs stay in
@@ -196,6 +207,8 @@ export function App() {
       session={session}
       onLogout={handleLogout}
       onSessionUpdate={setSession}
+      isAdmin={me?.isAdmin ?? false}
+      pendingRequests={me?.pendingCount ?? 0}
     >
       {content}
     </AppShell>

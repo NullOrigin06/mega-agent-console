@@ -7,3 +7,14 @@ export class ApiFieldError extends Error {
     this.fieldErrors = fieldErrors;
   }
 }
+
+/**
+ * The admin session (not the login) is missing or timed out. Distinct from a 401 on the normal
+ * key, which signs the user out: this only sends the administrator back to the password prompt.
+ */
+export class AdminSessionExpiredError extends Error {
+  constructor(message = "Admin mode timed out. Enter your password again.") {
+    super(message);
+    this.name = "AdminSessionExpiredError";
+  }
+}

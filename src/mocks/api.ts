@@ -10,12 +10,19 @@ import type {
   BomRow,
   TankData,
   DrawingStatus,
+  MeInfo,
+  AdminUser,
+  AdminUserFilter,
+  AdminUserAction,
+  AdminSessionInfo,
 } from "../types/engineering";
 import type { DrawingKind } from "../utils/drawingSelection";
 import { saveBlob } from "../api/realApi";
 import { mockTankResult } from "./tankMock";
 import { sampleJobs, sampleJobDetails, sampleAgents, sampleEngineeringData, sampleBom } from "./fixtures";
 import { validateEmail, validatePassword } from "../utils/accountValidation";
+import { getAuthSession } from "../utils/authSession";
+import { AdminSessionExpiredError } from "../api/errors";
 
 
 /**
@@ -327,4 +334,79 @@ export async function pairAgent(pairingCode: string): Promise<PairedAgentInfo> {
   return newAgent;
 }
 
+// ---------------------------------------------------------------------------
+// Administration (mock). Signing in as an email that starts with "admin" makes the account an
+// administrator, so the Requests panel can be tried without the real API. Password "wrong" fails.
+// ---------------------------------------------------------------------------
 
+const MOCK_ADMIN_TOKEN = "mock-admin-session";
+let mockAdminSessionOpen = false;
+
+const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
+let adminUsers: AdminUser[] = [
+  { id: "usr-a1", email: "priya.nair@example.com", emailVerified: false, isApproved: false, isAdmin: false, createdAt: hoursAgo(2), agentCount: 0, jobCount: 0 },
+  { id: "usr-a2", email: "rahul.kulkarni@example.com", emailVerified: false, isApproved: false, isAdmin: false, createdAt: hoursAgo(26), agentCount: 0, jobCount: 0 },
+  { id: "usr-a3", email: "s.joshi@example.com", emailVerified: false, isApproved: false, isAdmin: false, createdAt: hoursAgo(75), agentCount: 0, jobCount: 0 },
+  { id: "usr-b1", email: "admin@example.com", emailVerified: true, isApproved: true, isAdmin: true, createdAt: hoursAgo(900), agentCount: 1, jobCount: 14 },
+  { id: "usr-b2", email: "vyankatesh@example.com", emailVerified: true, isApproved: true, isAdmin: false, createdAt: hoursAgo(700), agentCount: 2, jobCount: 31 },
+  { id: "usr-b3", email: "pranali@example.com", emailVerified: true, isApproved: true, isAdmin: false, createdAt: hoursAgo(650), agentCount: 1, jobCount: 9 },
+];
+
+function requireMockAdmin(adminToken: string): void {
+  if (!mockAdminSessionOpen || adminToken !== MOCK_ADMIN_TOKEN) throw new AdminSessionExpiredError();
+}
+
+export async function getMe(): Promise<MeInfo> {
+  const email = getAuthSession()?.email ?? "";
+  const isAdmin = email.toLowerCase().startsWith("admin");
+  return delay({
+    email,
+    isAdmin,
+    pendingCount: isAdmin ? adminUsers.filter((u) => !u.isApproved).length : null,
+  });
+}
+
+export async function openAdminSession(password: string): Promise<AdminSessionInfo> {
+  await delay(undefined);
+  if (!password) throw new Error("Wrong password.");
+  if (password === "wrong") throw new Error("Wrong password.");
+  mockAdminSessionOpen = true;
+  return { adminToken: MOCK_ADMIN_TOKEN, expiresInSeconds: 1800 };
+}
+
+export async function closeAdminSession(_adminToken: string): Promise<void> {
+  mockAdminSessionOpen = false;
+}
+
+export async function adminListUsers(adminToken: string, status: AdminUserFilter): Promise<AdminUser[]> {
+  requireMockAdmin(adminToken);
+  const rows = adminUsers.filter((u) => status === "all" || (status === "pending" ? !u.isApproved : u.isApproved));
+  return delay([...rows].sort((a, b) => Number(a.isApproved) - Number(b.isApproved) || b.createdAt.localeCompare(a.createdAt)));
+}
+
+export async function adminSetUserApproval(
+  adminToken: string,
+  userId: string,
+  action: AdminUserAction
+): Promise<AdminUser> {
+  requireMockAdmin(adminToken);
+  const user = adminUsers.find((u) => u.id === userId);
+  if (!user) throw new Error("No such user.");
+  if (action === "revoke" && user.isAdmin) {
+    throw new Error("Administrator accounts can only be changed with the local admin tool (mega-admin.ps1).");
+  }
+  user.isApproved = action === "approve";
+  return delay({ ...user });
+}
+
+export async function adminDeleteUser(adminToken: string, userId: string, email: string): Promise<void> {
+  requireMockAdmin(adminToken);
+  const user = adminUsers.find((u) => u.id === userId);
+  if (!user) throw new Error("No such user.");
+  if (user.isAdmin) {
+    throw new Error("Administrator accounts can only be changed with the local admin tool (mega-admin.ps1).");
+  }
+  if (user.email.toLowerCase() !== email.trim().toLowerCase()) throw new Error("Email did not match.");
+  adminUsers = adminUsers.filter((u) => u.id !== userId);
+  await delay(undefined);
+}

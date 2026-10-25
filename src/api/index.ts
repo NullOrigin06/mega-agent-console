@@ -6,6 +6,11 @@ import type {
   SignupRequest,
   AuthResponse,
   PairedAgentInfo,
+  MeInfo,
+  AdminUser,
+  AdminUserFilter,
+  AdminUserAction,
+  AdminSessionInfo,
 } from "../types/engineering";
 import type { DrawingKind } from "../utils/drawingSelection";
 import * as mockApi from "../mocks/api";
@@ -183,8 +188,46 @@ export async function pairAgent(pairingCode: string): Promise<PairedAgentInfo> {
     : mockApi.pairAgent(pairingCode);
 }
 
+/** Who is signed in, and whether they may open admin mode. */
+export async function getMe(): Promise<MeInfo> {
+  return getApiMode() === "real" ? realApi.getMe() : mockApi.getMe();
+}
+
+/** Opens admin mode: needs the password again, ends after 30 idle minutes. */
+export async function openAdminSession(password: string): Promise<AdminSessionInfo> {
+  return getApiMode() === "real" ? realApi.openAdminSession(password) : mockApi.openAdminSession(password);
+}
+
+export async function closeAdminSession(adminToken: string): Promise<void> {
+  return getApiMode() === "real" ? realApi.closeAdminSession(adminToken) : mockApi.closeAdminSession(adminToken);
+}
+
+export async function adminListUsers(adminToken: string, status: AdminUserFilter): Promise<AdminUser[]> {
+  return getApiMode() === "real"
+    ? realApi.adminListUsers(adminToken, status)
+    : mockApi.adminListUsers(adminToken, status);
+}
+
+export async function adminSetUserApproval(
+  adminToken: string,
+  userId: string,
+  action: AdminUserAction
+): Promise<AdminUser> {
+  return getApiMode() === "real"
+    ? realApi.adminSetUserApproval(adminToken, userId, action)
+    : mockApi.adminSetUserApproval(adminToken, userId, action);
+}
+
+export async function adminDeleteUser(adminToken: string, userId: string, email: string): Promise<void> {
+  return getApiMode() === "real"
+    ? realApi.adminDeleteUser(adminToken, userId, email)
+    : mockApi.adminDeleteUser(adminToken, userId, email);
+}
+
+export { AdminSessionExpiredError } from "./errors";
 export { drawingDownloadUrl, buildGenerateDrawingBody } from "./realApi";
 export type { DrawingKind };
 export type { LoginRequest, SignupRequest, AuthResponse, PairedAgentInfo };
+export type { MeInfo, AdminUser, AdminUserFilter, AdminUserAction, AdminSessionInfo };
 
 

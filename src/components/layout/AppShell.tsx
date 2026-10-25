@@ -8,6 +8,7 @@ import { Header } from "./Header";
 import { PipelineStatusRail } from "./PipelineStatusRail";
 import { CommandPalette } from "../common/CommandPalette";
 import { RotateKeyModal } from "../auth/RotateKeyModal";
+import { AdminRequestsModal } from "../admin/AdminRequestsModal";
 import { AmbientBackground } from "../ambient/AmbientBackground";
 import { JobStreamBackground } from "../ambient/JobStreamBackground";
 import { useAmbientSuspend } from "../ambient/useAmbientBus";
@@ -33,6 +34,9 @@ interface AppShellProps {
   session?: AuthSession | null;
   onLogout?: () => void;
   onSessionUpdate?: (session: AuthSession) => void;
+  /** Administrators get a Requests button that opens admin mode. */
+  isAdmin?: boolean;
+  pendingRequests?: number;
   children: ReactNode;
 }
 
@@ -53,18 +57,21 @@ export function AppShell({
   session,
   onLogout,
   onSessionUpdate,
+  isAdmin = false,
+  pendingRequests = 0,
   children,
 }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [showRotateKey, setShowRotateKey] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   // The palette and modals blur what's behind them - hold the ambient
   // background on a static frame while they're open instead of re-blurring
   // a moving one every frame.
   useAmbientSuspend("palette", paletteOpen);
-  useAmbientSuspend("modal", showRotateKey && Boolean(session));
+  useAmbientSuspend("modal", (showRotateKey || showAdmin) && Boolean(session));
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -130,6 +137,9 @@ export function AppShell({
             isRefreshing={isRefreshing}
             onOpenMobileNav={() => setMobileNavOpen(true)}
             onOpenRotateKey={() => setShowRotateKey(true)}
+            isAdmin={isAdmin}
+            pendingRequests={pendingRequests}
+            onOpenAdmin={() => setShowAdmin(true)}
           />
           <PipelineStatusRail jobs={jobs} agents={agents} apiOk={apiOk} />
           <main className="main-content">{children}</main>
@@ -147,6 +157,8 @@ export function AppShell({
         onLogout={onLogout}
         jobs={jobs}
       />
+
+      {showAdmin && session && isAdmin && <AdminRequestsModal onClose={() => setShowAdmin(false)} />}
 
       {showRotateKey && session && (
         <RotateKeyModal

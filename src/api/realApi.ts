@@ -11,8 +11,13 @@ import type {
   AuthResponse,
   PairedAgentInfo,
   TankData,
+  MeInfo,
+  AdminUser,
+  AdminUserFilter,
+  AdminUserAction,
+  AdminSessionInfo,
 } from "../types/engineering";
-import { ApiFieldError } from "./errors";
+import { ApiFieldError, AdminSessionExpiredError } from "./errors";
 import { getAuthSession, clearAuthSession } from "../utils/authSession";
 
 // `let`, not `const`: public/runtime-config.json can replace the build-time
@@ -665,5 +670,94 @@ export async function pairAgent(pairingCode: string): Promise<PairedAgentInfo> {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Administration (see mega-agent-api AdminEndpoints.cs). An administrator signs in normally, then
+// re-enters their password to get a short-lived admin session token. It is kept only in memory by
+// the caller, never in localStorage, and sent as X-Admin-Session.
+// ---------------------------------------------------------------------------
 
+export async function getMe(): Promise<MeInfo> {
+  const res = await apiFetch(`${getApiRootUrl()}/me`, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error(`Failed to load account (${res.status})`);
+  const data = (await res.json()) as Record<string, unknown>;
+  return {
+    email: String(data.email ?? ""),
+    isAdmin: Boolean(data.isAdmin),
+    pendingCount: typeof data.pending === "number" ? data.pending : null,
+  };
+}
 
+/** Wrong password is a 403 (never 401), so apiFetch does not mistake it for an expired login. */
+export async function openAdminSession(password: string): Promise<AdminSessionInfo> {
+  const res = await apiFetch(`${getApiRootUrl()}/admin-session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  await throwIfNotOk(res, "Could not open admin mode");
+  const data = (await res.json()) as Record<string, unknown>;
+  return {
+    adminToken: String(data.adminToken),
+    expiresInSeconds: Number(data.expiresInSeconds ?? 1800),
+  };
+}
+
+export async function closeAdminSession(adminToken: string): Promise<void> {
+  try {
+    await fetchApi(`${getApiRootUrl()}/admin-session`, {
+      method: "DELETE",
+      headers: authHeaders({ "X-Admin-Session": adminToken }),
+      keepalive: true,
+    });
+  } catch {
+    // Best effort: the server ends idle admin sessions by itself.
+  }
+}
+
+async function adminFetch(path: string, adminToken: string, init?: RequestInit): Promise<Response> {
+  const res = await fetchApi(`${getApiRootUrl()}/admin${path}`, {
+    ...init,
+    headers: authHeaders({
+      Accept: "application/json",
+      "X-Admin-Session": adminToken,
+      ...(init?.headers as Record<string, string> | undefined),
+    }),
+  });
+  if (res.status === 401) throw new AdminSessionExpiredError();
+  await throwIfNotOk(res, "Admin request failed");
+  return res;
+}
+
+function toAdminUser(item: Record<string, unknown>): AdminUser {
+  return {
+    id: String(item.id ?? ""),
+    email: String(item.email ?? ""),
+    emailVerified: Boolean(item.emailVerified),
+    isApproved: Boolean(item.isApproved),
+    isAdmin: Boolean(item.isAdmin),
+    createdAt: String(item.createdAt ?? ""),
+    agentCount: Number(item.agentCount ?? 0),
+    jobCount: Number(item.jobCount ?? 0),
+  };
+}
+
+export async function adminListUsers(adminToken: string, status: AdminUserFilter): Promise<AdminUser[]> {
+  const res = await adminFetch(`/users?status=${encodeURIComponent(status)}`, adminToken);
+  const data = await res.json();
+  return Array.isArray(data) ? data.map((u: Record<string, unknown>) => toAdminUser(u)) : [];
+}
+
+export async function adminSetUserApproval(
+  adminToken: string,
+  userId: string,
+  action: AdminUserAction
+): Promise<AdminUser> {
+  const res = await adminFetch(`/users/${encodeURIComponent(userId)}/${action}`, adminToken, { method: "POST" });
+  return toAdminUser(await res.json());
+}
+
+export async function adminDeleteUser(adminToken: string, userId: string, email: string): Promise<void> {
+  await adminFetch(`/users/${encodeURIComponent(userId)}?confirm=${encodeURIComponent(email)}`, adminToken, {
+    method: "DELETE",
+  });
+}

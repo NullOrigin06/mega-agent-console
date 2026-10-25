@@ -42,3 +42,30 @@ export interface RotateKeyRequest {
   email: string;
   password: string;
 }
+
+/** GET /api/me - who is signed in, and whether they may open admin mode. */
+export interface MeInfo {
+  email: string;
+  isAdmin: boolean;
+  /** Only sent to administrators: how many sign-up requests are waiting. */
+  pendingCount: number | null;
+}
+
+export type AdminUserFilter = "pending" | "approved" | "all";
+export type AdminUserAction = "approve" | "revoke";
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  isApproved: boolean;
+  isAdmin: boolean;
+  createdAt: string;
+  agentCount: number;
+  jobCount: number;
+}
+
+export interface AdminSessionInfo {
+  adminToken: string;
+  expiresInSeconds: number;
+}

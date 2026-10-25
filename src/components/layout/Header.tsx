@@ -1,4 +1,4 @@
-import { IconRefresh, IconUser, IconLogOut, IconKey, IconList } from "../common/Icon";
+import { IconRefresh, IconUser, IconLogOut, IconKey, IconList, IconLock } from "../common/Icon";
 import { API_MODE } from "../../api";
 import type { AuthSession } from "../../utils/authSession";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -20,6 +20,9 @@ interface HeaderProps {
   onLogout?: () => void;
   onOpenMobileNav?: () => void;
   onOpenRotateKey?: () => void;
+  isAdmin?: boolean;
+  pendingRequests?: number;
+  onOpenAdmin?: () => void;
 }
 
 export function Header({
@@ -29,6 +32,9 @@ export function Header({
   onLogout,
   onOpenMobileNav,
   onOpenRotateKey,
+  isAdmin = false,
+  pendingRequests = 0,
+  onOpenAdmin,
 }: HeaderProps) {
   const { motionPref } = useAmbientBus();
   return (
@@ -80,6 +86,23 @@ export function Header({
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
+        )}
+
+        {session && isAdmin && onOpenAdmin && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-icon"
+            onClick={onOpenAdmin}
+            title="Review sign-up requests (asks for your password)"
+          >
+            <IconLock size={16} />
+            <span className="hide-mobile">Requests</span>
+            {pendingRequests > 0 && (
+              <span className="header-pending-chip" aria-label={`${pendingRequests} waiting`}>
+                {pendingRequests}
+              </span>
+            )}
+          </button>
         )}
 
         {session && (
