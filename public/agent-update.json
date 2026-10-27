@@ -1,10 +1,10 @@
 {
-  "version": "1.2.10",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.10/MegaLocalAgent.zip",
-  "sha256": "91FE14FBD6A800F81E2A64E3346794BC7C1206FEE1E11F757E702B8046AAB5F7",
-  "notes": "Site Tank: roof plan improvements; Shop Tank and nozzle updates",
-  "size": 50681197,
-  "signature": "UQtMrQcQGrOxQBZw8wGd08hFPC2iu7dcORbwjG3jgIllqJaiwSlIkyaDE5vbaJLVdZQ44BtJwnjg7hdAXSAoTA==",
-  "signedAt": "2026-10-27T15:05:38Z",
+  "version": "1.2.11",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.11/MegaLocalAgent.zip",
+  "sha256": "1A10BDA8BD627052F9759BF9AE5D969C572D47E6A90CBEAF6E49AE4DF9E501A8",
+  "notes": "Agent window: Check for updates button, update status, download progress with speed and time left",
+  "size": 50675486,
+  "signature": "d/LDHfMZwouyhiFd6BGxy3SSRwdQPNsNa4Ljawtm5+aBdjfJszdZhJc/s/m5fTSfIjcihGfuaOsCVSijzUl/Sg==",
+  "signedAt": "2026-10-27T15:19:04Z",
   "keyId": "9634299695640E27"
 }
