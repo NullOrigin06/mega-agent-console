@@ -142,6 +142,13 @@ export interface TankData {
   warnings: string[];
 }
 
+/** Body of POST /api/jobs/{id}/estimated (Heat Exchanger / Tube Sheet / Bonnet Flange): one edited Estimated value, or a reset. */
+export interface EditEstimatedRequest {
+  key?: keyof EngineeringValues;
+  value?: string;
+  reset?: boolean;
+}
+
 /** Body of POST /api/jobs/{id}/recalculate (tank jobs). Overrides is the complete set of edited Estimated values. */
 export interface RecalculateRequest {
   overrides?: Record<string, string>;

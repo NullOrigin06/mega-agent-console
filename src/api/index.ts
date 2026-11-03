@@ -3,6 +3,7 @@ import type {
   JobRequest,
   JobSummary,
   RecalculateRequest,
+  EditEstimatedRequest,
   LoginRequest,
   SignupRequest,
   AuthResponse,
@@ -64,6 +65,13 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
  */
 export async function recalculateJob(jobId: string, request: RecalculateRequest): Promise<JobDetail> {
   return getApiMode() === "real" ? realApi.recalculateJob(jobId, request) : mockApi.recalculateJob(jobId, request);
+}
+
+/**
+ * Heat Exchanger / Tube Sheet / Bonnet Flange: edit one Estimated value of a finished job; the server cascades it like the software.
+ */
+export async function editEstimated(jobId: string, request: EditEstimatedRequest): Promise<{ job: JobDetail; notice?: string | null }> {
+  return getApiMode() === "real" ? realApi.editEstimated(jobId, request) : mockApi.editEstimated(jobId, request);
 }
 
 /**

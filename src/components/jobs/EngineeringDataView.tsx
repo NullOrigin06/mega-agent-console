@@ -1,9 +1,16 @@
-import { useState } from "react";
-import type { EngineeringDataModel, EngineeringValues } from "../../types/engineering";
-import { IconInfo, IconRefresh } from "../common/Icon";
+import { useEffect, useRef, useState } from "react";
+import type { EngineeringDataModel, EngineeringValues, JobDetail } from "../../types/engineering";
+import { editEstimated } from "../../api";
+import { ApiFieldError } from "../../api/errors";
+import { IconInfo, IconLoader, IconRefresh } from "../common/Icon";
 
 interface EngineeringDataViewProps {
   initialData: EngineeringDataModel;
+  /** With the job id and a handler the Estimated column is live: an edit is calculated by the server, like the software's grid. */
+  jobId?: string;
+  onUpdated?: (job: JobDetail) => void;
+  /** Block editing, e.g. while a drawing is being generated. */
+  disabled?: boolean;
 }
 
 interface FieldMeta {
@@ -12,6 +19,10 @@ interface FieldMeta {
   unit: string;
   type: "number" | "text";
   description: string;
+  /** The software's Estimated grid does not let you edit this value (Baffle OD is derived). Default true. */
+  editable?: boolean;
+  /** A whole number (counts). */
+  integer?: boolean;
 }
 
 interface CategoryGroup {
@@ -27,12 +38,12 @@ const CATEGORIES: CategoryGroup[] = [
     title: "Shell & Flange Diameters",
     description: "Cylindrical shell, flange, and tube sheet circumferential dimensions",
     fields: [
-      { key: "shellID", label: "Shell ID", unit: "mm", type: "number", description: "Nominal inner diameter of shell" },
+      { key: "shellID", label: "Shell ID", unit: "mm", type: "number", integer: true, description: "Nominal inner diameter of shell" },
       { key: "flangeID", label: "Flange ID", unit: "mm", type: "number", description: "Body flange inner diameter" },
       { key: "tubeSheetFinishOD", label: "Tube Sheet Finish OD", unit: "mm", type: "number", description: "Finished machined outer diameter" },
       { key: "tubeSheetRawOD", label: "Tube Sheet Raw OD", unit: "mm", type: "number", description: "Pre-machined raw plate outer diameter" },
       { key: "linerGasketOD", label: "Liner Gasket OD", unit: "mm", type: "number", description: "Outer diameter of sealing gasket liner" },
-      { key: "baffleOD", label: "Baffle OD", unit: "mm", type: "number", description: "Transverse baffle outer diameter" },
+      { key: "baffleOD", label: "Baffle OD", unit: "mm", type: "number", editable: false, description: "Transverse baffle outer diameter (derived from the shell)" },
     ],
   },
   {
@@ -55,7 +66,7 @@ const CATEGORIES: CategoryGroup[] = [
     fields: [
       { key: "boltSize", label: "Bolt Size", unit: "", type: "text", description: "Thread designation (e.g. M20, M24)" },
       { key: "boltLength", label: "Bolt Length", unit: "mm", type: "number", description: "Nominal fastener stud/bolt length" },
-      { key: "noOfBolts", label: "Number of Bolts", unit: "qty", type: "number", description: "Total bolt circle count" },
+      { key: "noOfBolts", label: "Number of Bolts", unit: "qty", type: "number", integer: true, description: "Total bolt circle count" },
       { key: "holeDia", label: "Hole Diameter", unit: "mm", type: "number", description: "Clearance hole diameter on flange" },
       { key: "boltPCD", label: "Bolt PCD", unit: "mm", type: "number", description: "Pitch Circle Diameter of bolting" },
     ],
@@ -76,7 +87,7 @@ const CATEGORIES: CategoryGroup[] = [
     title: "Tubes, Tie Rods & Spacers",
     description: "Internal bundle components holding the tube array in place",
     fields: [
-      { key: "tubeQty", label: "Active Tube Count", unit: "tubes", type: "number", description: "Total number of heat transfer tubes" },
+      { key: "tubeQty", label: "Active Tube Count", unit: "tubes", type: "number", integer: true, description: "Total number of heat transfer tubes" },
       { key: "tieRodDia", label: "Tie Rod Diameter", unit: "mm", type: "number", description: "Skeleton tie rod bar diameter" },
       { key: "tieRodQty", label: "Tie Rod Quantity", unit: "rods", type: "number", description: "Quantity of longitudinal tie rods" },
       { key: "spacerTube", label: "Spacer Tube", unit: "mm", type: "number", description: "Distance sleeve between baffle plates" },
@@ -84,32 +95,96 @@ const CATEGORIES: CategoryGroup[] = [
   },
 ];
 
-export function EngineeringDataView({ initialData }: EngineeringDataViewProps) {
-  // Local state for estimated values (authoritative & editable)
-  const [estimated, setEstimated] = useState<EngineeringValues>({
-    ...initialData.estimated,
-  });
+export function EngineeringDataView({ initialData, jobId, onUpdated, disabled = false }: EngineeringDataViewProps) {
+  // The Estimated values come from the server (it calculates every edit, like the software's grid); what is typed lives in `draft`
+  // until Enter / leaving the field sends it.
+  const estimated = initialData.estimated;
   // Actual values are strictly read-only baseline snapshots
   const actual = initialData.actual;
+
+  const live = !!jobId && !!onUpdated;
+  const [draft, setDraft] = useState<Partial<Record<keyof EngineeringValues, string>>>({});
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof EngineeringValues, string>>>({});
+  const [notice, setNotice] = useState<string | null>(null);
+  const [updated, setUpdated] = useState<Set<string>>(new Set());
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (clearTimer.current) clearTimeout(clearTimer.current); }, []);
 
   // Track field diffs
   const diffKeys = (Object.keys(actual) as (keyof EngineeringValues)[]).filter(
     (key) => actual[key] !== estimated[key]
   );
 
-  const handleFieldChange = (
-    key: keyof EngineeringValues,
-    value: string,
-    type: "number" | "text"
-  ) => {
-    setEstimated((prev) => ({
-      ...prev,
-      [key]: type === "number" ? (value === "" ? 0 : Number(value)) : value,
-    }));
+  const shown = (key: keyof EngineeringValues) => draft[key] ?? String(estimated[key]);
+
+  const clearDraft = (key: keyof EngineeringValues) =>
+    setDraft((d) => {
+      const next = { ...d };
+      delete next[key];
+      return next;
+    });
+
+  /** Same checks as the software: a positive number (a whole one for counts); Bolt Size not empty. */
+  const validate = (field: FieldMeta, value: string): string | null => {
+    if (field.type === "text") return value.trim() ? null : `${field.label} cannot be empty.`;
+    const n = Number(value);
+    if (value.trim() === "" || !Number.isFinite(n) || n <= 0) return `Invalid value '${value}' entered for '${field.label}'. Please enter a valid positive number.`;
+    if (field.integer && !Number.isInteger(n)) return `${field.label} must be a whole number.`;
+    return null;
+  };
+
+  const apply = async (call: () => Promise<{ job: JobDetail; notice?: string | null }>) => {
+    setBusy(true);
+    setError(null);
+    setFieldErrors({});
+    setNotice(null);
+    const before = estimated;
+    try {
+      const { job, notice: n } = await call();
+      const after = job.engineeringData?.estimated;
+      if (after) {
+        const changed = (Object.keys(after) as (keyof EngineeringValues)[]).filter((k) => after[k] !== before[k]);
+        setUpdated(new Set(changed));
+        if (clearTimer.current) clearTimeout(clearTimer.current);
+        clearTimer.current = setTimeout(() => setUpdated(new Set()), 3000);
+      }
+      setDraft({});
+      if (n) setNotice(n);
+      onUpdated?.(job);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not recalculate.");
+      if (err instanceof ApiFieldError) setFieldErrors(err.fieldErrors as typeof fieldErrors);
+      setDraft({});                                           // the field goes back to the last accepted value, as in the software
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Enter / leaving the field: send the edit, the server cascades it and every connected value comes back. */
+  const commit = (field: FieldMeta) => {
+    const value = draft[field.key];
+    if (value === undefined || busy || !jobId) return;
+    const current = String(estimated[field.key]);
+    const same = field.type === "text" ? value.trim() === current : Number(value) === Number(current) && value.trim() !== "";
+    if (same) {
+      clearDraft(field.key);
+      return;
+    }
+    const problem = validate(field, value);
+    if (problem) {
+      setError(problem);
+      setFieldErrors({ [field.key]: problem });
+      clearDraft(field.key);
+      return;
+    }
+    void apply(() => editEstimated(jobId, { key: field.key, value: value.trim() }));
   };
 
   const handleResetToActual = () => {
-    setEstimated({ ...actual });
+    if (!jobId) return;
+    void apply(() => editEstimated(jobId, { reset: true }));
   };
 
   return (
@@ -134,6 +209,23 @@ export function EngineeringDataView({ initialData }: EngineeringDataViewProps) {
         </div>
       </div>
 
+      {live && (busy || error || notice || disabled) && (
+        <div className={`engineering-edit-banner${error ? " engineering-edit-banner-error" : notice ? " engineering-edit-banner-notice" : ""}`} role={error ? "alert" : "status"}>
+          {busy ? (
+            <>
+              <IconLoader size={14} className="animate-spin" />
+              <span>Recalculating the connected values…</span>
+            </>
+          ) : error ? (
+            <span>{error}</span>
+          ) : notice ? (
+            <span>{notice}</span>
+          ) : (
+            <span>A drawing is being generated - editing is available when it has finished.</span>
+          )}
+        </div>
+      )}
+
       {/* Action bar */}
       <div className="values-toolbar">
         <div className="diff-counter">
@@ -152,8 +244,8 @@ export function EngineeringDataView({ initialData }: EngineeringDataViewProps) {
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={handleResetToActual}
-            disabled={diffKeys.length === 0}
-            title="UI convenience: resets local Estimated inputs to match Actual baseline"
+            disabled={diffKeys.length === 0 || !live || busy || disabled}
+            title="Puts every Estimated value back to the calculated (Actual) value"
           >
             <IconRefresh size={14} />
             <span>Reset Estimated to Actual</span>
@@ -193,6 +285,8 @@ export function EngineeringDataView({ initialData }: EngineeringDataViewProps) {
                     const actualVal = actual[field.key];
                     const estVal = estimated[field.key];
                     const isDiff = actualVal !== estVal;
+                    const canEdit = live && field.editable !== false && !disabled;
+                    const fieldError = fieldErrors[field.key];
 
                     return (
                       <tr
@@ -221,18 +315,25 @@ export function EngineeringDataView({ initialData }: EngineeringDataViewProps) {
                         <td className="estimated-val-cell">
                           <div className="estimated-input-wrapper">
                             <input
-                              type={field.type === "number" ? "number" : "text"}
-                              step="any"
-                              className={`estimated-input text-mono ${isDiff ? "estimated-input-modified" : ""}`}
-                              value={estVal}
-                              onChange={(e) =>
-                                handleFieldChange(
-                                  field.key,
-                                  e.target.value,
-                                  field.type
-                                )
-                              }
-                              title={`Edit estimated ${field.label}`}
+                              type="text"
+                              inputMode={field.type === "number" ? "decimal" : "text"}
+                              className={`estimated-input text-mono ${isDiff ? "estimated-input-modified" : ""}${updated.has(field.key) ? " estimated-input-updated" : ""}${fieldError ? " estimated-input-invalid" : ""}`}
+                              value={shown(field.key)}
+                              readOnly={!canEdit}
+                              disabled={busy}
+                              aria-label={`Estimated ${field.label}`}
+                              aria-invalid={!!fieldError}
+                              onChange={(e) => setDraft((d) => ({ ...d, [field.key]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  commit(field);
+                                } else if (e.key === "Escape") {
+                                  clearDraft(field.key);
+                                }
+                              }}
+                              onBlur={() => commit(field)}
+                              title={field.editable === false ? `${field.label} is derived - it is not edited` : `Edit estimated ${field.label}, then press Enter`}
                             />
                             {field.unit && (
                               <span className="input-unit-tag">

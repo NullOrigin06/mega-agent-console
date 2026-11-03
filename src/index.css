@@ -4636,6 +4636,42 @@ body {
   font-size: var(--text-xs);
 }
 
+.engineering-edit-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.engineering-edit-banner-error {
+  border-color: #f87171;
+  color: #fca5a5;
+}
+
+.engineering-edit-banner-notice {
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.estimated-input-updated {
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.55);
+  transition: box-shadow 0.3s ease;
+}
+
+.estimated-input-invalid {
+  border-color: #f87171 !important;
+}
+
+.estimated-input[readonly] {
+  opacity: 0.75;
+  cursor: default;
+}
+
 .tank-overridden {
   color: #fbbf24 !important;
 }

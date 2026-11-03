@@ -13,6 +13,7 @@ import type {
   TankData,
   NozzleItem,
   RecalculateRequest,
+  EditEstimatedRequest,
   MeInfo,
   AdminUser,
   AdminUserFilter,
@@ -388,6 +389,34 @@ export async function recalculateJob(jobId: string, request: RecalculateRequest)
   const detail = parseJobDetail((await res.json()) as Record<string, unknown>);
   clientSessionJobs.delete(jobId);
   return detail;
+}
+
+/**
+ * Heat Exchanger / Tube Sheet / Bonnet Flange: edit ONE Estimated value of a finished job (or reset them). The server cascades
+ * the edit exactly as the software's Estimated grid does (a new Shell I.D. loads that size's profile, ...) and returns the job with
+ * every connected value, the BOM and the engineering data updated. A 400 carries the reason (and the field).
+ */
+export async function editEstimated(jobId: string, request: EditEstimatedRequest): Promise<{ job: JobDetail; notice?: string | null }> {
+  const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}/estimated`;
+  const res = await apiFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let body: { error?: string; fieldErrors?: Record<string, string> } = {};
+    try {
+      body = JSON.parse(text);
+    } catch {
+      /* plain-text error */
+    }
+    if (res.status === 400 && body.fieldErrors) throw new ApiFieldError(body.error || "That value was not accepted.", body.fieldErrors);
+    throw new Error(body.error || text || `Could not change the value (${res.status}).`);
+  }
+  const raw = (await res.json()) as { job: Record<string, unknown>; notice?: string | null };
+  clientSessionJobs.delete(jobId);
+  return { job: parseJobDetail(raw.job), notice: raw.notice ?? null };
 }
 
 export async function deleteJob(jobId: string): Promise<void> {

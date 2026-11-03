@@ -2,6 +2,8 @@ import type {
   JobDetail,
   JobRequest,
   RecalculateRequest,
+  EditEstimatedRequest,
+  EngineeringValues,
   JobSummary,
   LoginRequest,
   SignupRequest,
@@ -76,6 +78,22 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
     : jobExtras[jobId];
 
   return delay({ ...summary, ...extra } as JobDetail);
+}
+
+/** Mirrors POST /api/jobs/{id}/estimated for the offline demo mode (no cascade: the mock has no standards workbook). */
+export async function editEstimated(jobId: string, request: EditEstimatedRequest): Promise<{ job: JobDetail; notice?: string | null }> {
+  const detail = await getJob(jobId);
+  const data = detail?.engineeringData;
+  if (!detail || !data) throw new Error("This job has no engineering data to edit.");
+  const estimated: EngineeringValues = request.reset ? { ...data.actual } : { ...data.estimated };
+  if (!request.reset && request.key) {
+    const current = estimated[request.key];
+    (estimated as unknown as Record<string, unknown>)[request.key] = typeof current === "number" ? Number(request.value) : request.value;
+  }
+  jobExtras[jobId] = { ...jobExtras[jobId], engineeringData: { ...data, estimated }, bom: detail.bom ?? [] };
+  const summary = jobs.find((j) => j.id === jobId);
+  if (summary) summary.drawingStatus = "not_generated";
+  return { job: (await getJob(jobId))! };
 }
 
 /** Mirrors POST /api/jobs/{id}/recalculate for the offline demo mode. */

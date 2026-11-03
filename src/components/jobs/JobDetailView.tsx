@@ -456,7 +456,15 @@ export function JobDetailView({
           {/* Active Tab Panel */}
           <Tabs.Content value="values" className="tab-panel-content">
             {job.engineeringData && (
-              <EngineeringDataView initialData={job.engineeringData} />
+              <EngineeringDataView
+                initialData={job.engineeringData}
+                jobId={job.status === "completed" ? job.id : undefined}
+                disabled={anyDrawingGenerating}
+                onUpdated={(updated) => {
+                  setJob(updated);
+                  onRefreshListRef.current();
+                }}
+              />
             )}
             {tank && (
               <TankParametersView
