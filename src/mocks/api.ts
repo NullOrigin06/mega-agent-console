@@ -260,8 +260,7 @@ export async function exportJobData(jobId: string): Promise<void> {
   const e = detail?.engineeringData;
   const lines = ["Parameter,Actual,Estimated"];
   if (e) for (const k of Object.keys(e.actual) as (keyof typeof e.actual)[]) lines.push(`${k},${String(e.actual[k])},${String(e.estimated[k])}`);
-  saveBlob(new Blob([lines.join("
-")], { type: "text/csv" }), `${jobId}-export-mock.csv`);
+  saveBlob(new Blob([lines.join("\n")], { type: "text/csv" }), `${jobId}-export-mock.csv`);
 }
 
 /** Mock of GET /api/jobs/{id}/drawing?kind=... - there is no real drawing file, so a small placeholder is saved. */
