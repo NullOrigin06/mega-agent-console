@@ -4,6 +4,7 @@ import type { ModuleKind } from "../../types/engineering";
 import { moduleGroup } from "../../utils/moduleGroup";
 import { MODULE_OPTIONS } from "../../constants/modules";
 import { IconGrid, IconList, IconCpu, IconArrowLeft, IconArrowRight } from "../common/Icon";
+import { agentVersionState } from "../../utils/agentReleases";
 import { ambientBus } from "../ambient/ambientBus";
 import megaLogo from "../../assets/mega-logo.png";
 
@@ -17,7 +18,7 @@ interface SidebarProps {
   onSelectModule: (module: ModuleKind) => void;
   collapsed: boolean;
   onToggleCollapsed: () => void;
-  agentSummary: { online: number; total: number };
+  agentSummary: { online: number; total: number; version?: string; latest?: string };
   mobileOpen?: boolean;
 }
 
@@ -135,6 +136,16 @@ export function Sidebar({
               : `${agentSummary.online}/${agentSummary.total} agent online`}
           </span>
         </div>
+        {agentSummary.online > 0 && (
+          <div
+            className={`sidebar-agent-version agent-version-${agentVersionState(agentSummary.version, agentSummary.latest)}`}
+            title="The version of your Local Agent. Restart the agent to update it."
+          >
+            {agentSummary.version ? `Agent v${agentSummary.version}` : "Agent version not reported"}
+            {agentVersionState(agentSummary.version, agentSummary.latest) === "latest" && " · latest"}
+            {agentVersionState(agentSummary.version, agentSummary.latest) === "outdated" && ` · update to v${agentSummary.latest}`}
+          </div>
+        )}
       </div>
     </aside>
   );

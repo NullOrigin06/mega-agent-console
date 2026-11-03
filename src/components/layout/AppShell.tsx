@@ -4,6 +4,7 @@ import type { JobSummary, ModuleKind } from "../../types/engineering";
 import type { PairedAgentInfo } from "../../api";
 import type { AuthSession } from "../../utils/authSession";
 import { Sidebar } from "./Sidebar";
+import { compareVersions, fetchAgentReleases, latestRelease } from "../../utils/agentReleases";
 import { Header } from "./Header";
 import { PipelineStatusRail } from "./PipelineStatusRail";
 import { CommandPalette } from "../common/CommandPalette";
@@ -88,9 +89,22 @@ export function AppShell({
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
+  const [latestAgentVersion, setLatestAgentVersion] = useState<string | undefined>();
+  useEffect(() => {
+    let alive = true;
+    void fetchAgentReleases().then((r) => alive && setLatestAgentVersion(latestRelease(r)?.version));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // The version to show is that of the oldest online agent that reports one: that is the one that may be missing something.
+  const onlineVersions = agents.filter((a) => a.online && a.version).map((a) => a.version as string);
   const agentSummary = {
     online: agents.filter((a) => a.online).length,
     total: agents.length,
+    version: onlineVersions.sort(compareVersions)[0],
+    latest: latestAgentVersion,
   };
 
   // Below the sidebar's mobile breakpoint it's off-canvas by default (see
