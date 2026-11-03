@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { pairAgent } from "../../api";
+import { agentVersionState, fetchAgentReleases, latestRelease } from "../../utils/agentReleases";
+import { AgentVersionsPanel } from "./AgentVersionsPanel";
 import type { PairedAgentInfo } from "../../types/engineering";
 import {
   IconCheckCircle,
@@ -36,6 +38,14 @@ export function AgentPairingPanel({
   const [isPairing, setIsPairing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [latestVersion, setLatestVersion] = useState<string | undefined>();
+  useEffect(() => {
+    let alive = true;
+    void fetchAgentReleases().then((r) => alive && setLatestVersion(latestRelease(r)?.version));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const handlePair = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,6 +145,17 @@ export function AgentPairingPanel({
                   </div>
                   <div className="agent-card-details">
                     <span className="agent-card-id text-mono">{agent.agentId}</span>
+                    {(() => {
+                      const state = agentVersionState(agent.version, latestVersion);
+                      return (
+                        <span className={`agent-version agent-version-${state}`}>
+                          {agent.version ? `v${agent.version}` : "Version not reported"}
+                          {state === "latest" && " · latest"}
+                          {state === "outdated" && ` · update to v${latestVersion} (restart the agent)`}
+                          {state === "unknown" && !agent.version && " · update the agent"}
+                        </span>
+                      );
+                    })()}
                     <span className="agent-card-date">
                       Linked {new Date(agent.pairedAt).toLocaleDateString()}
                     </span>
@@ -150,6 +171,8 @@ export function AgentPairingPanel({
           </div>
         )}
       </div>
+
+      <AgentVersionsPanel />
 
       {/* Connect New Agent Form */}
       <div className="agent-connect-section">

@@ -178,6 +178,7 @@ export const sampleAgents: PairedAgentInfo[] = [
     name: "Engineering-CAD-01",
     online: true,
     pairedAt: "2026-09-20T10:00:00.000Z",
+    version: "1.2.14",
   },
   {
     agentId: "agent-wks-02",

@@ -19,6 +19,8 @@ export interface PairedAgentInfo {
   name?: string;
   online: boolean;
   pairedAt: string;
+  /** The Local Agent's version; absent for an agent that does not report it (older than 1.2.13). */
+  version?: string;
 }
 
 export interface ForgotPasswordRequest {

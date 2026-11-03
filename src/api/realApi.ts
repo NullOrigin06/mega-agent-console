@@ -752,6 +752,7 @@ export async function listAgents(): Promise<PairedAgentInfo[]> {
     name: item.name ? String(item.name) : undefined,
     online: Boolean(item.online ?? item.isOnline ?? false),
     pairedAt: String(item.pairedAt ?? item.registeredAt ?? new Date().toISOString()),
+    version: item.agentVersion ? String(item.agentVersion) : undefined,
   }));
 }
 

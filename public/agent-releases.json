@@ -1,0 +1,87 @@
+[
+  {
+    "version": "1.2.14",
+    "date": "2026-11-03T17:11:23Z",
+    "notes": "Nozzle schedule and Estimated value edits made on the site reach the drawing; Material of Construction edits reach the drawing; Shop Tank General Arrangement drawing (Fabrication and General Arrangement, one or both)"
+  },
+  {
+    "version": "1.2.13",
+    "date": "2026-11-03T11:31:15Z",
+    "notes": "Agent reports its version to the server; Site Tank updates"
+  },
+  {
+    "version": "1.2.12",
+    "date": "2026-11-03T10:31:42Z",
+    "notes": "Site Tank: roof plan and nozzle form updates; Shop Tank: nozzle location rules and plan view"
+  },
+  {
+    "version": "1.2.11",
+    "date": "2026-10-27T15:20:07Z",
+    "notes": "Agent window: Check for updates button, update status, download progress with speed and time left"
+  },
+  {
+    "version": "1.2.10",
+    "date": "2026-10-27T15:07:09Z",
+    "notes": "Site Tank: roof plan improvements; Shop Tank and nozzle updates"
+  },
+  {
+    "version": "1.2.9",
+    "date": "2026-10-25T05:43:54Z",
+    "notes": "Agents now install only updates signed by Mega. Company templates are downloaded after sign-in instead of being bundled. Faster, safer update download."
+  },
+  {
+    "version": "1.2.8",
+    "date": "2026-10-23T04:49:19Z",
+    "notes": "Shop Tank: BOM calculation and nozzle elevation; Site Tank: roof plan and nozzle updates"
+  },
+  {
+    "version": "1.2.7",
+    "date": "2026-10-22T16:44:12Z",
+    "notes": "Tube Sheet is drawn directly through COM: no LISP loading permission prompt, same behaviour as the other modules"
+  },
+  {
+    "version": "1.2.6",
+    "date": "2026-10-22T16:38:21Z",
+    "notes": "GA drawings: bonnet length and nozzle position from the bonnet standard, 4-pass lifting lugs on top, no trunnions, N1/N2 always on the bonnet; nozzle BOM uses the company pipe/flange/bolt weight table; inch nozzle sizes; Site Tank nozzle schedule and BOM"
+  },
+  {
+    "version": "1.2.5",
+    "date": "2026-10-16T05:59:41Z",
+    "notes": "Works with AutoCAD / Plant 3D as well as GstarCAD; waits instead of failing while CAD is busy; Tube Sheet about 5x faster; clear input checks before drawing; GA nozzles placed by size on 2/4-pass exchangers"
+  },
+  {
+    "version": "1.2.4",
+    "date": "2026-10-12T05:40:47Z",
+    "notes": "Heat Exchanger jobs: Generate GA drawing now makes the General Arrangement drawing (fabrication and GA can be made separately or together); Site Tank module update"
+  },
+  {
+    "version": "1.2.3",
+    "date": "2026-10-03T06:55:38Z",
+    "notes": "Tube Sheet drawing: underlined continuous note leaders, bolt-hole notches in side section, pitch dimension removed, updated template; baffle labels below plates and baffle notes restyled"
+  },
+  {
+    "version": "1.2.2",
+    "date": "2026-10-03T05:59:21Z",
+    "notes": "Tube Sheet BOM: baffle plate size (OD x 75% cut height x THK) and weight (WHT2)"
+  },
+  {
+    "version": "1.2.1",
+    "date": "2026-10-03T05:43:14Z",
+    "notes": "Tube Sheet: tube hole = OD + 0.3 mm, pitch to 2 dp, actual tube thickness, M.O.C. SA 240 Gr.304; Detail A Shell ID - 2 dimension filled; Baffle OD = Shell ID - 5"
+  },
+  {
+    "version": "1.2.0",
+    "date": "2026-10-03T01:20:46Z",
+    "notes": "Shop Tank and Site Tank drawing generation"
+  },
+  {
+    "version": "1.1.1",
+    "date": "2026-10-01T08:38:28Z",
+    "notes": "Fixes Connect rejecting a filled-in email and password; saved email pre-fills again."
+  },
+  {
+    "version": "1.1.0",
+    "date": "2026-10-01T07:24:58Z",
+    "notes": "Auto-update, redesigned interface, sharper at high display scaling, one-click Connect."
+  }
+]
