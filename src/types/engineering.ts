@@ -256,6 +256,11 @@ export interface EngineeringValues {
   bonnetShellRSLength: number;
   bonnetShellTHK: number;
   dishendTHK: number;
+  /** Materials of construction (the software's MOC grid). */
+  shellMaterial: string;
+  tubeMaterial: string;
+  tubeSheetMaterial: string;
+  bodyFlangeMaterial: string;
 }
 
 /** Mirrors MegaEngineeringSuite.NozzleItem (.NET). All fields are free strings on the .NET side today. */

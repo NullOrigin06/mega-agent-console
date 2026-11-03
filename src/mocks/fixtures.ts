@@ -71,6 +71,10 @@ export const sampleEngineeringData: EngineeringDataModel = {
     bonnetShellRSLength: 500,
     bonnetShellTHK: 5,
     dishendTHK: 5,
+    shellMaterial: "SA 240 Gr 304",
+    tubeMaterial: "SA 249 TP304",
+    tubeSheetMaterial: "SA 240 Gr 304",
+    bodyFlangeMaterial: "IS 2062 Gr. B",
   },
   estimated: {
     shellID: 914,
@@ -98,6 +102,10 @@ export const sampleEngineeringData: EngineeringDataModel = {
     bonnetShellRSLength: 500,
     bonnetShellTHK: 5,
     dishendTHK: 5,
+    shellMaterial: "SA 240 Gr 304",
+    tubeMaterial: "SA 249 TP304",
+    tubeSheetMaterial: "SA 240 Gr 304",
+    bodyFlangeMaterial: "IS 2062 Gr. B",
   },
   nozzles: [
     {

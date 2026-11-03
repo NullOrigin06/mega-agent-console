@@ -23,6 +23,8 @@ interface FieldMeta {
   editable?: boolean;
   /** A whole number (counts). */
   integer?: boolean;
+  /** Text that may be left empty: the Actual value comes back (the software's MOC grid). */
+  allowBlank?: boolean;
 }
 
 interface CategoryGroup {
@@ -93,6 +95,17 @@ const CATEGORIES: CategoryGroup[] = [
       { key: "spacerTube", label: "Spacer Tube", unit: "mm", type: "number", description: "Distance sleeve between baffle plates" },
     ],
   },
+  {
+    id: "moc",
+    title: "Material of Construction (MOC)",
+    description: "Materials printed in the BOM and on the drawing; an empty Estimated value goes back to the Actual one",
+    fields: [
+      { key: "shellMaterial", label: "Shell", unit: "", type: "text", allowBlank: true, description: "Shell plate material" },
+      { key: "tubeMaterial", label: "Tube", unit: "", type: "text", allowBlank: true, description: "Tube material" },
+      { key: "tubeSheetMaterial", label: "Tubesheet", unit: "", type: "text", allowBlank: true, description: "Tube sheet material" },
+      { key: "bodyFlangeMaterial", label: "Body Flange", unit: "", type: "text", allowBlank: true, description: "Body flange material" },
+    ],
+  },
 ];
 
 export function EngineeringDataView({ initialData, jobId, onUpdated, disabled = false }: EngineeringDataViewProps) {
@@ -128,7 +141,7 @@ export function EngineeringDataView({ initialData, jobId, onUpdated, disabled = 
 
   /** Same checks as the software: a positive number (a whole one for counts); Bolt Size not empty. */
   const validate = (field: FieldMeta, value: string): string | null => {
-    if (field.type === "text") return value.trim() ? null : `${field.label} cannot be empty.`;
+    if (field.type === "text") return value.trim() || field.allowBlank ? null : `${field.label} cannot be empty.`;
     const n = Number(value);
     if (value.trim() === "" || !Number.isFinite(n) || n <= 0) return `Invalid value '${value}' entered for '${field.label}'. Please enter a valid positive number.`;
     if (field.integer && !Number.isInteger(n)) return `${field.label} must be a whole number.`;
@@ -167,7 +180,7 @@ export function EngineeringDataView({ initialData, jobId, onUpdated, disabled = 
     const value = draft[field.key];
     if (value === undefined || busy || !jobId) return;
     const current = String(estimated[field.key]);
-    const same = field.type === "text" ? value.trim() === current : Number(value) === Number(current) && value.trim() !== "";
+    const same = field.type === "text" ? value.trim() === current || (field.allowBlank === true && value.trim() === "" && current === String(actual[field.key])) : Number(value) === Number(current) && value.trim() !== "";
     if (same) {
       clearDraft(field.key);
       return;

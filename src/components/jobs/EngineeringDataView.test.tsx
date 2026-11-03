@@ -161,4 +161,27 @@ describe("EngineeringDataView - the Estimated column is live", () => {
     expect(input("Shell ID").value).toBe("820");
     expect(input("Flange ID").value).toBe("832");
   });
+
+  it("shows the Material of Construction grid and sends a material edit", async () => {
+    editEstimated.mockResolvedValue({ job: jobAfterShellEdit() });
+    renderView();
+
+    expect(screen.getByText("Material of Construction (MOC)")).toBeTruthy();
+    const shell = input("Shell");
+    fireEvent.change(shell, { target: { value: "SA 240 Gr 316L" } });
+    fireEvent.keyDown(shell, { key: "Enter" });
+
+    await waitFor(() => expect(editEstimated).toHaveBeenCalledWith("job-1", { key: "shellMaterial", value: "SA 240 Gr 316L" }));
+  });
+
+  it("an empty material is sent as blank (the server puts the Actual one back) rather than refused", async () => {
+    editEstimated.mockResolvedValue({ job: jobAfterShellEdit() });
+    renderView({ initialData: { ...data(), estimated: { ...data().estimated, tubeMaterial: "SA 213 TP316" } } });
+
+    const tube = input("Tube");
+    fireEvent.change(tube, { target: { value: "" } });
+    fireEvent.keyDown(tube, { key: "Enter" });
+
+    await waitFor(() => expect(editEstimated).toHaveBeenCalledWith("job-1", { key: "tubeMaterial", value: "" }));
+  });
 });

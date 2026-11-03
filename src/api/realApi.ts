@@ -154,10 +154,14 @@ function normalizeEngineeringValues(
     tieRodDia: data.tieRodDia ?? 12,
     tieRodQty: data.tieRodQty ?? 6,
     spacerTube: data.spacerTube ?? 0,
-    bonnetShellFSLength: 500,
-    bonnetShellRSLength: 500,
-    bonnetShellTHK: 5,
-    dishendTHK: 5,
+    bonnetShellFSLength: data.bonnetShellFSLength ?? 500,
+    bonnetShellRSLength: data.bonnetShellRSLength ?? 500,
+    bonnetShellTHK: data.bonnetShellTHK ?? 5,
+    dishendTHK: data.dishendTHK ?? 5,
+    shellMaterial: data.shellMaterial ?? "SA 240 Gr 304",
+    tubeMaterial: data.tubeMaterial ?? "SA 249 TP304",
+    tubeSheetMaterial: data.tubeSheetMaterial ?? "SA 240 Gr 304",
+    bodyFlangeMaterial: data.bodyFlangeMaterial ?? "IS 2062 Gr. B",
   };
 }
 

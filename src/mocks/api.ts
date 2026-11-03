@@ -88,7 +88,8 @@ export async function editEstimated(jobId: string, request: EditEstimatedRequest
   const estimated: EngineeringValues = request.reset ? { ...data.actual } : { ...data.estimated };
   if (!request.reset && request.key) {
     const current = estimated[request.key];
-    (estimated as unknown as Record<string, unknown>)[request.key] = typeof current === "number" ? Number(request.value) : request.value;
+    const blankMaterial = typeof current === "string" && request.key.endsWith("Material") && !String(request.value ?? "").trim();
+    (estimated as unknown as Record<string, unknown>)[request.key] = typeof current === "number" ? Number(request.value) : blankMaterial ? data.actual[request.key] : request.value;
   }
   jobExtras[jobId] = { ...jobExtras[jobId], engineeringData: { ...data, estimated }, bom: detail.bom ?? [] };
   const summary = jobs.find((j) => j.id === jobId);
