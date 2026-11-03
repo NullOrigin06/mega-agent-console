@@ -1,7 +1,7 @@
 import { readUrlToken } from "./urlToken";
 
 /** Static marketing/welcome page shipped in public/. */
-export const LANDING_PATH = "/landing.html";
+export const LANDING_PATH = "/welcome.html";
 
 /** Query flag the welcome page's Sign in buttons use to ask for the login screen. */
 export const SIGN_IN_PARAM = "signin";
