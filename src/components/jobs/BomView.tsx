@@ -176,7 +176,7 @@ export function BomView({ bom = [], jobId }: BomViewProps) {
                 <td className="text-mono text-dim">{row.dimension}</td>
                 <td className="text-mono text-right font-medium">{row.qty}</td>
                 <td className="text-mono text-right font-medium text-accent">
-                  {row.weightKg.toFixed(1)}
+                  {row.weightKg > 0 ? row.weightKg.toFixed(1) : "--"}
                 </td>
                 <td className="text-dim text-sm">{row.remark || "—"}</td>
               </tr>
