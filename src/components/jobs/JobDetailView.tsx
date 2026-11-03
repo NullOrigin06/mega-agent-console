@@ -145,6 +145,7 @@ export function JobDetailView({
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const handleExportData = async () => {
+    if (!job) return;
     setIsExporting(true);
     setExportError(null);
     try {
