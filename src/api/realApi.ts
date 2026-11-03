@@ -542,6 +542,20 @@ export async function downloadDrawing(jobId: string, kind: DrawingKind = "fab"):
   saveBlob(blob, match ? decodeURIComponent(match[1]) : `${jobId}-${kind}.dwg`);
 }
 
+/** Downloads the job's engineering data, BOM and nozzle schedule as an Excel workbook (GET /api/jobs/{id}/export). */
+export async function exportJobData(jobId: string): Promise<void> {
+  const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}/export`;
+  const res = await apiFetch(url);
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => "");
+    throw new Error(`Failed to export data (${res.status}): ${errorText || res.statusText}`);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+  saveBlob(blob, match ? decodeURIComponent(match[1]) : `${jobId}.xlsx`);
+}
+
 export function saveBlob(blob: Blob, filename: string): void {
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");

@@ -253,6 +253,17 @@ export async function generateDrawing(jobId: string, _agentId?: string, drawings
   kinds.forEach((k) => setStatus(k, "generated"));
 }
 
+/** Mock of GET /api/jobs/{id}/export - a small CSV stands in for the workbook. */
+export async function exportJobData(jobId: string): Promise<void> {
+  await delay(undefined);
+  const detail = await getJob(jobId);
+  const e = detail?.engineeringData;
+  const lines = ["Parameter,Actual,Estimated"];
+  if (e) for (const k of Object.keys(e.actual) as (keyof typeof e.actual)[]) lines.push(`${k},${String(e.actual[k])},${String(e.estimated[k])}`);
+  saveBlob(new Blob([lines.join("
+")], { type: "text/csv" }), `${jobId}-export-mock.csv`);
+}
+
 /** Mock of GET /api/jobs/{id}/drawing?kind=... - there is no real drawing file, so a small placeholder is saved. */
 export async function downloadDrawing(jobId: string, kind: DrawingKind = "fab"): Promise<void> {
   await delay(undefined);

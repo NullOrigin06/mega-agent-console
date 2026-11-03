@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import type { JobDetail } from "../../types/engineering";
-import { getJob, generateDrawing } from "../../api";
+import { getJob, generateDrawing, exportJobData } from "../../api";
 import { DRAWING_LABELS, type DrawingKind } from "../../utils/drawingSelection";
 import { StatusBadge, ModuleBadge } from "../common/Badge";
 import {
@@ -16,6 +16,7 @@ import {
   IconDrafting,
   IconTrash,
   IconCylinder,
+  IconDownload,
 } from "../common/Icon";
 import { EngineeringDataView } from "./EngineeringDataView";
 import { SpecsAndNozzlesView } from "./SpecsAndNozzlesView";
@@ -140,6 +141,20 @@ export function JobDetailView({
       }
     };
   }, [isPolling, anyDrawingGenerating, refreshSilently]);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const handleExportData = async () => {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportJobData(job.id);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : "Could not export the data.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleGenerateDrawing = async (agentId?: string, drawings?: DrawingKind[]) => {
     if (!job) return;
@@ -300,7 +315,20 @@ export function JobDetailView({
               </button>
               <StatusBadge status={job.status} />
               <ModuleBadge module={job.module} />
+              {job.status === "completed" && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleExportData}
+                  disabled={isExporting}
+                  title="Download the engineering data, BOM and nozzle schedule as an Excel workbook"
+                >
+                  <IconDownload size={14} />
+                  <span>{isExporting ? "Exporting…" : "Export Data (Excel)"}</span>
+                </button>
+              )}
             </div>
+            {exportError && <div className="form-error" role="alert">{exportError}</div>}
             <h2 className="overview-heading">
               {RUN_TITLES[job.module]}
             </h2>

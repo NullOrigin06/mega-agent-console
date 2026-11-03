@@ -114,6 +114,13 @@ export async function downloadDrawing(jobId: string, kind: DrawingKind = "fab"):
 }
 
 /**
+ * Downloads the job's data as an Excel workbook (GET /api/jobs/{id}/export).
+ */
+export async function exportJobData(jobId: string): Promise<void> {
+  return getApiMode() === "real" ? realApi.exportJobData(jobId) : mockApi.exportJobData(jobId);
+}
+
+/**
  * Looks up a Local Agent by pairing code, confirming it's real and online.
  */
 export async function checkAgentByCode(
