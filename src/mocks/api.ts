@@ -170,7 +170,7 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
     status: "queued",
     createdAt: new Date().toISOString(),
     drawingStatus: "not_generated",
-    ...(request.module === "HeatExchangerFab" ? { gaDrawingStatus: "not_generated" as const } : {}),
+    ...((request.module === "HeatExchangerFab" || request.module === "ShopTank") ? { gaDrawingStatus: "not_generated" as const } : {}),
   };
   jobs = [newJob, ...jobs];
 
@@ -237,7 +237,7 @@ export async function generateDrawing(jobId: string, _agentId?: string, drawings
 
   const job = jobs.find((j) => j.id === jobId);
   // Only the combined module has a second drawing; legacy GA jobs use the primary fields.
-  const kinds = [...new Set(job?.module === "HeatExchangerFab" ? requested : (["fab"] as DrawingKind[]))];
+  const kinds = [...new Set((job?.module === "HeatExchangerFab" || job?.module === "ShopTank") ? requested : (["fab"] as DrawingKind[]))];
   if (job && (job.drawingStatus === "generating" || job.gaDrawingStatus === "generating")) {
     throw new Error("Failed to start drawing generation (409): a drawing is already being generated for this job.");
   }

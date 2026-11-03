@@ -500,7 +500,7 @@ export function JobDetailView({
               onGenerate={handleGenerateDrawing}
               isTriggering={isTriggeringGeneration}
               cards={
-                job.module === "HeatExchangerFab"
+                (job.module === "HeatExchangerFab" || job.module === "ShopTank")
                   ? [
                       { kind: "fab", label: DRAWING_LABELS.fab, status: job.drawingStatus, error: job.drawingError },
                       { kind: "ga", label: DRAWING_LABELS.ga, status: job.gaDrawingStatus ?? "not_generated", error: job.gaDrawingError },
