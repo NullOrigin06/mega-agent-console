@@ -2,6 +2,7 @@ import type {
   JobDetail,
   JobRequest,
   JobSummary,
+  RecalculateRequest,
   LoginRequest,
   SignupRequest,
   AuthResponse,
@@ -56,6 +57,13 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
   return getApiMode() === "real"
     ? realApi.submitJob(request)
     : mockApi.submitJob(request);
+}
+
+/**
+ * Tank jobs: change the Estimated values and / or the nozzle schedule of a finished job and calculate it again.
+ */
+export async function recalculateJob(jobId: string, request: RecalculateRequest): Promise<JobDetail> {
+  return getApiMode() === "real" ? realApi.recalculateJob(jobId, request) : mockApi.recalculateJob(jobId, request);
 }
 
 /**

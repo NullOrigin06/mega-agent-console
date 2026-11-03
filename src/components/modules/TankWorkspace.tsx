@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import type { JobSummary, ProjectInfo, TankModuleKind } from "../../types/engineering";
+import type { JobSummary, NozzleItem, ProjectInfo, TankModuleKind } from "../../types/engineering";
 import { submitJob } from "../../api";
 import { ApiFieldError } from "../../api/errors";
 import { MODULE_OPTIONS } from "../../constants/modules";
 import { TANK_FIELDS, buildTankInputs, defaultTankProjectInfo, defaultTankValues, tankDerived } from "../../constants/tankFields";
+import { getDefaultTankNozzles } from "../../constants/tankNozzles";
 import { JobDetailView } from "../jobs/JobDetailView";
+import { TankNozzleEditor } from "../jobs/TankNozzleEditor";
 import { TankHologram } from "../cad/TankHologram";
 import { tankWireFromValues } from "../cad/tankHologramGeometry";
 import { useTankActivity } from "./useTankActivity";
@@ -35,15 +37,16 @@ const PROJECT_FIELDS: Array<[keyof ProjectInfo, string]> = [
 
 /**
  * Workspace for the two storage-tank modules. Same page structure as the
- * heat-exchanger workspace (inputs, project information, calculate), but the
- * inputs are the desktop tank forms' own fields - Shop Tank sizes from Shell
- * I.D. and height, Site Tank from required volume and H/D - and there is no
- * nozzle schedule.
+ * heat-exchanger workspace (inputs, project information, nozzle schedule,
+ * calculate), but the inputs are the desktop tank forms' own fields - Shop Tank
+ * sizes from Shell I.D. and height, Site Tank from required volume and H/D -
+ * and the nozzle schedule has the desktop form's columns and default rows.
  */
 export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJobs, onJobSubmitted, onRefreshList, onDeleteJob }: TankWorkspaceProps) {
   const [job, setJob] = useState<JobSummary | null>(null);
   const [values, setValues] = useState<Record<string, string>>(() => defaultTankValues(module));
   const [projectInfo, setProjectInfo] = useState<ProjectInfo>(() => defaultTankProjectInfo(module));
+  const [nozzles, setNozzles] = useState<NozzleItem[]>(() => getDefaultTankNozzles(module));
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +83,7 @@ export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJob
       const newJob = await submitJob({
         module,
         projectInfo,
+        nozzles,
         ...(module === "ShopTank" ? { shopTank: built.inputs as never } : { siteTank: built.inputs as never }),
       });
       onJobSubmitted(newJob);
@@ -210,6 +214,17 @@ export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJob
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Nozzle Input / Schedule - the desktop form's nozzle grid (it also fills the drawing's nozzle table and BOM) */}
+        <div className="workspace-panel">
+          <h3 className="workspace-panel-title">Nozzle Input / Schedule</h3>
+          <TankNozzleEditor module={module} nozzles={nozzles} onChange={setNozzles} disabled={isSubmitting} />
+          <p className="section-subtitle" style={{ marginTop: 10 }}>
+            {module === "ShopTank"
+              ? "Elevation / Radius: a SHELL nozzle's height above the bottom weld line (mm); a DISH nozzle's distance from the vessel centre (AUTO = shell I.D. / 2 - 150). N5, N6, SG and LG sit at fixed heights in the drawing template."
+              : "A SHELL nozzle has an elevation (mm) and no orientation; a ROOF nozzle has an orientation (degrees) and no elevation."}
+          </p>
         </div>
 
         <div className="module-workspace-form-footer">

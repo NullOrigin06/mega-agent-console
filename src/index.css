@@ -4640,6 +4640,60 @@ body {
   color: #fbbf24 !important;
 }
 
+/* Editable Estimated column of a finished tank job + the bar with Recalculate */
+.tank-edit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+}
+
+.tank-edit-hint {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  flex: 1 1 280px;
+}
+
+.tank-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tank-estimated-input {
+  width: 100%;
+  max-width: 130px;
+  text-align: right;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.tank-estimated-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.tank-estimated-input:disabled {
+  opacity: 0.6;
+}
+
+.tank-estimated-modified {
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.tank-estimated-invalid {
+  border-color: #f87171;
+}
+
 .tank-summary {
   display: flex;
   flex-direction: column;

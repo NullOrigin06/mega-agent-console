@@ -11,6 +11,8 @@ import type {
   AuthResponse,
   PairedAgentInfo,
   TankData,
+  NozzleItem,
+  RecalculateRequest,
   MeInfo,
   AdminUser,
   AdminUserFilter,
@@ -159,6 +161,16 @@ function normalizeEngineeringValues(
 }
 
 /** Tank results arrive pre-formatted (contract §2); only guard the shape. */
+function normalizeNozzle(raw: unknown): NozzleItem {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const text = (v: unknown) => (v == null ? "" : String(v));
+  return {
+    nozzleNo: text(r.nozzleNo), size: text(r.size), unit: text(r.unit), schedule: text(r.schedule), type: text(r.type),
+    rating: text(r.rating), projection: text(r.projection), service: text(r.service), orientation: text(r.orientation),
+    remark: text(r.remark), position: text(r.position), location: text(r.location), elevation: text(r.elevation),
+  };
+}
+
 function normalizeTankData(raw: unknown): TankData | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const r = raw as Partial<TankData>;
@@ -167,6 +179,7 @@ function normalizeTankData(raw: unknown): TankData | undefined {
     module: r.module,
     inputs: (r.inputs ?? {}) as TankData["inputs"],
     overrides: r.overrides ?? {},
+    nozzles: Array.isArray(r.nozzles) ? r.nozzles.map(normalizeNozzle) : [],
     parameters: Array.isArray(r.parameters) ? r.parameters.map((p) => ({ ...p, actual: String(p.actual ?? ""), estimated: String(p.estimated ?? p.actual ?? "") })) : [],
     summary: Array.isArray(r.summary) ? r.summary.map((x) => ({ ...x, value: String(x.value ?? "") })) : [],
     warnings: Array.isArray(r.warnings) ? r.warnings.map(String) : [],
@@ -311,8 +324,18 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
       throw new Error(`Real API getJob error: ${res.status} ${res.statusText}`);
     }
 
-    const raw = (await res.json()) as Record<string, unknown>;
+    const detail = parseJobDetail((await res.json()) as Record<string, unknown>);
 
+    return detail;
+  } catch (err) {
+    console.warn(`[realApi] getJob error for ${jobId}:`, err);
+    return clientSessionJobs.get(jobId);
+  }
+}
+
+/** The server's JobDetail JSON as the console's JobDetail. */
+function parseJobDetail(raw: Record<string, unknown>): JobDetail {
+  {
     const detail: JobDetail = {
       id: String(raw.id),
       module: raw.module as JobDetail["module"],
@@ -335,10 +358,36 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
     };
 
     return detail;
-  } catch (err) {
-    console.warn(`[realApi] getJob error for ${jobId}:`, err);
-    return clientSessionJobs.get(jobId);
   }
+}
+
+/**
+ * Tank jobs: change the Estimated values and / or the nozzle schedule of a finished job and calculate it again.
+ * Returns the updated job (its drawing, if any, is cleared: it no longer matches). A 400 carries the field messages.
+ */
+export async function recalculateJob(jobId: string, request: RecalculateRequest): Promise<JobDetail> {
+  const url = `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}/recalculate`;
+  const res = await apiFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let body: { error?: string; fieldErrors?: Record<string, string> } = {};
+    try {
+      body = JSON.parse(text);
+    } catch {
+      /* plain-text error */
+    }
+    if (res.status === 400 && body.fieldErrors) {
+      throw new ApiFieldError(body.error || "Please correct the highlighted values.", body.fieldErrors);
+    }
+    throw new Error(body.error || text || `Recalculate failed (${res.status}).`);
+  }
+  const detail = parseJobDetail((await res.json()) as Record<string, unknown>);
+  clientSessionJobs.delete(jobId);
+  return detail;
 }
 
 export async function deleteJob(jobId: string): Promise<void> {

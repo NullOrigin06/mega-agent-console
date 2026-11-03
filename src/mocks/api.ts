@@ -1,6 +1,7 @@
 import type {
   JobDetail,
   JobRequest,
+  RecalculateRequest,
   JobSummary,
   LoginRequest,
   SignupRequest,
@@ -50,6 +51,8 @@ let jobs: JobSummary[] = [...sampleJobs];
 // completion would freeze drawingStatus forever and silently break
 // "Generate Drawing" for any job submitted through the UI.
 const jobExtras: Record<string, { engineeringData?: EngineeringDataModel; tankData?: TankData; bom: BomRow[] }> = {};
+/** What each mock tank job was submitted with, so it can be calculated again with edited values. */
+const tankRequests: Record<string, JobRequest> = {};
 
 export async function listJobs(): Promise<JobSummary[]> {
   return delay([...jobs]);
@@ -73,6 +76,24 @@ export async function getJob(jobId: string): Promise<JobDetail | undefined> {
     : jobExtras[jobId];
 
   return delay({ ...summary, ...extra } as JobDetail);
+}
+
+/** Mirrors POST /api/jobs/{id}/recalculate for the offline demo mode. */
+export async function recalculateJob(jobId: string, request: RecalculateRequest): Promise<JobDetail> {
+  const original = tankRequests[jobId];
+  const summary = jobs.find((j) => j.id === jobId);
+  if (!original || !summary) throw new Error("Only Shop Tank and Site Tank jobs can be recalculated.");
+
+  const next: JobRequest = {
+    ...original,
+    overrides: request.overrides ?? original.overrides,
+    nozzles: request.nozzles ?? original.nozzles,
+  };
+  const tank = mockTankResult(next)!;
+  tankRequests[jobId] = next;
+  jobExtras[jobId] = { tankData: { ...tank.tankData, nozzles: next.nozzles ?? [] }, bom: tank.bom };
+  summary.drawingStatus = "not_generated";
+  return (await getJob(jobId))!;
 }
 
 /**
@@ -157,7 +178,8 @@ export async function submitJob(request: JobRequest): Promise<JobSummary> {
     // (job-1001/job-1005) had it, so every other job would sit at
     // "Data Extraction Pending" forever with no Drawing tab and no way to
     // ever generate a drawing.
-    jobExtras[newJob.id] = tank ? { tankData: tank.tankData, bom: tank.bom } : {
+    if (tank) tankRequests[newJob.id] = request;
+    jobExtras[newJob.id] = tank ? { tankData: { ...tank.tankData, nozzles: request.nozzles ?? [] }, bom: tank.bom } : {
       engineeringData: {
         ...sampleEngineeringData,
         // General Arrangement drawings (legacy GA jobs and the combined module) carry the submitted tube length and nozzle list.

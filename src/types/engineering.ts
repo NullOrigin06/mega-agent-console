@@ -135,9 +135,17 @@ export interface TankData {
   module: TankModuleKind;
   inputs: ShopTankInputs | SiteTankInputs;
   overrides?: Record<string, string>;
+  /** The nozzle schedule the job was calculated with, as entered. */
+  nozzles?: NozzleItem[];
   parameters: TankParameter[];
   summary: TankSummaryItem[];
   warnings: string[];
+}
+
+/** Body of POST /api/jobs/{id}/recalculate (tank jobs). Overrides is the complete set of edited Estimated values. */
+export interface RecalculateRequest {
+  overrides?: Record<string, string>;
+  nozzles?: NozzleItem[];
 }
 
 /** Summary row for a job list / history view. */
@@ -260,6 +268,13 @@ export interface NozzleItem {
    * Blank / absent = reference or automatic placement (see GadParameters.ResolvePlacements).
    */
   position?: string;
+  /** Shop Tank: "Dish" or "Shell". */
+  location?: string;
+  /**
+   * Shop Tank: "Elevation / Radius (mm)" - a shell nozzle's height above the bottom weld line, a dish nozzle's distance
+   * from the vessel centre (AUTO = shell I.D. / 2 - 150). Site Tank: a shell nozzle's elevation ("-" for a roof nozzle).
+   */
+  elevation?: string;
 }
 
 /**
