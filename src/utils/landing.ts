@@ -1,10 +1,15 @@
 import { readUrlToken } from "./urlToken";
 
 /** Static marketing/welcome page shipped in public/. */
-export const LANDING_PATH = "/welcome.html";
+export const LANDING_PATH = "/landing.html";
 
 /** Query flag the welcome page's Sign in buttons use to ask for the login screen. */
 export const SIGN_IN_PARAM = "signin";
+
+/** Which auth tab a landing-page link asked for: `?signin=signup` (Request access) opens Create Account. */
+export function requestedAuthMode(): "login" | "signup" {
+  return new URLSearchParams(window.location.search).get(SIGN_IN_PARAM) === "signup" ? "signup" : "login";
+}
 
 /**
  * True when a visitor with no session should see the welcome page first.

@@ -173,7 +173,20 @@ describe("TankParametersView - the nozzle schedule", () => {
     expect(body.nozzles[0].service).toBe("VENT");
   });
 
+  it("asks before removing a nozzle, and keeps it when the answer is no", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderView();
+
+    fireEvent.click(screen.getByRole("button", { name: /remove nozzle N1/i }));
+
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining("N1"));
+    expect(screen.getAllByLabelText("Nozzle location")).toHaveLength(2);        // both rows are still there
+    expect(recalcButton()).toBeDisabled();                                      // nothing changed
+    confirm.mockRestore();
+  });
+
   it("can add and remove a nozzle", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     recalculateJob.mockResolvedValue(updatedJob);
     renderView();
 
@@ -185,6 +198,7 @@ describe("TankParametersView - the nozzle schedule", () => {
     const nozzles = recalculateJob.mock.calls[0][1].nozzles as NozzleItem[];
     expect(nozzles).toHaveLength(2);
     expect(nozzles.map((n) => n.nozzleNo)).toEqual(["N2", "N3"]);          // N1 removed, the next free number added
+    confirm.mockRestore();
   });
 
   it("does not send the schedule when only a value was edited", async () => {

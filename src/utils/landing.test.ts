@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { shouldShowLanding } from "./landing";
+import { requestedAuthMode, shouldShowLanding } from "./landing";
 
 function visit(search: string) {
   window.history.replaceState({}, "", `/${search}`);
@@ -41,8 +41,29 @@ describe("shouldShowLanding", () => {
     expect(shouldShowLanding(false)).toBe(false);
   });
 
+  it("lets Request access (?signin=signup) through to the auth screen", () => {
+    visit("?signin=signup");
+    expect(shouldShowLanding(false)).toBe(false);
+  });
+
   it("is disabled in the test environment", () => {
     vi.stubEnv("MODE", "test");
     expect(shouldShowLanding(false)).toBe(false);
+  });
+});
+
+describe("requestedAuthMode", () => {
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("opens Create Account for ?signin=signup", () => {
+    window.history.replaceState({}, "", "/?signin=signup");
+    expect(requestedAuthMode()).toBe("signup");
+  });
+
+  it("defaults to Sign in", () => {
+    window.history.replaceState({}, "", "/?signin=1");
+    expect(requestedAuthMode()).toBe("login");
+    window.history.replaceState({}, "", "/");
+    expect(requestedAuthMode()).toBe("login");
   });
 });

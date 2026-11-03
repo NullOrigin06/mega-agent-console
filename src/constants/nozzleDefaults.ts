@@ -6,15 +6,16 @@ import type { NozzleItem } from "../types/engineering";
  * (PopulateNozzleGrid on load). Keep in sync if the desktop source changes.
  */
 export const NOZZLE_NUMBERS = [
-  "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10",
+  "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14", "N15", "M1", "M2",
 ];
 
 export const NOZZLE_SIZES = [
   "1/2", "15", "20", "25", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300",
+  "350", "400", "450", "500", "600", "700", "750", "800", "900", "1000",
 ];
 
-/** General Arrangement drawings also carry the large vapour nozzles (flange table of the generator goes to 500 NB). */
-export const NOZZLE_SIZES_GA = [...NOZZLE_SIZES, "350", "400", "450", "500"];
+/** The General Arrangement list is the software's full list too (kept as its own name: the GA form passes it explicitly). */
+export const NOZZLE_SIZES_GA = NOZZLE_SIZES;
 
 /** "inch" is the pipe size in inches (1/2, 3/4, 1, 1 1/4 ...); the agent maps it to the nominal bore. */
 export const NOZZLE_UNITS = ["NB", "inch", "mm"];

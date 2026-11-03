@@ -42,6 +42,8 @@ export function NozzleScheduleEditor({
   };
 
   const removeRow = (index: number) => {
+    // The software asks before removing a nozzle.
+    if (!window.confirm(`Are you sure you want to remove nozzle '${nozzles[index]?.nozzleNo ?? ""}'?`)) return;
     onChange(nozzles.filter((_, i) => i !== index));
   };
 

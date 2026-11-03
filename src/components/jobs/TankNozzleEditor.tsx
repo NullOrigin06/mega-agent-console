@@ -65,7 +65,11 @@ export function TankNozzleEditor({ module, nozzles, onChange, disabled = false }
   };
 
   const addRow = () => onChange([...nozzles, createBlankTankNozzle(module, nextTankNozzleNo(module, nozzles))]);
-  const removeRow = (index: number) => onChange(nozzles.filter((_, i) => i !== index));
+  const removeRow = (index: number) => {
+    // The software asks before removing a nozzle.
+    if (!window.confirm(`Are you sure you want to remove nozzle '${nozzles[index]?.nozzleNo ?? ""}'?`)) return;
+    onChange(nozzles.filter((_, i) => i !== index));
+  };
 
   const columns = shop ? 12 : 12;
 

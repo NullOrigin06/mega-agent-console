@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildWorkspaceRequest, DEFAULT_WORKSPACE_FIELDS } from "./workspaceValidation";
-import { getDefaultNozzleSchedule, NOZZLE_SIZES, NOZZLE_SIZES_GA } from "../constants/nozzleDefaults";
+import { getDefaultNozzleSchedule, NOZZLE_NUMBERS, NOZZLE_SIZES, NOZZLE_SIZES_GA } from "../constants/nozzleDefaults";
 import { MODULE_OPTIONS } from "../constants/modules";
 import type { ProjectInfo } from "../types/engineering";
 
@@ -17,9 +17,11 @@ describe("merged Heat Exchanger module", () => {
     expect(hx?.description).toMatch(/general-arrangement/i);
   });
 
-  it("offers the larger nozzle sizes only through the GA list", () => {
-    expect(NOZZLE_SIZES_GA).toContain("500");
-    expect(NOZZLE_SIZES).not.toContain("500");
+  it("offers the software's full nozzle size and number lists on every exchanger form", () => {
+    expect(NOZZLE_SIZES).toEqual(["1/2", "15", "20", "25", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300",
+      "350", "400", "450", "500", "600", "700", "750", "800", "900", "1000"]);
+    expect(NOZZLE_SIZES_GA).toEqual(NOZZLE_SIZES);
+    expect(NOZZLE_NUMBERS).toEqual(["N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14", "N15", "M1", "M2"]);
   });
 
   it("sends nozzle Position and GA title-block values through, with module HeatExchangerFab", () => {

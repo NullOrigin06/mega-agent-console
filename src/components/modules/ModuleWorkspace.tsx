@@ -3,6 +3,7 @@ import type { ModuleKind, JobSummary, ProjectInfo, NozzleItem } from "../../type
 import { submitJob } from "../../api";
 import { MODULE_OPTIONS, isTankModule } from "../../constants/modules";
 import { getDefaultNozzleSchedule, NOZZLE_SIZES_GA } from "../../constants/nozzleDefaults";
+import { today } from "../../constants/tankFields";
 import {
   buildWorkspaceRequest,
   DEFAULT_WORKSPACE_FIELDS,
@@ -38,6 +39,7 @@ function defaultProjectInfo(module: ModuleKind): ProjectInfo {
     projectNo: "25-005",
     drawingNo: "25-005-FLG-EX-1405",
     revision: "0",
+    date: today(),
     preparedBy: "NSS",
     checkedBy: "ASK",
     approvedBy: "ASK",
@@ -50,6 +52,7 @@ const PROJECT_FIELDS: Array<[keyof ProjectInfo, string]> = [
   ["projectNo", "Project No"],
   ["drawingNo", "Drawing No"],
   ["revision", "Revision"],
+  ["date", "Date (dd-MM-yyyy)"],
   ["preparedBy", "Prepared By"],
   ["checkedBy", "Checked By"],
   ["approvedBy", "Approved By"],

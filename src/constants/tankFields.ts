@@ -48,7 +48,8 @@ export const SITE_TANK_FIELDS: TankField[] = [
 
 export const TANK_FIELDS: Record<TankModuleKind, TankField[]> = { ShopTank: SHOP_TANK_FIELDS, SiteTank: SITE_TANK_FIELDS };
 
-function today(): string {
+/** Today as dd-MM-yyyy, the title block's date format (the software's Date box default). */
+export function today(): string {
   const d = new Date();
   return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
 }

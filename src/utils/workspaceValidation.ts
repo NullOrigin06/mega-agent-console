@@ -1,5 +1,40 @@
 import type { JobRequest, ModuleKind, NozzleItem, ProjectInfo } from "../types/engineering";
 
+/**
+ * Form3.ValidateNozzles: at least one nozzle; every column filled; a Nozzle No. used once; a plain-number size or projection
+ * greater than zero. (Text such as "SEE DRG" or a fractional size stays allowed.) Returns the first problem, or null.
+ */
+export function validateNozzles(nozzles: NozzleItem[]): string | null {
+  if (nozzles.length === 0) return "At least one nozzle must be defined in the Nozzle Schedule before generating drawings.";
+  const seen = new Set<string>();
+  const required: Array<[keyof NozzleItem, string]> = [
+    ["nozzleNo", "Nozzle No."],
+    ["size", "Size NB/inch"],
+    ["unit", "Nozzle Size Unit"],
+    ["schedule", "SCH./THK."],
+    ["type", "Type"],
+    ["rating", "Rating"],
+    ["projection", "Proj. From Centre"],
+    ["service", "Service"],
+    ["orientation", "Nozzle Orientation"],
+  ];
+  for (let i = 0; i < nozzles.length; i++) {
+    const n = nozzles[i];
+    const no = (n.nozzleNo ?? "").trim();
+    const label = no ? `Nozzle '${no}' (Row ${i + 1})` : `Row ${i + 1}`;
+    for (const [key, name] of required) {
+      if (!String(n[key] ?? "").trim()) return `${label}: '${name}' is required.`;
+    }
+    if (seen.has(no.toLowerCase())) return `${label}: Nozzle No. '${no}' is used more than once.`;
+    seen.add(no.toLowerCase());
+    const size = Number(n.size.trim());
+    if (n.size.trim() !== "" && Number.isFinite(size) && size <= 0) return `${label}: 'Size NB/inch' must be greater than zero.`;
+    const proj = Number(n.projection.trim());
+    if (n.projection.trim() !== "" && Number.isFinite(proj) && proj <= 0) return `${label}: 'Proj. From Centre' must be greater than zero.`;
+  }
+  return null;
+}
+
 export interface WorkspaceFieldValues {
   hta: string;
   tubeOD: string;
@@ -51,6 +86,9 @@ export function buildWorkspaceRequest(
       error: "HTA, Tube OD, Tube Length, Tube THK, No. of Pass, and Baffle Qty are all required and must be positive numbers.",
     };
   }
+
+  const nozzleProblem = validateNozzles(nozzles);
+  if (nozzleProblem) return { error: nozzleProblem };
 
   if (module === "HeatExchangerFab" || module === "GeneralArrangement") {
     const bad = nozzles.find((n) => {

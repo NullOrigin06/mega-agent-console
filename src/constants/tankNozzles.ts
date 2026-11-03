@@ -46,7 +46,8 @@ export function getDefaultShopTankNozzles(): NozzleItem[] {
 
 export const SITE_TANK_POSITIONS = ["ROOF", "SHELL"];
 
-export const SITE_TANK_NOZZLE_SIZES = ["15", "20", "25", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300", "350", "400", "450", "500", "600"];
+/** The software's Site Tank grid offers ApprovedNozzleData.Sizes: 1/2" and every bore up to 1000 NB. */
+export const SITE_TANK_NOZZLE_SIZES = ["1/2", "15", "20", "25", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300", "350", "400", "450", "500", "600", "700", "750", "800", "900", "1000"];
 
 /** The approved fermentor schedule uses values the generic lists do not carry ("Sch 10s", "5 mm", "5 THK"). */
 export const SITE_TANK_SCHEDULES = [...NOZZLE_SCHEDULES, "Sch 10s", "5 mm", "5 THK"];
