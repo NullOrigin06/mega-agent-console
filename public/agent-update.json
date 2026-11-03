@@ -1,10 +1,10 @@
 {
-  "version": "1.2.13",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.13/MegaLocalAgent.zip",
-  "sha256": "39CB60FADE71317849A86948C8C0B7B5766C5F6767AAD063C59A81B4C3003D2F",
-  "notes": "Agent reports its version to the server; Site Tank updates",
-  "size": 50712933,
-  "signature": "+akQY1i6WuHIYnGZPuio9ZyQBiac8cprLjMpHunnZxm9uq0z6ZNOcqC7d2EF3daxduz6TK06CTMpjQvN7ZFAKw==",
-  "signedAt": "2026-11-03T11:30:08Z",
+  "version": "1.2.14",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.14/MegaLocalAgent.zip",
+  "sha256": "C9F9A6649DFA48097B17322218154359E52C745C1B34F75AA299CDBDAFCCF74F",
+  "notes": "Nozzle schedule and Estimated value edits reach the drawing; Shop Tank General Arrangement drawing; MOC edits",
+  "size": 50721894,
+  "signature": "9GHhX+iWg+XmUG7r04i5o6xAQIfKQ4NTktrnBgTFMYTTgwzpU7+geTHxLc0jvbi4lryxY1VmvAYIzMLNeqK4uA==",
+  "signedAt": "2026-11-03T17:10:04Z",
   "keyId": "9634299695640E27"
 }
