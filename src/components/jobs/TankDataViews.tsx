@@ -10,9 +10,25 @@ import { TankNozzleEditor } from "./TankNozzleEditor";
 const CHOICE_VALUES: Record<string, string[]> = {
   TOP_ROOT_TYPE: ["DISH", "FLAT", "CONICAL"],
   BOTTOM_ROOT_TYPE: ["DISH", "FLAT", "CONICAL"],
+  SUPPORT_TYPE: ["LEG SUPPORT", "LUG SUPPORT", "SADDLE SUPPORT", "SKIRT SUPPORT"],
 };
 
 const isNumber = (v: string) => v.trim() !== "" && Number.isFinite(Number(v));
+
+// Same checks as the desktop grids (and the API's TankOverrideRules).
+const MAY_BE_ZERO = new Set(["NO_OF_STIFFENERS", "FIRST_LEG_ORIENTATION", "STIFFENER_SIZE", "STIFFENER_THK", "NO_OF_PARTIAL_COURSES", "PARTIAL_COURSE_HEIGHT"]);
+const WHOLE_NUMBERS = new Set(["NO_OF_LEGS", "NO_OF_STIFFENERS", "NO_OF_FULL_COURSES", "NO_OF_PARTIAL_COURSES", "NO_OF_COURSES"]);
+
+export function validateTankValue(key: string, value: string, calculated: string): string | null {
+  if (CHOICE_VALUES[key]) return CHOICE_VALUES[key].includes(value.trim().toUpperCase()) ? null : "Choose one of the listed values";
+  if (!isNumber(calculated)) return null;
+  if (!isNumber(value)) return "Enter a number";
+  const n = Number(value);
+  if (key === "NO_OF_FULL_COURSES") return Number.isInteger(n) && n >= 1 && n <= 30 ? null : "Whole number from 1 to 30";
+  if (key === "NO_OF_PARTIAL_COURSES") return n === 0 || n === 1 ? null : "Must be 0 or 1";
+  if (WHOLE_NUMBERS.has(key) && !Number.isInteger(n)) return "Must be a whole number";
+  return MAY_BE_ZERO.has(key) ? (n >= 0 ? null : "Zero or more") : n > 0 ? null : "Must be greater than zero";
+}
 
 /** The same value written differently ("6" / "6.0") is not an edit. */
 function sameValue(a: string, b: string): boolean {
@@ -66,9 +82,9 @@ export function TankParametersView({ data, jobId, onRecalculated, disabled = fal
   const parameterErrors = useMemo(() => {
     const errors: Record<string, string> = {};
     for (const p of data.parameters) {
-      if (!p.editable || CHOICE_VALUES[p.key]) continue;
-      const v = draft[p.key] ?? p.estimated;
-      if (isNumber(p.actual) && !isNumber(v)) errors[p.key] = "Enter a number";
+      if (!p.editable) continue;
+      const problem = validateTankValue(p.key, draft[p.key] ?? p.estimated, p.actual);
+      if (problem) errors[p.key] = problem;
     }
     return errors;
   }, [data.parameters, draft]);

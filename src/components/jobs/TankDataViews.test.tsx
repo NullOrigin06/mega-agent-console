@@ -10,7 +10,7 @@ vi.mock("../../api", () => ({
   recalculateJob: (...args: unknown[]) => (refuseWith ? Promise.reject(refuseWith) : recalculateJob(...args)),
 }));
 
-import { TankParametersView } from "./TankDataViews";
+import { TankParametersView, validateTankValue } from "./TankDataViews";
 import { TankNozzleEditor } from "./TankNozzleEditor";
 import { getDefaultShopTankNozzles, getDefaultSiteTankNozzles } from "../../constants/tankNozzles";
 
@@ -271,5 +271,23 @@ describe("TankNozzleEditor", () => {
     fireEvent.blur(screen.getByLabelText("Orientation"), { target: { value: "300" } });
 
     expect(onChange).toHaveBeenLastCalledWith([expect.objectContaining({ orientation: "300°" })]);
+  });
+});
+
+describe("validateTankValue", () => {
+  it("accepts what the desktop grid accepts", () => {
+    expect(validateTankValue("NO_OF_STIFFENERS", "0", "0")).toBeNull();
+    expect(validateTankValue("NO_OF_FULL_COURSES", "30", "7")).toBeNull();
+    expect(validateTankValue("SUPPORT_TYPE", "saddle support", "LEG SUPPORT")).toBeNull();
+    expect(validateTankValue("BOTTOM_SLOPE", "1 : 30", "1 : 25")).toBeNull();
+  });
+
+  it("refuses what the desktop grid refuses", () => {
+    expect(validateTankValue("SHELL_THK", "abc", "3")).toBe("Enter a number");
+    expect(validateTankValue("SHELL_THK", "0", "3")).toBe("Must be greater than zero");
+    expect(validateTankValue("NO_OF_LEGS", "3.5", "4")).toBe("Must be a whole number");
+    expect(validateTankValue("NO_OF_FULL_COURSES", "31", "7")).toBe("Whole number from 1 to 30");
+    expect(validateTankValue("NO_OF_PARTIAL_COURSES", "2", "0")).toBe("Must be 0 or 1");
+    expect(validateTankValue("SUPPORT_TYPE", "BOX SUPPORT", "LEG SUPPORT")).not.toBeNull();
   });
 });
