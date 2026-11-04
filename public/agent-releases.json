@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.2.15",
+    "date": "2026-11-04T04:40:02Z",
+    "notes": "Shop Tank drawings now work in AutoCAD (fixes the 'bad argument type: variantp' stop); clearer message when AutoCAD asks permission to load the drawing script; Shop Tank General Arrangement template"
+  },
+  {
     "version": "1.2.14",
     "date": "2026-11-03T17:11:23Z",
     "notes": "Nozzle schedule and Estimated value edits made on the site reach the drawing; Material of Construction edits reach the drawing; Shop Tank General Arrangement drawing (Fabrication and General Arrangement, one or both)"

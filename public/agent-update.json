@@ -1,10 +1,10 @@
 {
-  "version": "1.2.14",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.14/MegaLocalAgent.zip",
-  "sha256": "C9F9A6649DFA48097B17322218154359E52C745C1B34F75AA299CDBDAFCCF74F",
-  "notes": "Nozzle schedule and Estimated value edits reach the drawing; Shop Tank General Arrangement drawing; MOC edits",
-  "size": 50721894,
-  "signature": "9GHhX+iWg+XmUG7r04i5o6xAQIfKQ4NTktrnBgTFMYTTgwzpU7+geTHxLc0jvbi4lryxY1VmvAYIzMLNeqK4uA==",
-  "signedAt": "2026-11-03T17:10:04Z",
+  "version": "1.2.15",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.15/MegaLocalAgent.zip",
+  "sha256": "F6791BDFBDF81AE8EF581EA00968F4065D9E91F6822BA0B69D105B2950E3810B",
+  "notes": "Shop Tank drawings now work in AutoCAD (fixes the 'bad argument type: variantp' stop); clearer message when AutoCAD asks permission to load the drawing script; Shop Tank General Arrangement template",
+  "size": 50722835,
+  "signature": "5i86ohmPjxJN7PQj9dcxDbTwYx+RqH/TQIQY8NgNdPEjyMAGC3BbV1n5gnfItWl2Y980RGVoPuDa4UZIH9lh5Q==",
+  "signedAt": "2026-11-04T04:40:02Z",
   "keyId": "9634299695640E27"
 }
