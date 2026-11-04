@@ -102,8 +102,8 @@ export function nextTankNozzleNo(module: TankModuleKind, nozzles: NozzleItem[]):
 /** A new row, like the desktop "Add Nozzle". */
 export function createBlankTankNozzle(module: TankModuleKind, nozzleNo: string): NozzleItem {
   return module === "ShopTank"
-    ? { nozzleNo, size: "50", unit: "NB", schedule: "Sch 40", type: "LJFF", rating: "150#", projection: "", service: "Process", orientation: "90°", remark: "-", location: "Shell", elevation: "500" }
-    : { nozzleNo, size: "50", unit: "NB", schedule: "Sch 10s", type: "SORF", rating: "150#", projection: "", service: "", orientation: "0°", remark: "-", position: "ROOF", elevation: "-" };
+    ? { nozzleNo, size: "50", unit: "NB", schedule: NOZZLE_SCHEDULES[0], type: "LJFF", rating: "150#", projection: "", service: "Process", orientation: "90°", remark: "-", location: "Shell", elevation: "500" }
+    : { nozzleNo, size: "50", unit: "NB", schedule: NOZZLE_SCHEDULES[0], type: "SORF", rating: "150#", projection: "", service: "", orientation: "0°", remark: "-", position: "ROOF", elevation: "-" };
 }
 
 export { NOZZLE_RATINGS, NOZZLE_TYPES };
