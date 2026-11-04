@@ -18,6 +18,7 @@ import {
   toggleDrawing,
 } from "../../utils/drawingSelection";
 import { AgentPairingPanel } from "./AgentPairingPanel";
+import { DrawingChecksBanner } from "./DrawingChecksBanner";
 
 interface DrawingViewProps {
   drawingStatus: DrawingStatus;
@@ -27,6 +28,8 @@ interface DrawingViewProps {
   shellId: number;
   onGenerate: (agentId?: string, drawings?: DrawingKind[]) => void;
   isTriggering: boolean;
+  /** Why the drawing cannot be made with the current values; while there are any, nothing can be started. */
+  blockedReasons?: string[];
   /**
    * Heat Exchanger jobs: one card per drawing (fabrication + general
    * arrangement), each with its own tick box and one shared "Generate
@@ -43,8 +46,10 @@ export function DrawingView({
   shellId,
   onGenerate,
   isTriggering,
+  blockedReasons,
   cards,
 }: DrawingViewProps) {
+  const blocked = (blockedReasons?.length ?? 0) > 0;
   const multi = Boolean(cards);
   const anyGenerating = cards ? isAnyDrawingGenerating(cards.map((c) => c.status)) : drawingStatus === "generating";
   const isGenerating = isTriggering || anyGenerating;
@@ -77,7 +82,7 @@ export function DrawingView({
 
   const canGenerate = Boolean(activeAgentId);
   const canGenerateMulti =
-    multi && canGenerateSelected({ selected, statuses: (cards ?? []).map((c) => c.status), isTriggering, hasAgent: canGenerate });
+    multi && canGenerateSelected({ selected, statuses: (cards ?? []).map((c) => c.status), isTriggering, hasAgent: canGenerate && !blocked });
 
   const handleGenerateSelected = () => {
     onGenerate(activeAgentId || undefined, selected);
@@ -100,6 +105,7 @@ export function DrawingView({
 
   return (
     <div className="drawing-view">
+      <DrawingChecksBanner reasons={blockedReasons} />
       {cards && (
         <div className="drawing-cards-intro">
           <p className="drawing-meta-text">
@@ -283,7 +289,9 @@ export function DrawingView({
               onClick={handleGenerateSelected}
               disabled={!canGenerateMulti}
               title={
-                !canGenerate
+                blocked
+                  ? "Correct the values listed above first"
+                  : !canGenerate
                   ? "Connect or start an online Local Agent below first"
                   : selected.length === 0 && !isGenerating
                     ? "Tick at least one drawing"
@@ -307,8 +315,8 @@ export function DrawingView({
               type="button"
               className="btn btn-secondary"
               onClick={() => onGenerate(activeAgentId || undefined)}
-              disabled={isGenerating || !canGenerate}
-              title={canGenerate ? undefined : "Connect or start an online Local Agent below first"}
+              disabled={isGenerating || !canGenerate || blocked}
+              title={blocked ? "Correct the values listed above first" : canGenerate ? undefined : "Connect or start an online Local Agent below first"}
             >
               <IconDrafting size={16} />
               <span>Generate Again</span>
@@ -318,8 +326,8 @@ export function DrawingView({
               type="button"
               className="btn btn-primary"
               onClick={() => onGenerate(activeAgentId || undefined)}
-              disabled={isGenerating || !canGenerate}
-              title={canGenerate ? undefined : "Connect or start an online Local Agent below first"}
+              disabled={isGenerating || !canGenerate || blocked}
+              title={blocked ? "Correct the values listed above first" : canGenerate ? undefined : "Connect or start an online Local Agent below first"}
             >
               {isGenerating ? (
                 <>

@@ -360,6 +360,8 @@ function parseJobDetail(raw: Record<string, unknown>): JobDetail {
       gaDrawingUrl: absoluteDrawingUrl(raw.gaDrawingUrl),
       gaDrawingStatus: (raw.gaDrawingStatus as JobDetail["drawingStatus"]) ?? "not_generated",
       gaDrawingError: raw.gaDrawingError ? String(raw.gaDrawingError) : undefined,
+      drawingChecks:
+        Array.isArray(raw.drawingChecks) && raw.drawingChecks.length > 0 ? raw.drawingChecks.map((c: unknown) => String(c)) : undefined,
     };
 
     return detail;

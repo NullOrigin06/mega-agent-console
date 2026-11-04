@@ -52,7 +52,7 @@ let jobs: JobSummary[] = [...sampleJobs];
 // entry directly (drawingStatus/drawingUrl). A one-time snapshot taken at
 // completion would freeze drawingStatus forever and silently break
 // "Generate Drawing" for any job submitted through the UI.
-const jobExtras: Record<string, { engineeringData?: EngineeringDataModel; tankData?: TankData; bom: BomRow[] }> = {};
+const jobExtras: Record<string, { engineeringData?: EngineeringDataModel; tankData?: TankData; bom: BomRow[]; drawingChecks?: string[] }> = {};
 /** What each mock tank job was submitted with, so it can be calculated again with edited values. */
 const tankRequests: Record<string, JobRequest> = {};
 
@@ -92,6 +92,16 @@ export async function editEstimated(jobId: string, request: EditEstimatedRequest
     (estimated as unknown as Record<string, unknown>)[request.key] = typeof current === "number" ? Number(request.value) : blankMaterial ? data.actual[request.key] : request.value;
   }
   jobExtras[jobId] = { ...jobExtras[jobId], engineeringData: { ...data, estimated }, bom: detail.bom ?? [] };
+  // Like the server's pre-generate check for a Tube Sheet: a tube count that cannot fit the shell stands in the way of the drawing.
+  if (detail.module === "TubeSheet") {
+    const tooMany = estimated.tubeQty > 3000;
+    jobExtras[jobId] = {
+      ...jobExtras[jobId],
+      drawingChecks: tooMany
+        ? [`The tubes do not fit the shell: only 1200 of the ${estimated.tubeQty} tubes fit inside the Shell I.D. ${estimated.shellID} with 2 pass(es). Choose a larger Shell I.D. or reduce the tube quantity.`]
+        : undefined,
+    };
+  }
   const summary = jobs.find((j) => j.id === jobId);
   if (summary) summary.drawingStatus = "not_generated";
   return { job: (await getJob(jobId))! };

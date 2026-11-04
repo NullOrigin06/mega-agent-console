@@ -4994,3 +4994,8 @@ body {
 .agent-versions-history summary { cursor: pointer; font-size: 13px; }
 .agent-versions-history-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow: auto; }
 .sidebar-agent-version { font-size: 11px; padding: 2px 0 0 22px; }
+
+/* Why a drawing cannot be made yet */
+.drawing-checks-banner { align-items: flex-start; margin-bottom: 12px; }
+.drawing-checks-list { margin: 6px 0; padding-left: 18px; }
+.drawing-checks-hint { font-size: var(--text-xs); opacity: 0.85; }

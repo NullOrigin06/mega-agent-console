@@ -22,6 +22,7 @@ import { EngineeringDataView } from "./EngineeringDataView";
 import { SpecsAndNozzlesView } from "./SpecsAndNozzlesView";
 import { BomView } from "./BomView";
 import { DrawingView } from "./DrawingView";
+import { DrawingChecksBanner } from "./DrawingChecksBanner";
 import { TankParametersView, TankSummaryView } from "./TankDataViews";
 import { gaSpecFromJob } from "../cad/gaSpec";
 
@@ -484,6 +485,7 @@ export function JobDetailView({
 
           {/* Active Tab Panel */}
           <Tabs.Content value="values" className="tab-panel-content">
+            <DrawingChecksBanner reasons={job.drawingChecks} />
             {job.engineeringData && (
               <EngineeringDataView
                 initialData={job.engineeringData}
@@ -526,6 +528,7 @@ export function JobDetailView({
               jobId={job.id}
               module={job.module}
               shellId={job.shellId}
+              blockedReasons={job.drawingChecks}
               onGenerate={handleGenerateDrawing}
               isTriggering={isTriggeringGeneration}
               cards={

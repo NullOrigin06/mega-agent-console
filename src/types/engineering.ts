@@ -180,6 +180,8 @@ export interface JobDetail extends JobSummary {
   drawingError?: string;
   gaDrawingUrl?: string;
   gaDrawingError?: string;
+  /** Why the drawing cannot be made with the current values (Tube Sheet); absent when nothing stands in the way. */
+  drawingChecks?: string[];
 }
 
 /**
