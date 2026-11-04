@@ -164,6 +164,12 @@ function siteTank(input: SiteTankInputs, ov: Record<string, string>) {
     p("CURB_WIDTH", "Curb Width", "mm", "Roof Structure", String(curbW), false),
     p("RAFTER_QTY", "Rafter Qty", null, "Roof Structure", String(rafterQty), false),
     p("ANCHOR_CHAIR_QTY", "Anchor Chair Qty", null, "Roof Structure", String(anchorQty), false),
+    // the software's Extras grid: free text, shown with the drawing data
+    p("EXTRA_DESIGN_CODE", "Design Code", null, "Extras", input.designCode || "API 650", true),
+    p("EXTRA_CORROSION_ALLOWANCE", "Corrosion Allowance", "mm", "Extras", "1.50", true),
+    p("EXTRA_LIQUID_SPECIFIC_GRAVITY", "Liquid Specific Gravity", null, "Extras", "1.00", true),
+    p("EXTRA_DESIGN_WIND_SPEED", "Design Wind Speed", "km/h", "Extras", "150.00", true),
+    p("EXTRA_SEISMIC_ZONE", "Seismic Zone", null, "Extras", "Zone III", true),
   ];
   const summary: TankSummaryItem[] = [
     { key: "GROSS_VOLUME", label: "Gross Volume", value: f(gross), unit: "m³" },

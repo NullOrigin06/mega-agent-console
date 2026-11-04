@@ -330,3 +330,33 @@ describe("validateTankValue", () => {
     expect(validateTankValue("SUPPORT_TYPE", "BOX SUPPORT", "LEG SUPPORT")).not.toBeNull();
   });
 });
+
+describe("Site Tank Extras", () => {
+  beforeEach(() => recalculateJob.mockReset());
+  afterEach(cleanup);
+
+  const siteData = (): TankData => ({
+    ...shopData(),
+    module: "SiteTank",
+    parameters: [
+      { key: "EXTRA_DESIGN_CODE", label: "Design Code", unit: null, group: "Extras", actual: "API 650", estimated: "API 650", editable: true },
+      { key: "EXTRA_CORROSION_ALLOWANCE", label: "Corrosion Allowance", unit: "mm", group: "Extras", actual: "1.50", estimated: "1.50", editable: true },
+    ],
+  });
+
+  it("are a card of their own with an editable Estimated column, and accept any text", async () => {
+    recalculateJob.mockResolvedValue(updatedJob);
+    render(<TankParametersView data={siteData()} jobId="job-1" onRecalculated={vi.fn()} />);
+
+    expect(screen.getByText("Extras", { selector: ".category-title" })).toBeInTheDocument();
+    const input = screen.getByLabelText("Estimated Corrosion Allowance") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "to be agreed" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => expect(recalculateJob).toHaveBeenCalledWith("job-1", { overrides: { EXTRA_CORROSION_ALLOWANCE: "to be agreed" } }));
+  });
+
+  it("validateTankValue has no checks for them", () => {
+    expect(validateTankValue("EXTRA_CORROSION_ALLOWANCE", "to be agreed", "1.50")).toBeNull();
+  });
+});

@@ -27,6 +27,7 @@ const MAY_BE_ZERO = new Set(["NO_OF_STIFFENERS", "FIRST_LEG_ORIENTATION", "STIFF
 const WHOLE_NUMBERS = new Set(["NO_OF_LEGS", "NO_OF_STIFFENERS", "NO_OF_FULL_COURSES", "NO_OF_PARTIAL_COURSES", "NO_OF_COURSES"]);
 
 export function validateTankValue(key: string, value: string, calculated: string): string | null {
+  if (key.startsWith("EXTRA_")) return null;                     // the Site Tank Extras are free text in the software's grid
   if (CHOICE_VALUES[key]) return CHOICE_VALUES[key].includes(value.trim().toUpperCase()) ? null : "Choose one of the listed values";
   if (!isNumber(calculated)) return null;
   if (!isNumber(value)) return "Enter a number";
