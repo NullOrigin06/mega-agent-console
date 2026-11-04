@@ -25,10 +25,8 @@ import { DrawingView } from "./DrawingView";
 import { DrawingChecksBanner } from "./DrawingChecksBanner";
 import { TankParametersView, TankSummaryView } from "./TankDataViews";
 import { gaSpecFromJob } from "../cad/gaSpec";
-import { TYPICAL_VESSEL, vesselSpecFromJob } from "../cad/vesselSpec";
 
 // three.js + react-three-fiber are heavy; only fetched once the 3D tab is opened.
-const VesselViewport3D = lazy(() => import("../cad/VesselViewport3D").then((m) => ({ default: m.VesselViewport3D })));
 const GeneralArrangementViewport3D = lazy(() =>
   import("../cad/GeneralArrangementViewport3D").then((m) => ({ default: m.GeneralArrangementViewport3D }))
 );
@@ -479,7 +477,7 @@ export function JobDetailView({
                 <span className="tab-pill">Generating</span>
               )}
             </Tabs.Trigger>
-            {(job.module === "GeneralArrangement" || job.module === "HeatExchangerFab") && job.engineeringData && (
+            {job.module === "GeneralArrangement" && job.engineeringData && (
               <Tabs.Trigger value="3d" className="detail-tab-btn">
                 <IconCylinder size={16} />
                 <span>3D View</span>
@@ -552,21 +550,6 @@ export function JobDetailView({
               }
             />
           </Tabs.Content>
-
-          {job.module === "HeatExchangerFab" && job.engineeringData && (
-            <Tabs.Content value="3d" className="tab-panel-content">
-              <Suspense
-                fallback={
-                  <div className="vessel-panel-loading">
-                    <IconLoader size={24} className="animate-spin text-accent" />
-                    <span>Loading 3D viewport...</span>
-                  </div>
-                }
-              >
-                <VesselViewport3D spec={vesselSpecFromJob(job) ?? TYPICAL_VESSEL} />
-              </Suspense>
-            </Tabs.Content>
-          )}
 
           {job.module === "GeneralArrangement" && job.engineeringData && (
             <Tabs.Content value="3d" className="tab-panel-content">

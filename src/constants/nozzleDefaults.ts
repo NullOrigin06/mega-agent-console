@@ -30,16 +30,16 @@ export const NOZZLE_RATINGS = ["150#", "300#", "600#"];
 
 export function getDefaultNozzleSchedule(): NozzleItem[] {
   return [
-    { nozzleNo: "N1", size: "100", unit: "NB", schedule: "Sch 40", type: "LJFF", rating: "150#", projection: "250", service: "Process In", orientation: "0°", remark: "-" },
-    { nozzleNo: "N2", size: "100", unit: "NB", schedule: "Sch 40", type: "LJFF", rating: "150#", projection: "250", service: "Process Out", orientation: "180°", remark: "-" },
-    { nozzleNo: "N3", size: "80", unit: "NB", schedule: "Sch 40", type: "LJFF", rating: "150#", projection: "200", service: "Utility In", orientation: "90°", remark: "-" },
-    { nozzleNo: "N4", size: "80", unit: "NB", schedule: "Sch 40", type: "LJFF", rating: "150#", projection: "200", service: "Utility Out", orientation: "270°", remark: "-" },
-    { nozzleNo: "N5", size: "25", unit: "NB", schedule: "Sch 40S", type: "LJFF", rating: "150#", projection: "150", service: "Vent", orientation: "TOP", remark: "-" },
-    { nozzleNo: "N6", size: "25", unit: "NB", schedule: "Sch 40S", type: "LJFF", rating: "150#", projection: "150", service: "Vapour Out", orientation: "BOTTOM", remark: "-" },
-    { nozzleNo: "N7", size: "50", unit: "NB", schedule: "Sch 40", type: "LJFF", rating: "150#", projection: "200", service: "Pressure Relief", orientation: "TOP", remark: "-" },
-    { nozzleNo: "N8", size: "40", unit: "NB", schedule: "Sch 40", type: "LJFF", rating: "150#", projection: "180", service: "Drain", orientation: "BOTTOM", remark: "-" },
-    { nozzleNo: "N9", size: "25", unit: "NB", schedule: "Sch 40", type: "LJFF", rating: "150#", projection: "150", service: "Instrument", orientation: "0°", remark: "-" },
-    { nozzleNo: "N10", size: "25", unit: "NB", schedule: "Sch 40S", type: "LJFF", rating: "150#", projection: "150", service: "Level Gauge", orientation: "TOP", remark: "-" },
+    { nozzleNo: "N1", size: "100", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "250", service: "Process In", orientation: "0°", remark: "-" },
+    { nozzleNo: "N2", size: "100", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "250", service: "Process Out", orientation: "180°", remark: "-" },
+    { nozzleNo: "N3", size: "80", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "200", service: "Utility In", orientation: "90°", remark: "-" },
+    { nozzleNo: "N4", size: "80", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "200", service: "Utility Out", orientation: "270°", remark: "-" },
+    { nozzleNo: "N5", size: "25", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "150", service: "Vent", orientation: "TOP", remark: "-" },
+    { nozzleNo: "N6", size: "25", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "150", service: "Vapour Out", orientation: "BOTTOM", remark: "-" },
+    { nozzleNo: "N7", size: "50", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "200", service: "Pressure Relief", orientation: "TOP", remark: "-" },
+    { nozzleNo: "N8", size: "40", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "180", service: "Drain", orientation: "BOTTOM", remark: "-" },
+    { nozzleNo: "N9", size: "25", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "150", service: "Instrument", orientation: "0°", remark: "-" },
+    { nozzleNo: "N10", size: "25", unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "150", service: "Level Gauge", orientation: "TOP", remark: "-" },
   ];
 }
 

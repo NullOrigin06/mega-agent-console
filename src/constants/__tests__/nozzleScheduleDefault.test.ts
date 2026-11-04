@@ -9,3 +9,10 @@ describe("a new nozzle row", () => {
     expect(createBlankNozzle("N20").schedule).toBe("Sch 10S");
   });
 });
+
+describe("the starting nozzle schedules", () => {
+  it("use Sch 10S throughout for the Heat Exchanger", async () => {
+    const { getDefaultNozzleSchedule } = await import("../nozzleDefaults");
+    expect(getDefaultNozzleSchedule().every((n) => n.schedule === "Sch 10S")).toBe(true);
+  });
+});
