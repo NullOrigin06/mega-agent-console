@@ -166,7 +166,7 @@ describe("pose selection", () => {
     expect(poseForPage("jobs", null, layout)).toBe("telemetry");
     expect(poseForPage("workspace", "TubeSheet", layout)).toBe("face");
     expect(poseForPage("workspace", "BonnetFlange", layout)).toBe("bonnet");
-    expect(poseForPage("workspace", "HeatExchangerFab", layout)).toBe("section");
+    expect(poseForPage("workspace", "HeatExchangerFab", layout)).toBe("overview");
     expect(poseForPage("modules", null, { ...layout, narrow: true })).toBe("porthole");
     expect(poseForPage("modules", null, { ...layout, canvas: { ...layout.canvas, w: 1500 } })).toBe("wide");
   });

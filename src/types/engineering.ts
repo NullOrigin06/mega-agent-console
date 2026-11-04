@@ -182,6 +182,8 @@ export interface JobDetail extends JobSummary {
   gaDrawingError?: string;
   /** Why the drawing cannot be made with the current values (Tube Sheet); absent when nothing stands in the way. */
   drawingChecks?: string[];
+  /** Heat Exchanger: the Tube Sheet ("ts") and Bonnet Flange ("bf") drawings; a kind is absent until it was asked for. */
+  extraDrawings?: Partial<Record<"ts" | "bf", { status: DrawingStatus; url?: string; error?: string }>>;
 }
 
 /**

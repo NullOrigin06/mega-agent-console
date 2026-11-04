@@ -1,7 +1,7 @@
 import { Suspense, lazy, useState } from "react";
 import type { JobSummary, ModuleKind } from "../../types/engineering";
-import { MODULE_OPTIONS, type ModuleOption } from "../../constants/modules";
-import { sameModuleGroup } from "../../utils/moduleGroup";
+import { MODULE_OPTIONS, VISIBLE_MODULE_OPTIONS, type ModuleOption } from "../../constants/modules";
+import { moduleGroup, sameModuleGroup } from "../../utils/moduleGroup";
 import { MODULE_COLORS, MODULE_SHORT_NAMES } from "../../constants/moduleColors";
 import { IconArrowRight, IconDrafting, IconLoader } from "../common/Icon";
 import { CadHeatExchangerPreview } from "../cad/CadHeatExchangerPreview";
@@ -95,7 +95,7 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
   // Two WebGL scenes shouldn't share the GPU - the ambient background holds
   // its last frame while the interactive twin is open.
   useAmbientSuspend("twin3d", showVessel);
-  const withActivityAll = MODULE_OPTIONS.map((mod) => {
+  const withActivityAll = VISIBLE_MODULE_OPTIONS.map((mod) => {
     const latest = latestJobFor(jobs, mod.kind);
     const isRunning = latest?.status === "running" || latest?.status === "queued";
     return { mod, latest, isRunning };
@@ -150,7 +150,7 @@ export function ModulesHome({ onSelectModule, jobs = [] }: ModulesHomeProps) {
               ))}
             </div>
             {twin === "HeatExchangerFab" ? (
-              <VesselViewport3D spec={vesselSpec} onSelectModule={onSelectModule} onClose={() => setShowVessel(false)} />
+              <VesselViewport3D spec={vesselSpec} onSelectModule={(m) => onSelectModule(moduleGroup(m))} onClose={() => setShowVessel(false)} />
             ) : twin === "HeatExchangerDetailed" ? (
               <HeatExchangerGlbViewport3D key={twin} onClose={() => setShowVessel(false)} />
             ) : twin === "GeneralArrangement" ? (

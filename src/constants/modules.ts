@@ -20,6 +20,8 @@ export interface ModuleOption {
   family: "exchanger" | "tank";
   /** Real CAD line-art for this module, used on the Command Center bento cards. */
   preview: typeof CadTubeSheetPreview;
+  /** Known (old jobs, 3D twin parts) but not offered as a module of its own: its drawing is part of the Heat Exchanger module. */
+  hidden?: boolean;
 }
 
 /**
@@ -31,6 +33,7 @@ export const MODULE_OPTIONS: ModuleOption[] = [
   {
     kind: "TubeSheet",
     family: "exchanger",
+    hidden: true,
     title: "Tube Sheet",
     badge: "TS-GEN",
     description:
@@ -41,6 +44,7 @@ export const MODULE_OPTIONS: ModuleOption[] = [
   {
     kind: "BonnetFlange",
     family: "exchanger",
+    hidden: true,
     title: "Bonnet Flange",
     badge: "BF-GEN",
     description:
@@ -52,9 +56,9 @@ export const MODULE_OPTIONS: ModuleOption[] = [
     kind: "HeatExchangerFab",
     family: "exchanger",
     title: "Heat Exchanger",
-    badge: "HX-FAB / GA",
+    badge: "HX / TS / BF / GA",
     description:
-      "Heat exchanger fabrication package (shell, tube bundle, baffles, nozzles, BOM) and general-arrangement drawing (elevation, end views, saddles, tagged nozzles and nozzle schedule) from one job - generate either drawing or both.",
+      "One input for the whole exchanger: fabrication package (shell, tube bundle, baffles, nozzles, BOM), general arrangement, tube sheet and bonnet flange drawings from one job - tick the drawings you need.",
     icon: IconLayers,
     preview: CadHeatExchangerPreview,
   },
@@ -79,6 +83,9 @@ export const MODULE_OPTIONS: ModuleOption[] = [
     preview: CadSiteTankPreview,
   },
 ];
+
+/** The modules offered in the menus: Tube Sheet and Bonnet Flange are drawings of the Heat Exchanger module now. */
+export const VISIBLE_MODULE_OPTIONS: ModuleOption[] = MODULE_OPTIONS.filter((m) => !m.hidden);
 
 export function isTankModule(kind: ModuleKind): kind is TankModuleKind {
   return kind === "ShopTank" || kind === "SiteTank";

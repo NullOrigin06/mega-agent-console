@@ -1,20 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { buildWorkspaceRequest, DEFAULT_WORKSPACE_FIELDS } from "./workspaceValidation";
 import { getDefaultNozzleSchedule, NOZZLE_NUMBERS, NOZZLE_SIZES, NOZZLE_SIZES_GA } from "../constants/nozzleDefaults";
-import { MODULE_OPTIONS } from "../constants/modules";
+import { MODULE_OPTIONS, VISIBLE_MODULE_OPTIONS } from "../constants/modules";
 import type { ProjectInfo } from "../types/engineering";
 
 const PROJECT: ProjectInfo = { customerName: "MEGA CLIENT", drawingTitle: "HEAT EXCHANGER" };
 
 describe("merged Heat Exchanger module", () => {
-  it("is the only registry entry for the HX/GA pair", () => {
+  it("is the one module for the whole exchanger: GA, Tube Sheet and Bonnet Flange are its drawings, not menu entries", () => {
     expect(MODULE_OPTIONS.find((m) => m.kind === "GeneralArrangement")).toBeUndefined();
     const hx = MODULE_OPTIONS.find((m) => m.kind === "HeatExchangerFab");
     expect(hx?.title).toBe("Heat Exchanger");
-    expect(hx?.badge).toBe("HX-FAB / GA");
+    expect(hx?.badge).toBe("HX / TS / BF / GA");
+    expect(VISIBLE_MODULE_OPTIONS.map((m) => m.kind)).toEqual(["HeatExchangerFab", "ShopTank", "SiteTank"]);
+    expect(MODULE_OPTIONS.find((m) => m.kind === "TubeSheet")?.hidden).toBe(true);      // still known: old jobs keep opening
+    expect(MODULE_OPTIONS.find((m) => m.kind === "BonnetFlange")?.hidden).toBe(true);
     expect(hx?.family).toBe("exchanger");
     expect(typeof hx?.preview).toBe("function");
-    expect(hx?.description).toMatch(/general-arrangement/i);
+    expect(hx?.description).toMatch(/general arrangement, tube sheet and bonnet flange/i);
   });
 
   it("offers the software's full nozzle size and number lists on every exchanger form", () => {

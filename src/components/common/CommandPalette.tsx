@@ -1,6 +1,6 @@
 import { Command } from "cmdk";
 import type { JobSummary, ModuleKind } from "../../types/engineering";
-import { MODULE_OPTIONS } from "../../constants/modules";
+import { VISIBLE_MODULE_OPTIONS } from "../../constants/modules";
 import { IconGrid, IconList, IconKey, IconRefresh, IconLogOut, IconPause, IconPlay } from "../common/Icon";
 import type { AmbientMotionPref } from "../../ambient/types";
 import { ambientBus } from "../ambient/ambientBus";
@@ -66,7 +66,7 @@ export function CommandPalette({
             <IconList size={15} />
             <span>Jobs Dashboard</span>
           </Command.Item>
-          {MODULE_OPTIONS.map((mod) => (
+          {VISIBLE_MODULE_OPTIONS.map((mod) => (
             <Command.Item key={mod.kind} onSelect={() => run(() => onSelectModule(mod.kind))}>
               <mod.icon size={15} />
               <span>Open {mod.title}</span>

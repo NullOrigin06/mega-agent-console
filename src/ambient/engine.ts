@@ -917,12 +917,13 @@ function startEngine(canvas: HTMLCanvasElement, opts: AmbientEngineOptions): Amb
     const ez = e[2] - RM[14];
     u4(UBO.EYE, RM[0] * ex + RM[1] * ey + RM[2] * ez, RM[4] * ex + RM[5] * ey + RM[6] * ez, RM[8] * ex + RM[9] * ey + RM[10] * ez, shotCur.focal);
     for (let r = 0; r < 4; r++) {
-      const wsOther = ws && r > 0 && REGION[ws] !== r ? WIRE.otherRegionsWorkspace : 1;
+      const wsOther = ws && ws !== "HeatExchangerFab" && r > 0 && REGION[ws] !== r ? WIRE.otherRegionsWorkspace : 1;
       ubo[UBO.REGA * 4 + r] = (1 + WIRE.hoverBoost * ease.hover[r]) * wsOther;
       ubo[UBO.REGB * 4 + r] = WIRE.regionRunningAlpha * ease.run[r] + WIRE.jobDetailRunningBoost * ease.detail[r];
       ubo[UBO.REGT * 4 + r] = WIRE.regionRunningMix * ease.run[r];
     }
-    ubo[UBO.REGA * 4] = ws ? WIRE.otherRegionsWorkspace : 1;
+    // the Heat Exchanger workspace owns the whole twin (tube sheet, bonnet and shell): nothing is dimmed
+    ubo[UBO.REGA * 4] = ws && ws !== "HeatExchangerFab" ? WIRE.otherRegionsWorkspace : 1;
     u4(UBO.LAT, pitchPx, narrowLat ? LATTICE.rowStepNarrow : LATTICE.rowStep, narrowLat ? LATTICE.mouthRNarrow : LATTICE.mouthR, LATTICE.laneEvery);
 
     // Streak region: the twin halo, or 2.2 x face radius in FACE.

@@ -49,11 +49,12 @@ export function DrawingView({
   blockedReasons,
   cards,
 }: DrawingViewProps) {
-  const blocked = (blockedReasons?.length ?? 0) > 0;
+  const hasChecks = (blockedReasons?.length ?? 0) > 0;
   const multi = Boolean(cards);
   const anyGenerating = cards ? isAnyDrawingGenerating(cards.map((c) => c.status)) : drawingStatus === "generating";
   const isGenerating = isTriggering || anyGenerating;
   const [selected, setSelected] = useState<DrawingKind[]>([]);
+  const blocked = hasChecks && (multi ? selected.includes("ts") : true);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<DrawingKind | null>(null);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -105,7 +106,7 @@ export function DrawingView({
 
   return (
     <div className="drawing-view">
-      <DrawingChecksBanner reasons={blockedReasons} />
+      <DrawingChecksBanner reasons={blockedReasons} what={multi ? "The Tube Sheet drawing" : "The drawing"} />
       {cards && (
         <div className="drawing-cards-intro">
           <p className="drawing-meta-text">

@@ -675,7 +675,8 @@ export function projectPoint(frame: CameraFrame, p: [number, number, number], ca
 const WORKSPACE_POSE: Record<ModuleKind, PoseName> = {
   TubeSheet: "face",
   BonnetFlange: "bonnet",
-  HeatExchangerFab: "section",
+  // The merged Heat Exchanger tab (fabrication, GA, tube sheet and bonnet flange from one input) shows the whole exploded twin.
+  HeatExchangerFab: "overview",
   // GA gets its own backdrop: the whole vessel from an angle (saddles, nozzles, both heads), not the side-on tube-bundle section of the heat exchanger.
   GeneralArrangement: "overview",
   // Storage tanks have no part on the exchanger twin: the overview pose.

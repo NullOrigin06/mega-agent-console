@@ -1,13 +1,15 @@
 import type { DrawingStatus } from "../types/engineering";
 
-/** Drawing kinds a Heat Exchanger job can produce: fabrication or general arrangement. */
-export type DrawingKind = "fab" | "ga";
+/** Drawing kinds a Heat Exchanger job can produce: fabrication, general arrangement, tube sheet or bonnet flange. */
+export type DrawingKind = "fab" | "ga" | "ts" | "bf";
 
-export const DRAWING_KINDS: readonly DrawingKind[] = ["fab", "ga"];
+export const DRAWING_KINDS: readonly DrawingKind[] = ["fab", "ga", "ts", "bf"];
 
 export const DRAWING_LABELS: Record<DrawingKind, string> = {
   fab: "Fabrication Drawing",
   ga: "General Arrangement Drawing",
+  ts: "Tube Sheet Drawing",
+  bf: "Bonnet Flange Drawing",
 };
 
 export interface DrawingCardInfo {
@@ -17,7 +19,7 @@ export interface DrawingCardInfo {
   error?: string;
 }
 
-/** Ticks/unticks one drawing; the result is always in canonical order (fab, ga), nothing is ticked by default. */
+/** Ticks/unticks one drawing; the result is always in canonical order (fab, ga, ts, bf), nothing is ticked by default. */
 export function toggleDrawing(selected: readonly DrawingKind[], kind: DrawingKind, checked?: boolean): DrawingKind[] {
   const has = selected.includes(kind);
   const want = checked ?? !has;

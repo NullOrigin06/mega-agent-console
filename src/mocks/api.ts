@@ -243,19 +243,23 @@ export async function listShellIds(): Promise<number[]> {
  */
 export async function generateDrawing(jobId: string, _agentId?: string, drawings?: readonly DrawingKind[]): Promise<void> {
   const requested = drawings && drawings.length > 0 ? drawings : (["fab"] as DrawingKind[]);
-  const unknown = requested.find((k) => k !== "fab" && k !== "ga");
+  const unknown = requested.find((k) => !["fab", "ga", "ts", "bf"].includes(k));
   if (unknown) throw new Error(`Failed to start drawing generation (400): unknown drawing kind '${String(unknown)}'.`);
 
   const job = jobs.find((j) => j.id === jobId);
   // Only the combined module has a second drawing; legacy GA jobs use the primary fields.
   const kinds = [...new Set((job?.module === "HeatExchangerFab" || job?.module === "ShopTank") ? requested : (["fab"] as DrawingKind[]))];
-  if (job && (job.drawingStatus === "generating" || job.gaDrawingStatus === "generating")) {
+  const extra = (job as unknown as { extraDrawings?: NonNullable<JobDetail["extraDrawings"]> } | undefined)?.extraDrawings;
+  if (job && (job.drawingStatus === "generating" || job.gaDrawingStatus === "generating" || Object.values(extra ?? {}).some((d) => d?.status === "generating"))) {
     throw new Error("Failed to start drawing generation (409): a drawing is already being generated for this job.");
   }
   const setStatus = (kind: DrawingKind, status: DrawingStatus) => {
     if (!job) return;
     if (kind === "ga") job.gaDrawingStatus = status;
-    else job.drawingStatus = status;
+    else if (kind === "ts" || kind === "bf") {
+      const holder = job as unknown as { extraDrawings?: NonNullable<JobDetail["extraDrawings"]> };
+      holder.extraDrawings = { ...(holder.extraDrawings ?? {}), [kind]: { status } };
+    } else job.drawingStatus = status;
   };
   kinds.forEach((k) => setStatus(k, "generating"));
   await delay(undefined);

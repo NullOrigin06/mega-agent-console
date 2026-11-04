@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toggleDrawing, canGenerateSelected, cardActionHint, isAnyDrawingGenerating, normalizeSelection } from "./drawingSelection";
+import { DRAWING_KINDS, DRAWING_LABELS, toggleDrawing, canGenerateSelected, cardActionHint, isAnyDrawingGenerating, normalizeSelection } from "./drawingSelection";
 import { buildGenerateDrawingBody, drawingDownloadUrl } from "../api/realApi";
 
 describe("drawing selection", () => {
@@ -47,5 +47,19 @@ describe("drawing request building", () => {
   it("builds the download URL with ?kind=", () => {
     expect(drawingDownloadUrl("job 1", "ga")).toMatch(/\/job%201\/drawing\?kind=ga$/);
     expect(drawingDownloadUrl("job-1")).toMatch(/\/job-1\/drawing\?kind=fab$/);
+  });
+});
+
+describe("the four drawings of a Heat Exchanger job", () => {
+  it("are fabrication, general arrangement, tube sheet and bonnet flange, always in that order", () => {
+    expect(DRAWING_KINDS).toEqual(["fab", "ga", "ts", "bf"]);
+    expect(toggleDrawing(["bf"], "fab")).toEqual(["fab", "bf"]);
+    expect(toggleDrawing(["fab", "bf"], "ts")).toEqual(["fab", "ts", "bf"]);
+    expect(normalizeSelection(["bf", "ga", "ts", "fab"])).toEqual(["fab", "ga", "ts", "bf"]);
+  });
+
+  it("have a label each", () => {
+    expect(DRAWING_LABELS.ts).toBe("Tube Sheet Drawing");
+    expect(DRAWING_LABELS.bf).toBe("Bonnet Flange Drawing");
   });
 });

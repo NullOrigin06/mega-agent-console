@@ -25,8 +25,10 @@ import { DrawingView } from "./DrawingView";
 import { DrawingChecksBanner } from "./DrawingChecksBanner";
 import { TankParametersView, TankSummaryView } from "./TankDataViews";
 import { gaSpecFromJob } from "../cad/gaSpec";
+import { TYPICAL_VESSEL, vesselSpecFromJob } from "../cad/vesselSpec";
 
 // three.js + react-three-fiber are heavy; only fetched once the 3D tab is opened.
+const VesselViewport3D = lazy(() => import("../cad/VesselViewport3D").then((m) => ({ default: m.VesselViewport3D })));
 const GeneralArrangementViewport3D = lazy(() =>
   import("../cad/GeneralArrangementViewport3D").then((m) => ({ default: m.GeneralArrangementViewport3D }))
 );
@@ -119,7 +121,10 @@ export function JobDetailView({
   // minute), or while the job itself is still queued/running (BOM/engineering
   // calc is normally fast - a couple seconds - but has no other push signal)
   // - stop as soon as either settles.
-  const anyDrawingGenerating = job?.drawingStatus === "generating" || job?.gaDrawingStatus === "generating";
+  const anyDrawingGenerating =
+    job?.drawingStatus === "generating" ||
+    job?.gaDrawingStatus === "generating" ||
+    Object.values(job?.extraDrawings ?? {}).some((d) => d?.status === "generating");
   const isPolling =
     anyDrawingGenerating ||
     job?.status === "queued" ||
@@ -467,14 +472,14 @@ export function JobDetailView({
             <Tabs.Trigger value="drawing" className="detail-tab-btn">
               <IconDrafting size={16} />
               <span>CAD Drawing & Output</span>
-              {(job.drawingStatus === "generated" || job.gaDrawingStatus === "generated") && !anyDrawingGenerating && (
+              {(job.drawingStatus === "generated" || job.gaDrawingStatus === "generated" || Object.values(job.extraDrawings ?? {}).some((d) => d?.status === "generated")) && !anyDrawingGenerating && (
                 <span className="tab-pill-ready">Ready</span>
               )}
               {anyDrawingGenerating && (
                 <span className="tab-pill">Generating</span>
               )}
             </Tabs.Trigger>
-            {job.module === "GeneralArrangement" && job.engineeringData && (
+            {(job.module === "GeneralArrangement" || job.module === "HeatExchangerFab") && job.engineeringData && (
               <Tabs.Trigger value="3d" className="detail-tab-btn">
                 <IconCylinder size={16} />
                 <span>3D View</span>
@@ -485,7 +490,7 @@ export function JobDetailView({
 
           {/* Active Tab Panel */}
           <Tabs.Content value="values" className="tab-panel-content">
-            <DrawingChecksBanner reasons={job.drawingChecks} />
+            <DrawingChecksBanner reasons={job.drawingChecks} what={job.module === "HeatExchangerFab" ? "The Tube Sheet drawing" : "The drawing"} />
             {job.engineeringData && (
               <EngineeringDataView
                 initialData={job.engineeringData}
@@ -536,11 +541,32 @@ export function JobDetailView({
                   ? [
                       { kind: "fab", label: DRAWING_LABELS.fab, status: job.drawingStatus, error: job.drawingError },
                       { kind: "ga", label: DRAWING_LABELS.ga, status: job.gaDrawingStatus ?? "not_generated", error: job.gaDrawingError },
+                      ...(job.module === "HeatExchangerFab"
+                        ? [
+                            { kind: "ts" as const, label: DRAWING_LABELS.ts, status: job.extraDrawings?.ts?.status ?? "not_generated", error: job.extraDrawings?.ts?.error },
+                            { kind: "bf" as const, label: DRAWING_LABELS.bf, status: job.extraDrawings?.bf?.status ?? "not_generated", error: job.extraDrawings?.bf?.error },
+                          ]
+                        : []),
                     ]
                   : undefined
               }
             />
           </Tabs.Content>
+
+          {job.module === "HeatExchangerFab" && job.engineeringData && (
+            <Tabs.Content value="3d" className="tab-panel-content">
+              <Suspense
+                fallback={
+                  <div className="vessel-panel-loading">
+                    <IconLoader size={24} className="animate-spin text-accent" />
+                    <span>Loading 3D viewport...</span>
+                  </div>
+                }
+              >
+                <VesselViewport3D spec={vesselSpecFromJob(job) ?? TYPICAL_VESSEL} />
+              </Suspense>
+            </Tabs.Content>
+          )}
 
           {job.module === "GeneralArrangement" && job.engineeringData && (
             <Tabs.Content value="3d" className="tab-panel-content">

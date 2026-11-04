@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { ModuleKind } from "../../types/engineering";
 import { moduleGroup } from "../../utils/moduleGroup";
-import { MODULE_OPTIONS } from "../../constants/modules";
+import { VISIBLE_MODULE_OPTIONS } from "../../constants/modules";
 import { IconGrid, IconList, IconCpu, IconArrowLeft, IconArrowRight } from "../common/Icon";
 import { agentVersionState } from "../../utils/agentReleases";
 import { ambientBus } from "../ambient/ambientBus";
@@ -87,7 +87,7 @@ export function Sidebar({
               <span>Command Center</span>
             </button>
           </NavItem>
-          {MODULE_OPTIONS.map((mod) => (
+          {VISIBLE_MODULE_OPTIONS.map((mod) => (
             <NavItem key={mod.kind} collapsed={collapsed} label={mod.title}>
               <button
                 type="button"

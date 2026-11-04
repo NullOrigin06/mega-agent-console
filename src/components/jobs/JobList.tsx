@@ -1,5 +1,5 @@
 import { useState, useMemo, Fragment } from "react";
-import { MODULE_OPTIONS } from "../../constants/modules";
+import { VISIBLE_MODULE_OPTIONS } from "../../constants/modules";
 import { moduleGroup } from "../../utils/moduleGroup";
 import { MODULE_SHORT_NAMES } from "../../constants/moduleColors";
 import { AnimatePresence, motion } from "framer-motion";
@@ -160,7 +160,7 @@ export function JobList({
         <div className="filter-group">
           <span className="control-label">Module:</span>
           <div className="segmented-control">
-            {(["All", ...MODULE_OPTIONS.map((m) => m.kind)] as const).map((mod) => (
+            {(["All", ...VISIBLE_MODULE_OPTIONS.map((m) => m.kind)] as const).map((mod) => (
               <button
                 key={mod}
                 type="button"

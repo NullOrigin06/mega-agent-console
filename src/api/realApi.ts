@@ -362,6 +362,7 @@ function parseJobDetail(raw: Record<string, unknown>): JobDetail {
       gaDrawingError: raw.gaDrawingError ? String(raw.gaDrawingError) : undefined,
       drawingChecks:
         Array.isArray(raw.drawingChecks) && raw.drawingChecks.length > 0 ? raw.drawingChecks.map((c: unknown) => String(c)) : undefined,
+      extraDrawings: parseExtraDrawings(raw.extraDrawings),
     };
 
     return detail;
@@ -521,12 +522,28 @@ function absoluteDrawingUrl(value: unknown): string | undefined {
  * non-empty (omitted/empty means ["fab"] on the server, for backwards
  * compatibility); duplicates are removed.
  */
+/** The Tube Sheet / Bonnet Flange drawings of a Heat Exchanger job, as the API sends them (kind -> state). */
+function parseExtraDrawings(raw: unknown): JobDetail["extraDrawings"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const out: NonNullable<JobDetail["extraDrawings"]> = {};
+  for (const kind of ["ts", "bf"] as const) {
+    const s = (raw as Record<string, unknown>)[kind] as Record<string, unknown> | undefined;
+    if (!s) continue;
+    out[kind] = {
+      status: String(s.status ?? "not_generated") as JobDetail["drawingStatus"],
+      url: absoluteDrawingUrl(s.url),
+      error: s.error ? String(s.error) : undefined,
+    };
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export function buildGenerateDrawingBody(agentId?: string, drawings?: readonly DrawingKind[]): { agentId: string | null; drawings?: DrawingKind[] } {
   const unique = drawings ? [...new Set(drawings)] : [];
   return { agentId: agentId ?? null, ...(unique.length > 0 ? { drawings: unique } : {}) };
 }
 
-/** GET /api/jobs/{id}/drawing?kind=fab|ga - the download endpoint of one drawing. */
+/** GET /api/jobs/{id}/drawing?kind=fab|ga|ts|bf - the download endpoint of one drawing. */
 export function drawingDownloadUrl(jobId: string, kind: DrawingKind = "fab"): string {
   return `${REAL_API_BASE_URL.replace(/\/+$/, "")}/${encodeURIComponent(jobId)}/drawing?kind=${kind}`;
 }

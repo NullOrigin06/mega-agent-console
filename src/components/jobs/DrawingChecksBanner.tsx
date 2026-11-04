@@ -5,13 +5,13 @@ import { IconAlertTriangle } from "../common/Icon";
  * than the shell holds). Shown where the values are edited and where the drawing is started; nothing is shown when nothing
  * stands in the way.
  */
-export function DrawingChecksBanner({ reasons }: { reasons?: readonly string[] }) {
+export function DrawingChecksBanner({ reasons, what = "The drawing" }: { reasons?: readonly string[]; what?: string }) {
   if (!reasons || reasons.length === 0) return null;
   return (
     <div className="alert-banner alert-banner-danger drawing-checks-banner" role="alert">
       <IconAlertTriangle size={16} />
       <div>
-        <strong>The drawing cannot be made with these values yet.</strong>
+        <strong>{what} cannot be made with these values yet.</strong>
         <ul className="drawing-checks-list">
           {reasons.map((r) => (
             <li key={r}>{r}</li>
