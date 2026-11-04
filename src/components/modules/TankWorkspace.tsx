@@ -223,7 +223,7 @@ export function TankWorkspace({ module, jobs = [], onBackToModules, onGoToAllJob
           <p className="section-subtitle" style={{ marginTop: 10 }}>
             {module === "ShopTank"
               ? "Elevation / Radius: a SHELL nozzle's height above the bottom weld line (mm); a DISH nozzle's distance from the vessel centre (AUTO = shell I.D. / 2 - 150). N5, N6, SG and LG sit at fixed heights in the drawing template."
-              : "A SHELL nozzle has an elevation (mm) and no orientation; a ROOF nozzle has an orientation (degrees) and no elevation."}
+              : "Every nozzle has an orientation (its compass bearing in degrees, 0 = north, clockwise); a SHELL nozzle also has an elevation (mm), a ROOF nozzle has none."}
           </p>
         </div>
 

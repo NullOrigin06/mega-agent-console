@@ -36,7 +36,7 @@ function withDegreeSign(value: string): string {
 /**
  * Nozzle schedule of a Shop Tank or Site Tank, with the columns of the desktop form for that module.
  *  Shop Tank: Location (Dish / Shell), Elevation / Radius, Orientation.
- *  Site Tank: Position (ROOF / SHELL), Orientation (roof nozzles), Elevation (shell nozzles).
+ *  Site Tank: Position (ROOF / SHELL), Orientation (every nozzle), Elevation (shell nozzles).
  */
 export function TankNozzleEditor({ module, nozzles, onChange, disabled = false }: TankNozzleEditorProps) {
   const shop = module === "ShopTank";
@@ -54,13 +54,14 @@ export function TankNozzleEditor({ module, nozzles, onChange, disabled = false }
     updateRow(index, { size, unit: size.includes("/") ? "inch" : "NB" });
   };
 
-  // Site Tank: a SHELL nozzle has an elevation and no orientation; a ROOF nozzle has an orientation and no elevation.
+  // Site Tank: every nozzle has an orientation (its compass bearing); a SHELL nozzle also has an elevation, a ROOF nozzle none.
   const changePosition = (index: number, position: string) => {
     const row = nozzles[index];
+    const orientation = !row.orientation || row.orientation === "-" ? "0°" : row.orientation;
     if (position === "SHELL") {
-      updateRow(index, { position, orientation: "-", elevation: !row.elevation || row.elevation === "-" ? "1000" : row.elevation });
+      updateRow(index, { position, orientation, elevation: !row.elevation || row.elevation === "-" ? "1000" : row.elevation });
     } else {
-      updateRow(index, { position, elevation: "-", orientation: !row.orientation || row.orientation === "-" ? "0°" : row.orientation });
+      updateRow(index, { position, elevation: "-", orientation });
     }
   };
 
@@ -179,8 +180,8 @@ export function TankNozzleEditor({ module, nozzles, onChange, disabled = false }
                         </select>
                       </td>
                       <td>
-                        <input className="nozzle-cell-input text-mono" value={shell ? "-" : n.orientation} disabled={disabled || shell} aria-label="Orientation"
-                          title={shell ? "A SHELL nozzle has no orientation" : undefined}
+                        <input className="nozzle-cell-input text-mono" value={n.orientation} disabled={disabled} aria-label="Orientation"
+                          title="Compass bearing in degrees (0 = north, clockwise); roof and shell nozzles both have one"
                           onChange={(e) => updateRow(i, { orientation: e.target.value })}
                           onBlur={(e) => updateRow(i, { orientation: withDegreeSign(e.target.value) })} />
                       </td>

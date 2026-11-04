@@ -272,7 +272,7 @@ describe("TankNozzleEditor", () => {
     rowsOf(getDefaultSiteTankNozzles(), "SiteTank");
 
     expect(screen.getAllByLabelText("Position")).toHaveLength(17);
-    expect(screen.getAllByLabelText("Position").filter((p) => (p as HTMLSelectElement).value === "SHELL")).toHaveLength(5);
+    expect(screen.getAllByLabelText("Position").filter((p) => (p as HTMLSelectElement).value === "SHELL")).toHaveLength(6);
   });
 
   it("a size of 1/2 switches the unit to inch, a bore switches it back to NB", () => {
@@ -283,22 +283,23 @@ describe("TankNozzleEditor", () => {
     expect(onChange).toHaveBeenLastCalledWith([expect.objectContaining({ size: "1/2", unit: "inch" })]);
   });
 
-  it("Site Tank: a SHELL nozzle has no orientation and keeps an elevation; a ROOF nozzle the other way round", () => {
+  it("Site Tank: a nozzle moved to the SHELL keeps its orientation and gets an elevation; a ROOF nozzle has none", () => {
     const nozzles = getDefaultSiteTankNozzles().slice(0, 1);                 // N1, ROOF, 150°
     const onChange = rowsOf(nozzles, "SiteTank");
 
     fireEvent.change(screen.getByLabelText("Position"), { target: { value: "SHELL" } });
-    expect(onChange).toHaveBeenLastCalledWith([expect.objectContaining({ position: "SHELL", orientation: "-", elevation: "1000" })]);
+    expect(onChange).toHaveBeenLastCalledWith([expect.objectContaining({ position: "SHELL", orientation: "150°", elevation: "1000" })]);
   });
 
-  it("Site Tank: a shell row cannot be given an orientation and a roof row no elevation", () => {
-    rowsOf([...getDefaultSiteTankNozzles().slice(0, 1), ...getDefaultSiteTankNozzles().slice(2, 3)], "SiteTank");   // N1 roof, N3 shell
+  it("Site Tank: a shell row has an orientation and an elevation, a roof row only an orientation", () => {
+    rowsOf([...getDefaultSiteTankNozzles().slice(0, 1), ...getDefaultSiteTankNozzles().slice(9, 10)], "SiteTank");   // N1 roof, N10 shell
 
     const orientations = screen.getAllByLabelText("Orientation") as HTMLInputElement[];
     const elevations = screen.getAllByLabelText("Elevation") as HTMLInputElement[];
     expect(orientations[0]).toBeEnabled();
     expect(elevations[0]).toBeDisabled();
-    expect(orientations[1]).toBeDisabled();
+    expect(orientations[1]).toBeEnabled();
+    expect(orientations[1].value).toBe("180°");
     expect(elevations[1]).toBeEnabled();
   });
 

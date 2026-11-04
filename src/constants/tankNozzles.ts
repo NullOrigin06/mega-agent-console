@@ -57,7 +57,7 @@ export const SITE_TANK_NOZZLE_NUMBERS = [
   "N9 A/B", "TW", "M1", "M2",
 ];
 
-/** The approved Fermentor schedule (24-004-SFD-TK1331-32-FERMENTOR-R1), N1 - N17. */
+/** The approved Fermentor schedule (24-004-SFD-TK1331-32-FERMENTOR-R1), N1 - N17; same as the suite's SiteTankApprovedNozzles (every nozzle has a compass bearing, shell nozzles also an elevation). */
 export function getDefaultSiteTankNozzles(): NozzleItem[] {
   const n = (
     nozzleNo: string, size: string, schedule: string, type: string, projection: string, service: string,
@@ -68,21 +68,21 @@ export function getDefaultSiteTankNozzles(): NozzleItem[] {
   return [
     n("N1", "250", "Sch 40", "SORF", "250", "CIP CLEANING NOZZLE INLET", "ROOF", "150°", "-"),
     n("N2", "500", "5 mm", "SORF", "500", "CO2 OUTLET", "ROOF", "35°", "-"),
-    n("N3", "80", "Sch 10s", "SORF", "200", "SPENT WASH FEED", "SHELL", "-", "850"),
+    n("N3", "80", "Sch 10s", "SORF", "200", "SPENT WASH FEED", "ROOF", "90°", "-"),
     n("N4", "25", "Sch 10s", "SORF", "150", "NUTRIENT INLET", "ROOF", "60°", "-"),
     n("N5", "25", "Sch 10s", "SORF", "150", "ANTIFOAM INLET", "ROOF", "140°", "-"),
     n("N6", "25", "Sch 10s", "SORF", "150", "ACID INLET", "ROOF", "38°", "-"),
     n("N7", "25", "Sch 10s", "SORF", "150", "SPARE NOZZLE", "ROOF", "43°", "-"),
     n("N8", "125", "Sch 10s", "SORF", "200", "INLET FROM PRE-FREMENTOR", "ROOF", "132°", "-"),
     n("N9 A/B", "15", "5 THK", "SORF", "150", "FLUSHING FOR SG/LG", "ROOF", "72°", "-"),
-    n("N10", "300", "Sch 10s", "LJFF", "4750", "RECIRCULATION INLET", "SHELL", "-", "8500"),
-    n("N11", "80", "Sch 10s", "SORF", "4725", "PROCESS AIR INLET", "SHELL", "-", "665"),
-    n("N12", "80", "Sch 10s", "SORF", "4700", "LEVEL TRANSMITTER", "SHELL", "-", "300"),
-    n("N13", "350", "Sch 10s", "LJFF", "4855", "OUTLET TO PUMP", "ROOF", "0°", "-"),
-    n("N14", "25", "Sch 10s", "SORF", "4700", "SAMPLE POINT", "ROOF", "49°", "-"),
+    n("N10", "300", "Sch 10s", "LJFF", "4750", "RECIRCULATION INLET", "SHELL", "180°", "8500"),
+    n("N11", "80", "Sch 10s", "SORF", "4725", "PROCESS AIR INLET", "SHELL", "125°", "665"),
+    n("N12", "80", "Sch 10s", "SORF", "4700", "LEVEL TRANSMITTER", "SHELL", "90°", "300"),
+    n("N13", "350", "Sch 10s", "LJFF", "4855", "OUTLET TO PUMP", "SHELL", "0°", "0"),
+    n("N14", "25", "Sch 10s", "SORF", "4700", "SAMPLE POINT", "SHELL", "49°", "300"),
     n("N15", "200", "Sch 10s", "LJFF", "4700", "SAFETY SYSEM", "ROOF", "53°", "-"),
-    n("N16", "250", "Sch 10s", "LJFF", "4700", "AGITATOR NOZZLE", "ROOF", "33°", "-"),
-    n("N17", "150", "Sch 10s", "SORF", "200", "PROCESS WATER INLET", "SHELL", "-", "1000"),
+    n("N16", "250", "Sch 10s", "LJFF", "4700", "AGITATOR NOZZLE", "SHELL", "270°", "500"),
+    n("N17", "150", "Sch 10s", "SORF", "200", "PROCESS WATER INLET", "ROOF", "180°", "-"),
   ];
 }
 
