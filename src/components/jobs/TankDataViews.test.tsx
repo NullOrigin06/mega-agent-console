@@ -40,6 +40,12 @@ function renderView(props: Partial<Parameters<typeof TankParametersView>[0]> = {
 const estimatedInput = (label: string) => screen.getByLabelText(`Estimated ${label}`) as HTMLInputElement;
 const recalcButton = () => screen.getByRole("button", { name: /recalculate/i });
 
+const typeAndEnter = (label: string, value: string) => {
+  const input = estimatedInput(label);
+  fireEvent.change(input, { target: { value } });
+  fireEvent.keyDown(input, { key: "Enter" });
+};
+
 describe("TankParametersView - editing the Estimated values", () => {
   beforeEach(() => {
     recalculateJob.mockReset();
@@ -50,46 +56,64 @@ describe("TankParametersView - editing the Estimated values", () => {
   it("is read-only without a job to recalculate", () => {
     render(<TankParametersView data={shopData()} />);
 
-    expect(screen.queryByLabelText("Estimated Shell Thickness")).toBeNull();
+    expect(screen.getByLabelText("Estimated Shell Thickness")).toHaveAttribute("readonly");
     expect(screen.queryByRole("button", { name: /recalculate/i })).toBeNull();
     expect(screen.getByText("Shell Thickness")).toBeInTheDocument();
   });
 
-  it("offers an input for every editable value and none for the others", () => {
+  it("uses the same Actual / Estimated layout as the other modules", () => {
+    const { container } = render(<TankParametersView data={shopData()} jobId="job-1" onRecalculated={vi.fn()} />);
+
+    expect(screen.getByText("Understanding Actual vs. Estimated Values")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /reset estimated to actual/i })).toBeInTheDocument();
+    expect(container.querySelectorAll(".category-card").length).toBeGreaterThanOrEqual(4);          // a card per group, plus the nozzle schedule
+    expect(container.querySelectorAll("table.values-table th.th-estimated").length).toBe(4);
+    expect(screen.getAllByText("Baseline Reference (Read-Only)").length).toBe(4);
+  });
+
+  it("offers an input for every editable value and keeps the others read-only", () => {
     renderView();
 
     expect(estimatedInput("Shell Thickness").value).toBe("3");
+    expect(estimatedInput("Shell Thickness")).not.toHaveAttribute("readonly");
     expect(estimatedInput("No. of Legs").value).toBe("3");
-    expect(screen.queryByLabelText("Estimated Shell I.D.")).toBeNull();           // not editable
+    expect(estimatedInput("Shell I.D.")).toHaveAttribute("readonly");                       // not editable
     expect((screen.getByLabelText("Estimated Top Root Type") as HTMLSelectElement).value).toBe("DISH");
   });
 
-  it("keeps Recalculate off until something changes", () => {
-    renderView();
-
-    expect(recalcButton()).toBeDisabled();
-    fireEvent.change(estimatedInput("Shell Thickness"), { target: { value: "6" } });
-    expect(recalcButton()).toBeEnabled();
-  });
-
-  it("sends only the values that differ from the calculation, then hands over the recalculated job", async () => {
+  it("sends the edit when Enter is pressed, with the values already edited, then hands over the recalculated job", async () => {
     recalculateJob.mockResolvedValue(updatedJob);
-    const { onRecalculated } = renderView();
+    const data = shopData();
+    data.parameters[2] = { ...data.parameters[2], estimated: "5" };                          // an earlier edit: legs 5, calculated 3
+    const onRecalculated = vi.fn();
+    render(<TankParametersView data={data} jobId="job-1" onRecalculated={onRecalculated} />);
 
-    fireEvent.change(estimatedInput("Shell Thickness"), { target: { value: "6" } });
-    fireEvent.change(screen.getByLabelText("Estimated Top Root Type"), { target: { value: "FLAT" } });
-    fireEvent.click(recalcButton());
+    typeAndEnter("Shell Thickness", "6");
 
     await waitFor(() => expect(onRecalculated).toHaveBeenCalledWith(updatedJob));
-    expect(recalculateJob).toHaveBeenCalledWith("job-1", { overrides: { SHELL_THK: "6", TOP_ROOT_TYPE: "FLAT" } });
+    expect(recalculateJob).toHaveBeenCalledWith("job-1", { overrides: { SHELL_THK: "6", NO_OF_LEGS: "5" } });
   });
 
-  it("does not count 6 versus 6.0 as an edit", () => {
+  it("also sends it when the field is left, and a list value as soon as it is picked", async () => {
+    recalculateJob.mockResolvedValue(updatedJob);
     renderView();
 
-    fireEvent.change(estimatedInput("Shell Thickness"), { target: { value: "3.0" } });
+    const input = estimatedInput("Shell Thickness");
+    fireEvent.change(input, { target: { value: "7" } });
+    fireEvent.blur(input);
+    await waitFor(() => expect(recalculateJob).toHaveBeenCalledWith("job-1", { overrides: { SHELL_THK: "7" } }));
 
-    expect(recalcButton()).toBeDisabled();
+    recalculateJob.mockClear();
+    fireEvent.change(screen.getByLabelText("Estimated Top Root Type"), { target: { value: "FLAT" } });
+    await waitFor(() => expect(recalculateJob).toHaveBeenCalledWith("job-1", { overrides: { TOP_ROOT_TYPE: "FLAT" } }));
+  });
+
+  it("does not call the server when nothing changed, and does not count 6 versus 6.0 as an edit", () => {
+    renderView();
+
+    typeAndEnter("Shell Thickness", "3.0");
+
+    expect(recalculateJob).not.toHaveBeenCalled();
   });
 
   it("sends an empty set when a value is put back, so the override is removed", async () => {
@@ -98,46 +122,61 @@ describe("TankParametersView - editing the Estimated values", () => {
     data.parameters[1] = { ...data.parameters[1], estimated: "6" };      // an earlier edit: estimated 6, calculated 3
     render(<TankParametersView data={data} jobId="job-1" onRecalculated={vi.fn()} />);
 
-    fireEvent.change(estimatedInput("Shell Thickness"), { target: { value: "3" } });
-    fireEvent.click(recalcButton());
+    typeAndEnter("Shell Thickness", "3");
 
     await waitFor(() => expect(recalculateJob).toHaveBeenCalledWith("job-1", { overrides: {} }));
   });
 
-  it("refuses a value that is not a number, and says so", () => {
+  it("refuses a value that is not a number before asking the server, and says so", () => {
     renderView();
 
-    fireEvent.change(estimatedInput("Shell Thickness"), { target: { value: "abc" } });
+    typeAndEnter("Shell Thickness", "abc");
 
-    expect(screen.getByText("Enter a number")).toBeInTheDocument();
-    expect(recalcButton()).toBeDisabled();
+    expect(recalculateJob).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("Shell Thickness: Enter a number");
+    expect(estimatedInput("Shell Thickness").value).toBe("3");                               // back to the accepted value
   });
 
-  it("puts the calculated values back with Discard changes", () => {
+  it("Escape drops what was typed", () => {
     renderView();
-    fireEvent.change(estimatedInput("Shell Thickness"), { target: { value: "9" } });
+    const input = estimatedInput("Shell Thickness");
+    fireEvent.change(input, { target: { value: "9" } });
 
-    fireEvent.click(screen.getByRole("button", { name: /discard changes/i }));
+    fireEvent.keyDown(input, { key: "Escape" });
 
-    expect(estimatedInput("Shell Thickness").value).toBe("3");
-    expect(recalcButton()).toBeDisabled();
+    expect(input.value).toBe("3");
+    expect(recalculateJob).not.toHaveBeenCalled();
   });
 
-  it("shows the server's message next to the value it refused", async () => {
+  it("Reset Estimated to Actual sends an empty set, and is off while everything matches", async () => {
+    recalculateJob.mockResolvedValue(updatedJob);
+    renderView();
+    expect(screen.getByRole("button", { name: /reset estimated to actual/i })).toBeDisabled();
+
+    const data = shopData();
+    data.parameters[1] = { ...data.parameters[1], estimated: "6" };
+    cleanup();
+    render(<TankParametersView data={data} jobId="job-1" onRecalculated={vi.fn()} />);
+    expect(screen.getByText(/1 field modified from Actual baseline/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /reset estimated to actual/i }));
+
+    await waitFor(() => expect(recalculateJob).toHaveBeenCalledWith("job-1", { overrides: {} }));
+  });
+
+  it("shows the server's message and the value goes back to the accepted one", async () => {
     refuseWith = new ApiFieldError("These values cannot be edited: NO_OF_LEGS.", { "overrides.NO_OF_LEGS": "This value is not editable." });
     renderView();
 
-    fireEvent.change(estimatedInput("No. of Legs"), { target: { value: "5" } });
-    fireEvent.click(recalcButton());
+    typeAndEnter("No. of Legs", "5");
 
-    expect(await screen.findByText("This value is not editable.")).toBeInTheDocument();
-    expect(screen.getByText(/cannot be edited/i)).toBeInTheDocument();           // and the message above the table
+    expect(await screen.findByText(/cannot be edited/i)).toBeInTheDocument();
+    await waitFor(() => expect(estimatedInput("No. of Legs").value).toBe("3"));
   });
 
   it("locks editing while a drawing is being generated", () => {
     renderView({ disabled: true });
 
-    expect(estimatedInput("Shell Thickness")).toBeDisabled();
+    expect(estimatedInput("Shell Thickness")).toHaveAttribute("readonly");
     expect(screen.getByText(/drawing is being generated/i)).toBeInTheDocument();
   });
 
@@ -205,8 +244,7 @@ describe("TankParametersView - the nozzle schedule", () => {
     recalculateJob.mockResolvedValue(updatedJob);
     renderView();
 
-    fireEvent.change(estimatedInput("Shell Thickness"), { target: { value: "6" } });
-    fireEvent.click(recalcButton());
+    typeAndEnter("Shell Thickness", "6");
 
     await waitFor(() => expect(recalculateJob).toHaveBeenCalled());
     expect(recalculateJob.mock.calls[0][1]).not.toHaveProperty("nozzles");

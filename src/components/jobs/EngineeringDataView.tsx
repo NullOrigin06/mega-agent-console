@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import type { EngineeringDataModel, EngineeringValues, JobDetail } from "../../types/engineering";
 import { editEstimated } from "../../api";
 import { ApiFieldError } from "../../api/errors";
-import { IconInfo, IconLoader, IconRefresh } from "../common/Icon";
+import {
+  EstimatedBanner,
+  EstimatedCategoryCard,
+  EstimatedNoticeCard,
+  EstimatedToolbar,
+  type EstimatedRow,
+} from "./EstimatedFields";
 
 interface EngineeringDataViewProps {
   initialData: EngineeringDataModel;
@@ -130,8 +136,6 @@ export function EngineeringDataView({ initialData, jobId, onUpdated, disabled = 
     (key) => actual[key] !== estimated[key]
   );
 
-  const shown = (key: keyof EngineeringValues) => draft[key] ?? String(estimated[key]);
-
   const clearDraft = (key: keyof EngineeringValues) =>
     setDraft((d) => {
       const next = { ...d };
@@ -200,182 +204,44 @@ export function EngineeringDataView({ initialData, jobId, onUpdated, disabled = 
     void apply(() => editEstimated(jobId, { reset: true }));
   };
 
+  const rowsOf = (cat: CategoryGroup): EstimatedRow[] =>
+    cat.fields.map((f) => ({
+      key: f.key,
+      label: f.label,
+      unit: f.unit,
+      description: f.description,
+      actual: String(actual[f.key]),
+      estimated: String(estimated[f.key]),
+      editable: f.editable !== false,
+      numeric: f.type === "number",
+    }));
+  const fieldOf = (key: string) => CATEGORIES.flatMap((c) => c.fields).find((f) => f.key === key)!;
+
   return (
     <div className="engineering-data-view">
-      {/* Plain language semantic explanation banner */}
-      <div className="semantic-notice-card">
-        <div className="notice-icon">
-          <IconInfo size={20} />
-        </div>
-        <div className="notice-content">
-          <h4 className="notice-title">
-            Understanding Actual vs. Estimated Values
-          </h4>
-          <p className="notice-text">
-            <strong>Estimated overrides Actual for CAD & BOM generation.</strong> In
-            the engineering engine, <code>actual</code> is the immutable baseline
-            reference captured from initial design sheets, while{" "}
-            <code>estimated</code> is the <strong>authoritative value</strong> used for
-            all downstream calculations, 3D modeling, and drawings. You can edit the
-            Estimated fields below to override parameters for this run.
-          </p>
-        </div>
-      </div>
+      <EstimatedNoticeCard />
 
-      {live && (busy || error || notice || disabled) && (
-        <div className={`engineering-edit-banner${error ? " engineering-edit-banner-error" : notice ? " engineering-edit-banner-notice" : ""}`} role={error ? "alert" : "status"}>
-          {busy ? (
-            <>
-              <IconLoader size={14} className="animate-spin" />
-              <span>Recalculating the connected values…</span>
-            </>
-          ) : error ? (
-            <span>{error}</span>
-          ) : notice ? (
-            <span>{notice}</span>
-          ) : (
-            <span>A drawing is being generated - editing is available when it has finished.</span>
-          )}
-        </div>
-      )}
+      {live && <EstimatedBanner busy={busy} busyText="Recalculating the connected values…" error={error} notice={notice} disabled={disabled} />}
 
-      {/* Action bar */}
-      <div className="values-toolbar">
-        <div className="diff-counter">
-          {diffKeys.length > 0 ? (
-            <span className="diff-pill diff-pill-active">
-              ● {diffKeys.length} field{diffKeys.length === 1 ? "" : "s"} modified from
-              Actual baseline
-            </span>
-          ) : (
-            <span className="diff-pill">✓ Estimated matches Actual baseline</span>
-          )}
-        </div>
+      <EstimatedToolbar diffCount={diffKeys.length} canReset={diffKeys.length > 0 && live && !busy && !disabled} onReset={handleResetToActual} />
 
-        <div className="toolbar-actions">
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={handleResetToActual}
-            disabled={diffKeys.length === 0 || !live || busy || disabled}
-            title="Puts every Estimated value back to the calculated (Actual) value"
-          >
-            <IconRefresh size={14} />
-            <span>Reset Estimated to Actual</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Categorized Comparison Cards */}
       <div className="categories-stack">
         {CATEGORIES.map((cat) => (
-          <section key={cat.id} className="category-card">
-            <div className="category-header">
-              <div>
-                <h3 className="category-title">{cat.title}</h3>
-                <p className="category-desc">{cat.description}</p>
-              </div>
-            </div>
-
-            <div className="fields-table-wrapper">
-              <table className="values-table">
-                <thead>
-                  <tr>
-                    <th className="th-field">Parameter</th>
-                    <th className="th-actual">
-                      Actual
-                      <span className="th-sub">Baseline Reference (Read-Only)</span>
-                    </th>
-                    <th className="th-estimated">
-                      Estimated
-                      <span className="th-sub">Authoritative (Editable)</span>
-                    </th>
-                    <th className="th-status">Diff</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cat.fields.map((field) => {
-                    const actualVal = actual[field.key];
-                    const estVal = estimated[field.key];
-                    const isDiff = actualVal !== estVal;
-                    const canEdit = live && field.editable !== false && !disabled;
-                    const fieldError = fieldErrors[field.key];
-
-                    return (
-                      <tr
-                        key={field.key}
-                        className={`value-row ${isDiff ? "value-row-diff" : ""}`}
-                      >
-                        <td className="field-info-cell">
-                          <div className="field-label-group">
-                            <span className="field-name">{field.label}</span>
-                            <span className="field-code">{field.key}</span>
-                          </div>
-                          <span className="field-desc">{field.description}</span>
-                        </td>
-
-                        {/* Read-Only Actual Value */}
-                        <td className="actual-val-cell">
-                          <div className="readonly-val-badge">
-                            <span className="text-mono">{String(actualVal)}</span>
-                            {field.unit && (
-                              <span className="unit-label">{field.unit}</span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Editable Estimated Value */}
-                        <td className="estimated-val-cell">
-                          <div className="estimated-input-wrapper">
-                            <input
-                              type="text"
-                              inputMode={field.type === "number" ? "decimal" : "text"}
-                              className={`estimated-input text-mono ${isDiff ? "estimated-input-modified" : ""}${updated.has(field.key) ? " estimated-input-updated" : ""}${fieldError ? " estimated-input-invalid" : ""}`}
-                              value={shown(field.key)}
-                              readOnly={!canEdit}
-                              disabled={busy}
-                              aria-label={`Estimated ${field.label}`}
-                              aria-invalid={!!fieldError}
-                              onChange={(e) => setDraft((d) => ({ ...d, [field.key]: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  commit(field);
-                                } else if (e.key === "Escape") {
-                                  clearDraft(field.key);
-                                }
-                              }}
-                              onBlur={() => commit(field)}
-                              title={field.editable === false ? `${field.label} is derived - it is not edited` : `Edit estimated ${field.label}, then press Enter`}
-                            />
-                            {field.unit && (
-                              <span className="input-unit-tag">
-                                {field.unit}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Status / Diff indicator */}
-                        <td className="diff-cell">
-                          {isDiff ? (
-                            <span
-                              className="badge-diff"
-                              title={`Baseline is ${actualVal}`}
-                            >
-                              Modified
-                            </span>
-                          ) : (
-                            <span className="badge-match">Match</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <EstimatedCategoryCard
+            key={cat.id}
+            title={cat.title}
+            description={cat.description}
+            rows={rowsOf(cat)}
+            draft={draft}
+            errors={fieldErrors}
+            updated={updated}
+            live={live && !disabled}
+            busy={busy}
+            same={(a, b) => a === b}
+            onChange={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
+            onCommit={(row) => commit(fieldOf(row.key))}
+            onCancel={(key) => clearDraft(key as keyof EngineeringValues)}
+          />
         ))}
       </div>
     </div>

@@ -1,10 +1,17 @@
-import { useMemo, useState } from "react";
-import type { JobDetail, NozzleItem, TankData, TankParameter } from "../../types/engineering";
+import { useEffect, useRef, useState } from "react";
+import type { JobDetail, NozzleItem, TankData } from "../../types/engineering";
 import { TANK_FIELDS } from "../../constants/tankFields";
 import { recalculateJob } from "../../api";
 import { ApiFieldError } from "../../api/errors";
 import { IconAlertTriangle, IconLoader } from "../common/Icon";
 import { TankNozzleEditor } from "./TankNozzleEditor";
+import {
+  EstimatedBanner,
+  EstimatedCategoryCard,
+  EstimatedNoticeCard,
+  EstimatedToolbar,
+  type EstimatedRow,
+} from "./EstimatedFields";
 
 /** Values the calculation takes from a fixed list rather than a number. */
 const CHOICE_VALUES: Record<string, string[]> = {
@@ -47,25 +54,28 @@ interface TankParametersViewProps {
 }
 
 /**
- * Tank results, mirroring the desktop tank forms' "ENGINEERING PARAMETERS" grid (Actual vs. Estimated, grouped).
- * Values arrive pre-formatted by the suite's own calculation (contract §2), so nothing is re-derived here: editing an
- * Estimated value (or the nozzle schedule) and pressing Recalculate sends it to the server, which calculates again with
- * the same code as the software and returns every dependent value (thicknesses, weights, BOM, summary) updated.
+ * Tank results in the same Actual / Estimated layout as every other module (see EstimatedFields): grouped category cards,
+ * Parameter | Actual | Estimated | Diff. Values arrive pre-formatted by the suite's own calculation (contract §2), so nothing is
+ * re-derived here: editing an Estimated value (Enter or leaving the field) sends it to the server, which calculates again with the
+ * same code as the software and returns every dependent value (thicknesses, weights, BOM, summary) updated. The nozzle schedule is
+ * edited below and sent with its own Recalculate button.
  */
 export function TankParametersView({ data, jobId, onRecalculated, disabled = false }: TankParametersViewProps) {
   const editing = !!jobId && !!onRecalculated;
-  const estimatedOf = (d: TankData) => Object.fromEntries(d.parameters.map((p) => [p.key, p.estimated]));
-  const [draft, setDraft] = useState<Record<string, string>>(() => estimatedOf(data));
+  const [draft, setDraft] = useState<Record<string, string>>({});
   const [nozzleDraft, setNozzleDraft] = useState<NozzleItem[]>(data.nozzles ?? []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [updated, setUpdated] = useState<Set<string>>(new Set());
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (clearTimer.current) clearTimeout(clearTimer.current); }, []);
 
   // A fresh result (after a recalculation or a reload) replaces whatever was being typed.
   const [shownData, setShownData] = useState(data);
   if (shownData !== data) {
     setShownData(data);
-    setDraft(estimatedOf(data));
+    setDraft({});
     setNozzleDraft(data.nozzles ?? []);
     setError(null);
     setFieldErrors({});
@@ -78,158 +88,141 @@ export function TankParametersView({ data, jobId, onRecalculated, disabled = fal
     groups.set(p.group, list);
   }
 
-  const valueOf = (p: TankParameter) => draft[p.key] ?? p.estimated;
-  const parameterErrors = useMemo(() => {
-    const errors: Record<string, string> = {};
-    for (const p of data.parameters) {
-      if (!p.editable) continue;
-      const problem = validateTankValue(p.key, draft[p.key] ?? p.estimated, p.actual);
-      if (problem) errors[p.key] = problem;
-    }
-    return errors;
-  }, [data.parameters, draft]);
-
-  const valuesChanged = data.parameters.some((p) => p.editable && !sameValue(draft[p.key] ?? p.estimated, p.estimated));
   const nozzlesChanged = JSON.stringify(nozzleDraft) !== JSON.stringify(data.nozzles ?? []);
-  const dirty = valuesChanged || nozzlesChanged;
-  const hasErrors = Object.keys(parameterErrors).length > 0;
+  const diffCount = data.parameters.filter((p) => p.editable && !sameValue(p.actual, p.estimated)).length;
+  const locked = disabled || busy;
 
-  const discard = () => {
-    setDraft(Object.fromEntries(data.parameters.map((p) => [p.key, p.estimated])));
-    setNozzleDraft(data.nozzles ?? []);
-    setError(null);
-    setFieldErrors({});
-  };
+  const clearDraft = (key: string) =>
+    setDraft((d) => {
+      const next = { ...d };
+      delete next[key];
+      return next;
+    });
 
-  const recalculate = async () => {
-    if (!jobId || !onRecalculated || busy || hasErrors) return;
+  /** Sends the complete set of edited values (those that differ from the calculated one); `change` replaces one of them; `resetAll` sends none. */
+  const send = async (change: { key: string; value: string } | null, nozzles?: NozzleItem[], resetAll = false) => {
+    if (!jobId || !onRecalculated || busy) return;
     setBusy(true);
     setError(null);
     setFieldErrors({});
-    // The complete set of edited values: those that differ from the calculated ("Actual") value.
     const overrides: Record<string, string> = {};
     for (const p of data.parameters) {
-      if (!p.editable) continue;
-      const v = (draft[p.key] ?? p.estimated).trim();
+      if (!p.editable || resetAll) continue;
+      const v = (change && change.key === p.key ? change.value : p.estimated).trim();
       if (!sameValue(v, p.actual)) overrides[p.key] = v;
     }
+    const before = Object.fromEntries(data.parameters.map((p) => [p.key, p.estimated]));
     try {
-      const job = await recalculateJob(jobId, { overrides, ...(nozzlesChanged ? { nozzles: nozzleDraft } : {}) });
+      const job = await recalculateJob(jobId, { overrides, ...(nozzles ? { nozzles } : {}) });
+      const after = job.tankData?.parameters ?? [];
+      setUpdated(new Set(after.filter((p) => !sameValue(p.estimated, before[p.key] ?? "")).map((p) => p.key)));
+      if (clearTimer.current) clearTimeout(clearTimer.current);
+      clearTimer.current = setTimeout(() => setUpdated(new Set()), 3000);
+      setDraft({});
       onRecalculated(job);
     } catch (err) {
-      if (err instanceof ApiFieldError) setFieldErrors(err.fieldErrors);
+      if (err instanceof ApiFieldError) {
+        const mapped: Record<string, string> = {};
+        for (const [k, v] of Object.entries(err.fieldErrors)) mapped[k.replace(/^overrides\./, "")] = v;
+        setFieldErrors(mapped);
+      }
       setError(err instanceof Error ? err.message : "Could not recalculate.");
+      setDraft({});                                           // the field goes back to the last accepted value, as in the software
     } finally {
       setBusy(false);
     }
   };
 
-  const locked = disabled || busy;
+  /** Enter / leaving the field / picking from a list: check it like the software grid, then send it. */
+  const commit = (row: EstimatedRow, picked?: string) => {
+    const value = picked ?? draft[row.key];
+    if (value === undefined || busy || !jobId) return;
+    if (sameValue(value, row.estimated)) {
+      clearDraft(row.key);
+      return;
+    }
+    const problem = validateTankValue(row.key, value, row.actual);
+    if (problem) {
+      setError(`${row.label}: ${problem}`);
+      setFieldErrors({ [row.key]: problem });
+      clearDraft(row.key);
+      return;
+    }
+    void send({ key: row.key, value });
+  };
+
+  const rowsOf = (list: TankData["parameters"]): EstimatedRow[] =>
+    list.map((p) => ({
+      key: p.key,
+      label: p.label,
+      unit: p.unit ?? undefined,
+      actual: p.actual,
+      estimated: p.estimated,
+      editable: p.editable,
+      numeric: isNumber(p.actual),
+      choices: CHOICE_VALUES[p.key],
+    }));
 
   return (
-    <div className="tank-params">
+    <div className="engineering-data-view">
       {data.warnings.length > 0 && <TankWarnings warnings={data.warnings} />}
+      <EstimatedNoticeCard />
+
+      {editing && <EstimatedBanner busy={busy} busyText="Recalculating the connected values…" error={error} disabled={disabled} />}
+
+      <EstimatedToolbar diffCount={diffCount} canReset={editing && !locked && diffCount > 0} onReset={() => void send(null, undefined, true)} />
+
+      <div className="categories-stack">
+        {[...groups.entries()].map(([group, rows]) => (
+          <EstimatedCategoryCard
+            key={group}
+            title={group}
+            rows={rowsOf(rows)}
+            draft={draft}
+            errors={fieldErrors}
+            updated={updated}
+            live={editing && !disabled}
+            busy={busy}
+            same={sameValue}
+            onChange={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
+            onCommit={commit}
+            onCancel={clearDraft}
+          />
+        ))}
+      </div>
+
       {editing && (
-        <div className="tank-edit-bar" role="region" aria-label="Edit and recalculate">
-          <span className="tank-edit-hint">
-            {disabled
-              ? "A drawing is being generated - editing is available when it has finished."
-              : dirty
-                ? "You have unsaved changes. Recalculate to update every dependent value, the BOM and the summary."
-                : "Edit the Estimated values or the nozzle schedule, then Recalculate. A drawing made before a change is cleared - generate it again."}
-          </span>
-          <div className="tank-edit-actions">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={discard} disabled={!dirty || locked}>
-              Discard changes
-            </button>
-            <button type="button" className="btn btn-primary btn-sm" onClick={recalculate} disabled={!dirty || locked || hasErrors} id="btn-tank-recalculate">
-              {busy ? (
-                <>
-                  <IconLoader size={14} className="animate-spin" />
-                  <span>Recalculating...</span>
-                </>
-              ) : (
-                <span>Recalculate</span>
-              )}
-            </button>
+        <section className="category-card" aria-label="Nozzle schedule">
+          <div className="category-header">
+            <div>
+              <h3 className="category-title">Nozzle Schedule</h3>
+              <p className="category-desc">Edit the nozzles, then Recalculate to update the BOM and the drawing data. A drawing made before a change is cleared - generate it again.</p>
+            </div>
+            <div className="toolbar-actions">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  setNozzleDraft(data.nozzles ?? []);
+                  setFieldErrors({});
+                  setError(null);
+                }}
+                disabled={!nozzlesChanged || locked}
+              >
+                Discard changes
+              </button>
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => void send(null, nozzleDraft)} disabled={!nozzlesChanged || locked} id="btn-tank-recalculate">
+                {busy ? (
+                  <>
+                    <IconLoader size={14} className="animate-spin" />
+                    <span>Recalculating...</span>
+                  </>
+                ) : (
+                  <span>Recalculate</span>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-      {error && (
-        <div className="alert-banner alert-banner-danger" role="alert">
-          <span>{error}</span>
-        </div>
-      )}
-      {[...groups.entries()].map(([group, rows]) => (
-        <section key={group} className="workspace-panel tank-params-group" aria-label={group}>
-          <h3 className="workspace-panel-title">{group}</h3>
-          <table className="tank-params-table">
-            <colgroup>
-              <col style={{ width: "46%" }} />
-              <col style={{ width: "20%" }} />
-              <col style={{ width: "20%" }} />
-              <col style={{ width: "14%" }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th scope="col">Parameter</th>
-                <th scope="col" className="num">Actual</th>
-                <th scope="col" className="num">Estimated</th>
-                <th scope="col">Unit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((p) => {
-                const current = valueOf(p);
-                const overridden = !sameValue(current, p.actual);
-                const choices = CHOICE_VALUES[p.key];
-                const err = parameterErrors[p.key] ?? fieldErrors[`overrides.${p.key}`];
-                return (
-                  <tr key={p.key}>
-                    <th scope="row">{p.label}</th>
-                    <td className="num text-mono">{p.actual}</td>
-                    <td className={`num text-mono${overridden ? " tank-overridden" : ""}`} title={overridden ? "Estimated value overrides the calculation" : undefined}>
-                      {editing && p.editable ? (
-                        choices ? (
-                          <select
-                            className={`tank-estimated-input${overridden ? " tank-estimated-modified" : ""}`}
-                            value={current}
-                            disabled={locked}
-                            aria-label={`Estimated ${p.label}`}
-                            onChange={(e) => setDraft((d) => ({ ...d, [p.key]: e.target.value }))}
-                          >
-                            {(choices.includes(current) ? choices : [current, ...choices]).map((c) => (
-                              <option key={c} value={c}>{c}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            className={`tank-estimated-input text-mono${overridden ? " tank-estimated-modified" : ""}${err ? " tank-estimated-invalid" : ""}`}
-                            value={current}
-                            disabled={locked}
-                            inputMode="decimal"
-                            aria-label={`Estimated ${p.label}`}
-                            aria-invalid={!!err}
-                            title={err ?? "Edit the estimated value"}
-                            onChange={(e) => setDraft((d) => ({ ...d, [p.key]: e.target.value }))}
-                          />
-                        )
-                      ) : (
-                        p.estimated
-                      )}
-                      {err && <span className="tank-field-error" role="alert">{err}</span>}
-                    </td>
-                    <td className="tank-params-unit">{p.unit ?? ""}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
-      ))}
-      {editing && (
-        <section className="workspace-panel" aria-label="Nozzle schedule">
-          <h3 className="workspace-panel-title">Nozzle Schedule</h3>
           <TankNozzleEditor module={data.module} nozzles={nozzleDraft} onChange={setNozzleDraft} disabled={locked} />
           {fieldErrors.nozzles && <span className="tank-field-error" role="alert">{fieldErrors.nozzles}</span>}
         </section>
