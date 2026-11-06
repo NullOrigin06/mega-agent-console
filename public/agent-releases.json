@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.2.16",
+    "date": "2026-11-06T16:30:26Z",
+    "notes": "Heat Exchanger: Tube Sheet and Bonnet Flange drawings from the same job as the fabrication and General Arrangement drawings; General Arrangement: tube quantity, pitch, size and passes come from the job; nozzle BOM bolt/nut/washer quantity no longer blank; Shop Tank: new nozzle model (every nozzle drawn at its own value, checks before drawing); Site Tank: new nozzle placement, N13 labels, Extras"
+  },
+  {
     "version": "1.2.15",
     "date": "2026-11-04T04:40:02Z",
     "notes": "Shop Tank drawings now work in AutoCAD (fixes the 'bad argument type: variantp' stop); clearer message when AutoCAD asks permission to load the drawing script; Shop Tank General Arrangement template"
