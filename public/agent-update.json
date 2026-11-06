@@ -1,10 +1,10 @@
 {
-  "version": "1.2.16",
-  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.16/MegaLocalAgent.zip",
-  "sha256": "1DAE88BAD385381A82FF11B8B13B928F77C39829CF546B7ECADC4CFE9C74BEDC",
-  "notes": "Heat Exchanger: Tube Sheet and Bonnet Flange drawings from the same job as the fabrication and General Arrangement drawings; General Arrangement: tube quantity, pitch, size and passes come from the job; nozzle BOM bolt/nut/washer quantity no longer blank; Shop Tank: new nozzle model (every nozzle drawn at its own value, checks before drawing); Site Tank: new nozzle placement, N13 labels, Extras",
-  "size": 50743889,
-  "signature": "P6t7p5itjKXBFK/O490KHfbKlfkoJylUX5oU1VWYbi+dp/xu+qMHMpOeqAfwYRd+w9abM5viVmtm4ylq+EiD9A==",
-  "signedAt": "2026-11-06T16:30:26Z",
+  "version": "1.2.17",
+  "url": "https://github.com/NullOrigin06/mega-agent-console/releases/download/agent-v1.2.17/MegaLocalAgent.zip",
+  "sha256": "DF4B3E368B124D670783895A71A1CFF318386E323F866D438185EDCDBB7FC0FD",
+  "notes": "Heat Exchanger drawings: the nozzle BOM is laid out like a hand-made one - shared parts first, one nozzle-number block per set of nozzles, no overlapping numbers, long sizes and materials condensed instead of FIT ERROR.",
+  "size": 49151234,
+  "signature": "otKGc49xVzBmwF6ttfCIJP4aCTxxmjYVhQwH5KkLPdvj/wkIXwl29gECUfG1gDdXDZWWlzFJxu3N3iqhBLaVfQ==",
+  "signedAt": "2026-11-06T18:07:25Z",
   "keyId": "9634299695640E27"
 }

@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.2.17",
+    "date": "2026-11-06T18:07:25Z",
+    "notes": "Heat Exchanger drawings: the nozzle BOM is laid out like a hand-made one - shared parts first, one nozzle-number block per set of nozzles, no overlapping numbers, long sizes and materials condensed instead of FIT ERROR."
+  },
+  {
     "version": "1.2.16",
     "date": "2026-11-06T16:30:26Z",
     "notes": "Heat Exchanger: Tube Sheet and Bonnet Flange drawings from the same job as the fabrication and General Arrangement drawings; General Arrangement: tube quantity, pitch, size and passes come from the job; nozzle BOM bolt/nut/washer quantity no longer blank; Shop Tank: new nozzle model (every nozzle drawn at its own value, checks before drawing); Site Tank: new nozzle placement, N13 labels, Extras"
