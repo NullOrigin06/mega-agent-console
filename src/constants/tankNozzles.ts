@@ -20,25 +20,29 @@ export const SHOP_TANK_LOCATIONS = ["Dish", "Shell"];
 export const SHOP_TANK_UNITS = ["NB", "inch"];
 
 /**
- * Defaults = the schedule of the Shop Tank template (editable / removable).
+ * Defaults = the schedule of the Shop Tank template (editable / removable), as the software seeds it.
  * Elevation / Radius: Shell -> height above the bottom weld line (mm); Dish -> distance from the vessel centre (mm);
- * AUTO = shell I.D. / 2 - 150; "--" = none. N5 / N6 / SG / LG sit at fixed heights in the drawing template.
+ * AUTO is worked out once by the calculation: dish nozzle = shell I.D. / 2 - 150, N5 = 75 below the top weld line, N6 = 75 above the
+ * bottom weld line, SG / LG at the template heights, any other shell nozzle at mid-height; "--" = none.
+ * Every nozzle is drawn at the value given (N5, N6, SG and LG included).
  */
 export function getDefaultShopTankNozzles(): NozzleItem[] {
-  const n = (nozzleNo: string, size: string, location: string, service: string, elevation: string, orientation: string): NozzleItem => ({
-    nozzleNo, size, unit: "NB", schedule: "Sch 10S", type: "LJFF", rating: "150#", projection: "", service, orientation, remark: "-", location, elevation,
+  const n = (nozzleNo: string, size: string, location: string, service: string, elevation: string, orientation: string, type = "LJFF"): NozzleItem => ({
+    nozzleNo, size, unit: size.includes("/") ? "inch" : "NB", schedule: "Sch 10S", type, rating: "150#", projection: "", service, orientation, remark: "-", location, elevation,
   });
   return [
     n("N1", "25", "Dish", "VENT TO CONDENSER", "--", "TOP"),
     n("N2", "100", "Dish", "CONDENSATE INLET(FROM REBOILER)", "AUTO", "270°"),
     n("N3", "25", "Dish", "CONDENSATE INLET(FROM VENT COND.)", "AUTO", "30°"),
     n("N4", "25", "Dish", "SPARE", "AUTO", "330°"),
-    n("N5", "25", "Shell", "LEVEL INDICATOR (TOP)", "--", "135°"),
-    n("N6", "25", "Shell", "LEVEL INDICATOR (BOTTOM)", "--", "135°"),
+    n("N5", "1/2", "Shell", "LEVEL INDICATOR (TOP)", "AUTO", "135°", "SOCKET"),
+    n("N6", "1/2", "Shell", "LEVEL INDICATOR (BOTTOM)", "AUTO", "135°", "SOCKET"),
     n("N7", "100", "Dish", "OUTLET TO PUMP", "--", "BOTTOM"),
     n("N8", "40", "Shell", "DRAIN", "500", "90°"),
     n("N9", "25", "Shell", "INSTRUMENT", "900", "270°"),
     n("N10", "25", "Dish", "SPARE (ON DISH)", "AUTO", "180°"),
+    n("SG", "100", "Shell", "SIGHT GLASS", "AUTO", "270°"),
+    n("LG", "100", "Shell", "LIGHT GLASS", "AUTO", "240°"),
   ];
 }
 

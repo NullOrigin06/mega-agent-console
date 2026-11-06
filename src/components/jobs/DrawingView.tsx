@@ -54,7 +54,8 @@ export function DrawingView({
   const anyGenerating = cards ? isAnyDrawingGenerating(cards.map((c) => c.status)) : drawingStatus === "generating";
   const isGenerating = isTriggering || anyGenerating;
   const [selected, setSelected] = useState<DrawingKind[]>([]);
-  const blocked = hasChecks && (multi ? selected.includes("ts") : true);
+  // The checks stand in the way of the Tube Sheet drawing of a Heat Exchanger job only; of every drawing of any other module.
+  const blocked = hasChecks && (module === "HeatExchangerFab" ? selected.includes("ts") : true);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<DrawingKind | null>(null);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -106,7 +107,7 @@ export function DrawingView({
 
   return (
     <div className="drawing-view">
-      <DrawingChecksBanner reasons={blockedReasons} what={multi ? "The Tube Sheet drawing" : "The drawing"} />
+      <DrawingChecksBanner reasons={blockedReasons} what={module === "HeatExchangerFab" ? "The Tube Sheet drawing" : module === "ShopTank" ? "The Shop Tank drawings" : "The drawing"} />
       {cards && (
         <div className="drawing-cards-intro">
           <p className="drawing-meta-text">

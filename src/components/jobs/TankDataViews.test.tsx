@@ -260,12 +260,12 @@ describe("TankNozzleEditor", () => {
     return onChange;
   };
 
-  it("Shop Tank has Location and Elevation / Radius, and the desktop default schedule has ten rows", () => {
+  it("Shop Tank has Location and Elevation / Radius, and the desktop default schedule has twelve rows (SG and LG included)", () => {
     rowsOf(getDefaultShopTankNozzles(), "ShopTank");
 
     expect(screen.getByText("Nozzle Location")).toBeInTheDocument();
     expect(screen.getByText("Elevation / Radius (mm)")).toBeInTheDocument();
-    expect(screen.getAllByLabelText("Nozzle location")).toHaveLength(10);
+    expect(screen.getAllByLabelText("Nozzle location")).toHaveLength(12);
   });
 
   it("Site Tank has Position, and its default is the 17-nozzle fermentor schedule", () => {
@@ -358,5 +358,28 @@ describe("Site Tank Extras", () => {
 
   it("validateTankValue has no checks for them", () => {
     expect(validateTankValue("EXTRA_CORROSION_ALLOWANCE", "to be agreed", "1.50")).toBeNull();
+  });
+});
+
+describe("Shop Tank nozzle model (as in the software)", () => {
+  afterEach(cleanup);
+
+  it("the default schedule has N5 / N6 as 1/2 inch socket nozzles on AUTO height, and SG and LG on the shell", () => {
+    const d = getDefaultShopTankNozzles();
+    const by = (no: string) => d.find((n) => n.nozzleNo === no)!;
+
+    expect(d.map((n) => n.nozzleNo)).toEqual(["N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "SG", "LG"]);
+    expect(by("N5")).toMatchObject({ size: "1/2", unit: "inch", type: "SOCKET", location: "Shell", elevation: "AUTO", orientation: "135°" });
+    expect(by("SG")).toMatchObject({ location: "Shell", elevation: "AUTO", orientation: "270°" });
+    expect(d.every((n) => n.schedule === "Sch 10S")).toBe(true);
+  });
+
+  it("moving a nozzle from the dish to the shell puts its elevation back to AUTO, and a centre nozzle gets 90 degrees", () => {
+    const onChange = vi.fn();
+    render(<TankNozzleEditor module="ShopTank" nozzles={[{ ...getDefaultShopTankNozzles()[0] }]} onChange={onChange} />);   // N1: dish, TOP, "--"
+
+    fireEvent.change(screen.getByLabelText("Nozzle location"), { target: { value: "Shell" } });
+
+    expect(onChange).toHaveBeenLastCalledWith([expect.objectContaining({ location: "Shell", elevation: "AUTO", orientation: "90°" })]);
   });
 });

@@ -54,6 +54,14 @@ export function TankNozzleEditor({ module, nozzles, onChange, disabled = false }
     updateRow(index, { size, unit: size.includes("/") ? "inch" : "NB" });
   };
 
+  // Shop Tank: moving a nozzle between the dish and the shell changes what its "Elevation / Radius" means (height above W.L. <-> pitch
+  // radius), so it goes back to AUTO and is placed sensibly; a shell nozzle cannot sit on the dish centre (TOP / BOTTOM), it gets 90 degrees.
+  const changeLocation = (index: number, location: string) => {
+    const row = nozzles[index];
+    const orientation = location === "Shell" && /^(TOP|BOTTOM)$/i.test((row.orientation ?? "").trim()) ? "90\u00b0" : row.orientation;
+    updateRow(index, { location, elevation: "AUTO", orientation });
+  };
+
   // Site Tank: every nozzle has an orientation (its compass bearing); a SHELL nozzle also has an elevation, a ROOF nozzle none.
   const changePosition = (index: number, position: string) => {
     const row = nozzles[index];
@@ -89,14 +97,14 @@ export function TankNozzleEditor({ module, nozzles, onChange, disabled = false }
               {shop ? <th>Nozzle Location</th> : <th>Service</th>}
               {shop ? <th>Service</th> : <th>Position</th>}
               {shop ? (
-                <th title="SHELL nozzle: height of its centre line above the bottom weld line W.L. (mm). DISH nozzle: distance from the vessel centre (mm); AUTO = shell I.D. / 2 - 150. N1 / N7 on the centre line need no value. N5, N6, SG and LG sit at fixed heights in the drawing template.">
+                <th title="SHELL nozzle: height of its centre line above the bottom weld line W.L. (mm). DISH nozzle: distance from the vessel centre (mm); AUTO = shell I.D. / 2 - 150. N1 / N7 on the centre line need no value. Every nozzle - N5, N6, SG, LG included - is drawn at the value typed here. AUTO: N5 = 75 below the top weld line, N6 = 75 above the bottom weld line, SG / LG at the template heights, any other shell nozzle at mid-height.">
                   Elevation / Radius (mm)
                 </th>
               ) : (
                 <th>Nozzle Orientation</th>
               )}
               {shop ? (
-                <th title="Angle in degrees clockwise from the plan top (e.g. 270 or 270°). TOP / BOTTOM for N1 / N7.">Nozzle Orientation</th>
+                <th title="Angle in degrees clockwise from the plan top (e.g. 270 or 270°) - for dish AND shell nozzles. TOP / BOTTOM for the nozzles on the centre of the top / bottom dish (N1 / N7).">Nozzle Orientation</th>
               ) : (
                 <th title="Height of a SHELL nozzle's centre line above the bottom (mm).">Elevation</th>
               )}
@@ -149,7 +157,7 @@ export function TankNozzleEditor({ module, nozzles, onChange, disabled = false }
                     <>
                       <td>
                         <select className="nozzle-cell-select" value={n.location ?? "Dish"} disabled={disabled}
-                          onChange={(e) => updateRow(i, { location: e.target.value })} aria-label="Nozzle location">
+                          onChange={(e) => changeLocation(i, e.target.value)} aria-label="Nozzle location">
                           {SHOP_TANK_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
                         </select>
                       </td>
