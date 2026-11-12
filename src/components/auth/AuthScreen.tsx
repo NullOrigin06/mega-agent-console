@@ -10,17 +10,11 @@ import {
 } from "../../api";
 import { setAuthSession, getAuthSession, type AuthSession } from "../../utils/authSession";
 import { readUrlToken, clearUrlToken } from "../../utils/urlToken";
-import {
-  IconLoader,
-  IconMail,
-  IconLock,
-  IconArrowLeft,
-  IconArrowRight,
-  IconAlertTriangle,
-  IconCheckCircle,
-} from "../common/Icon";
+import { requestedAuthMode } from "../../utils/landing";
+import { IconLoader, IconArrowLeft, IconAlertTriangle, IconCheckCircle } from "../common/Icon";
 import { LANDING_PATH } from "../../utils/landing";
 import megaLogo from "../../assets/mega-logo.png";
+import type { Relief } from "./relief/relief.js";
 
 interface AuthScreenProps {
   onLoginSuccess: (session: AuthSession) => void;
@@ -30,10 +24,51 @@ type Mode = "login" | "signup" | "forgot-password" | "reset-password" | "verify-
 
 export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
   const urlToken = readUrlToken();
-  const [mode, setMode] = useState<Mode>(urlToken?.mode ?? "login");
+  const [mode, setMode] = useState<Mode>(urlToken?.mode ?? requestedAuthMode());
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Brand panel background: the tube sheet relief, in the console's navy. Loaded on demand so the
+  // WebGL code stays out of the main bundle; without WebGL2 the panel keeps its plain ground.
+  const reliefRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const canvas = reliefRef.current;
+    if (!canvas || import.meta.env.MODE === "test") return;
+    let relief: Relief | null = null;
+    let cancelled = false;
+    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    import("./relief/relief.js")
+      .then((mod) => {
+        if (cancelled) return;
+        relief = mod.createRelief(canvas, {
+          scene: 1,
+          side: 0,
+          zoom: 1.26,
+          center: [0.04, -0.03],
+          plaster: "#132038",
+          tint: "#38bdf8",
+          // With a mouse the plate is hidden until the cursor passes over it; on touch screens,
+          // where nothing can hover, it stays visible.
+          restDepth: canHover ? 0 : 0.72,
+          idleSweep: false,
+          falloff: 0.065,
+          dissipation: 0.95,
+          rainbow: 0,
+          scrollFactor: 0,
+        });
+        if (!relief) canvas.classList.add("is-unavailable");
+        // Reduced motion already switches off the idle sweep and the tilt inside the engine;
+        // keep the loop running so the plate still answers the visitor's own cursor.
+        else relief.setPaused(false);
+      })
+      .catch(() => canvas.classList.add("is-unavailable"));
+    return () => {
+      cancelled = true;
+      relief?.destroy();
+    };
+  }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -167,6 +202,7 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     }
   };
 
+  const isEntry = mode === "login" || mode === "signup";
   const title =
     mode === "forgot-password"
       ? "Reset your password"
@@ -175,58 +211,68 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
         : mode === "verify-email"
           ? "Verifying your email"
           : mode === "signup"
-            ? "Create account"
+            ? "Create your account"
             : "Sign in";
 
-  // Sign in / Create account are named by their tabs, so the heading is only
-  // visible for the modes that have no tabs.
-  const hasTabs = mode === "login" || mode === "signup";
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    setError(null);
+    setInfo(null);
+  };
+
+  const passwordField = (id: string, label: string, value: string, onChange: (v: string) => void, opts: {
+    autoComplete: string;
+    disabled: boolean;
+    autoFocus?: boolean;
+    aside?: React.ReactNode;
+    hint?: string;
+  }) => (
+    <div className="form-group">
+      <div className="auth-label-row">
+        <label htmlFor={id} className="form-label">{label}</label>
+        {opts.aside}
+      </div>
+      <div className="auth-input-wrapper">
+        <input
+          id={id}
+          type={showPassword ? "text" : "password"}
+          className="form-input auth-input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          autoComplete={opts.autoComplete}
+          aria-describedby={opts.hint ? `${id}-hint` : undefined}
+          required
+          disabled={opts.disabled}
+          autoFocus={opts.autoFocus}
+        />
+        <button
+          type="button"
+          className="auth-reveal-btn"
+          onClick={() => setShowPassword((v) => !v)}
+          aria-pressed={showPassword}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? "Hide" : "Show"}
+        </button>
+      </div>
+      {opts.hint && <p id={`${id}-hint`} className="auth-field-hint">{opts.hint}</p>}
+    </div>
+  );
 
   return (
     <div className="auth-screen-container">
       <main className="auth-card">
-        <span className={`brand-env-tag auth-env-tag ${API_MODE === "real" ? "brand-env-real" : ""}`}>
-          {API_MODE === "real" ? "REAL API" : "MOCK API v1.0"}
-        </span>
+        {API_MODE === "mock" && <span className="brand-env-tag auth-env-tag">Mock data</span>}
 
-        {(mode === "login" || mode === "signup") && (
-          <div className="auth-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === "login"}
-              className={`auth-tab-btn ${mode === "login" ? "active" : ""}`}
-              onClick={() => { setMode("login"); setError(null); setInfo(null); }}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === "signup"}
-              className={`auth-tab-btn ${mode === "signup" ? "active" : ""}`}
-              onClick={() => { setMode("signup"); setError(null); setInfo(null); }}
-            >
-              Create Account
-            </button>
-          </div>
-        )}
-
-        <h1 className={hasTabs ? "auth-sr-only" : "auth-heading"}>{title}</h1>
-
-        {(mode === "login" || mode === "signup") && (
-          <p className="auth-instructions">
-            {mode === "login"
-              ? "Sign in to access engineering jobs, calculation snapshots, and CAD workstations."
-              : "Register a new engineer account to start running automated calculations and drawings."}
-          </p>
-        )}
-
-        {mode === "forgot-password" && (
-          <p className="auth-instructions">
-            Enter your account email and we'll send a link to reset your password.
-          </p>
-        )}
+        <div className="auth-head">
+          <h1 className="auth-heading">{title}</h1>
+          {mode === "signup" && (
+            <p className="auth-instructions">You'll use it to run jobs and to pair the workstations that make your drawings.</p>
+          )}
+          {mode === "forgot-password" && (
+            <p className="auth-instructions">Enter your account email and we'll send a link to reset your password.</p>
+          )}
+        </div>
 
         {error && (
           <div className="alert-banner alert-banner-danger" role="alert">
@@ -242,76 +288,73 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
           </div>
         )}
 
-        {/* Login / Signup */}
-        {(mode === "login" || mode === "signup") && (
+        {/* Sign in / Create account */}
+        {isEntry && (
           <form onSubmit={handleLoginOrSignup} className="auth-form">
             <div className="form-group">
-              <label htmlFor="auth-email" className="form-label">Email Address</label>
-              <div className="auth-input-wrapper">
-                <IconMail size={16} className="auth-input-icon" />
-                <input
-                  id="auth-email"
-                  type="email"
-                  className="form-input auth-input"
-                  placeholder="engineer@megaepc.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  required
-                  disabled={isSubmitting}
-                  autoFocus
-                />
-              </div>
+              <label htmlFor="auth-email" className="form-label">Email</label>
+              <input
+                id="auth-email"
+                type="email"
+                className="form-input auth-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+                disabled={isSubmitting}
+                autoFocus
+              />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="auth-password" className="form-label">Password</label>
-              <div className="auth-input-wrapper">
-                <IconLock size={16} className="auth-input-icon" />
-                <input
-                  id="auth-password"
-                  type="password"
-                  className="form-input auth-input"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
-
-            {mode === "login" && (
-              <div className="auth-link-row">
-                <button type="button" className="btn-link" onClick={() => { setMode("forgot-password"); setError(null); setInfo(null); }}>
+            {passwordField("auth-password", "Password", password, setPassword, {
+              autoComplete: mode === "login" ? "current-password" : "new-password",
+              disabled: isSubmitting,
+              aside: mode === "login" ? (
+                <button type="button" className="btn-link auth-aside-link" onClick={() => switchMode("forgot-password")}>
                   Forgot password?
                 </button>
-                <button type="button" className="btn-link" onClick={handleResendVerification} disabled={isSubmitting}>
-                  Resend verification email
-                </button>
-              </div>
-            )}
+              ) : undefined,
+              hint: mode === "signup" ? "At least 8 characters." : undefined,
+            })}
 
             <button type="submit" className="btn btn-primary auth-submit-btn" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <IconLoader size={16} className="animate-spin" />
-                  <span>{mode === "login" ? "Signing In..." : "Creating Account..."}</span>
-                </>
-              ) : (
-                <>
-                  <span>{mode === "login" ? "Sign In to Console" : "Create Account & Continue"}</span>
-                  <IconArrowRight size={16} />
-                </>
-              )}
+              {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+              <span>
+                {mode === "login"
+                  ? isSubmitting ? "Signing in" : "Sign in"
+                  : isSubmitting ? "Creating account" : "Create account"}
+              </span>
             </button>
           </form>
         )}
 
-        {API_MODE === "mock" && (mode === "login" || mode === "signup") && (
+        {isEntry && (
+          <div className="auth-switch">
+            {mode === "login" ? (
+              <>
+                <p>
+                  No account yet?{" "}
+                  <button type="button" className="btn-link" onClick={() => switchMode("signup")}>Create one</button>
+                </p>
+                <p>
+                  Didn't get the verification email?{" "}
+                  <button type="button" className="btn-link" onClick={handleResendVerification} disabled={isSubmitting}>
+                    Send it again
+                  </button>
+                </p>
+              </>
+            ) : (
+              <p>
+                Already have an account?{" "}
+                <button type="button" className="btn-link" onClick={() => switchMode("login")}>Sign in</button>
+              </p>
+            )}
+          </div>
+        )}
+
+        {API_MODE === "mock" && isEntry && (
           <p className="auth-mock-hint">
-            <strong>Mock mode:</strong> any email and password signs you in (e.g. <code>engineer@megaepc.com</code> / <code>123456</code>).
+            This build runs on mock data, so any email and password will sign you in.
           </p>
         )}
 
@@ -319,76 +362,50 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
         {mode === "forgot-password" && (
           <form onSubmit={handleForgotPassword} className="auth-form">
             <div className="form-group">
-              <label htmlFor="forgot-email" className="form-label">Email Address</label>
-              <div className="auth-input-wrapper">
-                <IconMail size={16} className="auth-input-icon" />
-                <input
-                  id="forgot-email"
-                  type="email"
-                  className="form-input auth-input"
-                  placeholder="engineer@megaepc.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  required
-                  disabled={isSubmitting}
-                  autoFocus
-                />
-              </div>
+              <label htmlFor="forgot-email" className="form-label">Email</label>
+              <input
+                id="forgot-email"
+                type="email"
+                className="form-input auth-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+                disabled={isSubmitting}
+                autoFocus
+              />
             </div>
             <button type="submit" className="btn btn-primary auth-submit-btn" disabled={isSubmitting}>
-              {isSubmitting ? <IconLoader size={16} className="animate-spin" /> : <span>Send Reset Link</span>}
+              {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+              <span>{isSubmitting ? "Sending" : "Send reset link"}</span>
             </button>
-            <button type="button" className="btn-link" onClick={goToLogin}>Back to Sign In</button>
+            <div className="auth-switch">
+              <p><button type="button" className="btn-link" onClick={goToLogin}>Back to sign in</button></p>
+            </div>
           </form>
         )}
 
         {/* Reset password (arrived via emailed link) */}
         {mode === "reset-password" && (
           <form onSubmit={handleResetPassword} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="reset-password" className="form-label">New Password</label>
-              <div className="auth-input-wrapper">
-                <IconLock size={16} className="auth-input-icon" />
-                <input
-                  id="reset-password"
-                  type="password"
-                  className="form-input auth-input"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                  disabled={isSubmitting || Boolean(info)}
-                  autoFocus
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label htmlFor="reset-confirm" className="form-label">Confirm New Password</label>
-              <div className="auth-input-wrapper">
-                <IconLock size={16} className="auth-input-icon" />
-                <input
-                  id="reset-confirm"
-                  type="password"
-                  className="form-input auth-input"
-                  placeholder="••••••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                  disabled={isSubmitting || Boolean(info)}
-                />
-              </div>
-            </div>
+            {passwordField("reset-password", "New password", password, setPassword, {
+              autoComplete: "new-password",
+              disabled: isSubmitting || Boolean(info),
+              autoFocus: true,
+              hint: "At least 8 characters.",
+            })}
+            {passwordField("reset-confirm", "Confirm new password", confirmPassword, setConfirmPassword, {
+              autoComplete: "new-password",
+              disabled: isSubmitting || Boolean(info),
+            })}
             {info ? (
               <button type="button" className="btn btn-primary auth-submit-btn" onClick={goToLogin}>
-                <span>Continue to Sign In</span>
-                <IconArrowRight size={16} />
+                <span>Continue to sign in</span>
               </button>
             ) : (
               <button type="submit" className="btn btn-primary auth-submit-btn" disabled={isSubmitting}>
-                {isSubmitting ? <IconLoader size={16} className="animate-spin" /> : <span>Reset Password</span>}
+                {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+                <span>{isSubmitting ? "Saving" : "Save new password"}</span>
               </button>
             )}
           </form>
@@ -404,21 +421,15 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
             )}
             {!isSubmitting && (
               <button type="button" className="btn btn-primary auth-submit-btn" onClick={goToLogin}>
-                <span>Continue to Sign In</span>
-                <IconArrowRight size={16} />
+                <span>Continue to sign in</span>
               </button>
             )}
           </div>
         )}
-
-        <div className="auth-footer">
-          <span className="auth-footer-text">
-            Protected internal engineering console. Local Agents pair securely per account.
-          </span>
-        </div>
       </main>
 
       <aside className="auth-brand-panel">
+        <canvas ref={reliefRef} className="auth-relief" aria-hidden="true" />
         <div className="auth-brand-top">
           <div className="auth-logo-badge">
             <img src={megaLogo} alt="Mega EPC" className="auth-logo-img" />
@@ -429,21 +440,13 @@ export function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
             <span>Back to home</span>
           </a>
         </div>
+
+
         <div className="auth-brand-body">
-          <p className="auth-brand-eyebrow">Pressure Vessel &amp; CAD Automation Platform</p>
-          <p className="auth-brand-headline">
-            From data to drawing in <span>minutes.</span>
-          </p>
+          <p className="auth-brand-headline">Heat exchanger drawings, straight from the datasheet.</p>
           <p className="auth-brand-copy">
-            Turn equipment data into fabrication-ready CAD drawings and bills of materials, generated on your own workstation.
+            Tube sheets, bonnet flanges, heat exchangers, shop tanks and site tanks, drawn in GstarCAD or AutoCAD on your own workstation.
           </p>
-          <ul className="auth-brand-modules" aria-label="Modules">
-            <li>Tube Sheet</li>
-            <li>Bonnet Flange</li>
-            <li>Heat Exchanger</li>
-            <li>Shop Tank</li>
-            <li>Site Tank</li>
-          </ul>
         </div>
       </aside>
     </div>
